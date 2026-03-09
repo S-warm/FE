@@ -1,11 +1,196 @@
-* {
-  box-sizing: border-box;
+/* Tailwind v4 기본 불러오기 */
+@import "tailwindcss";
+@import "tw-animate-css";
+/* Pretendard 웹폰트 */
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css");
+
+/* 1) 디자인 토큰 원본(UX-Swarm 팔레트) */
+:root {
+  /* 기본 브랜드 컬러(Primary) */
+  --color-primary-50: #e7eaf8;
+  --color-primary-100: #c1c9ee;
+  --color-primary-200: #97a6e3;
+  --color-primary-300: #6884d8;
+  --color-primary-main: #4669d0;
+  --color-primary-500: #0a4ec7;
+  --color-primary-600: #374d91;
+  --color-primary-800: #273a79;
+
+  /* 보조 컬러(Blue-gray) */
+  --color-blue-gray-10: #f5f7fb;
+  --color-blue-gray-50: #e7eaf2;
+  --color-blue-gray-100: #c3cbe0;
+  --color-blue-gray-200: #9da9cb;
+  --color-blue-gray-300: #7788b6;
+  --color-blue-gray-400: #5a6ea8;
+  --color-blue-gray-500: #3d559a;
+  --color-blue-gray-text: #8b96a8;
+
+  /* 무채색 계열(Neutral) */
+  --color-neutral-00: #ffffff;
+  --color-neutral-50: #fafafa;
+  --color-neutral-100: #f4f4f4;
+  --color-neutral-200: #ececec;
+  --color-neutral-300: #dedede;
+  --color-neutral-400: #bababa;
+  --color-neutral-500: #9b9b9b;
+  --color-neutral-600: #727272;
+  --color-neutral-700: #5f5f5f;
+  --color-neutral-800: #404040;
+  --color-neutral-900: #1f1f1f;
+
+  /* shadcn 호환 시맨틱 토큰 */
+  --background: var(--color-neutral-00);
+  --foreground: var(--color-neutral-900);
+  --card: var(--color-neutral-00);
+  --card-foreground: var(--color-neutral-900);
+  --popover: var(--color-neutral-00);
+  --popover-foreground: var(--color-neutral-900);
+  --primary: var(--color-primary-main);
+  --primary-foreground: var(--color-neutral-00);
+  --secondary: var(--color-blue-gray-50);
+  --secondary-foreground: var(--color-blue-gray-500);
+  --muted: var(--color-neutral-100);
+  --muted-foreground: var(--color-neutral-600);
+  --accent: var(--color-primary-50);
+  --accent-foreground: var(--color-primary-600);
+  --destructive: #e54949;
+  --destructive-foreground: var(--color-neutral-00);
+  --border: var(--color-neutral-200);
+  --input: var(--color-neutral-200);
+  --ring: var(--color-primary-main);
+  --radius: 0.75rem;
 }
 
-html,
-body,
-#root {
-  margin: 0;
-  width: 100%;
-  min-height: 100%;
+/* 다크 모드 기본값(필요 시 추후 조정) */
+.dark {
+  --background: var(--color-neutral-900);
+  --foreground: var(--color-neutral-00);
+  --card: var(--color-neutral-800);
+  --card-foreground: var(--color-neutral-00);
+  --popover: var(--color-neutral-800);
+  --popover-foreground: var(--color-neutral-00);
+  --primary: var(--color-primary-200);
+  --primary-foreground: var(--color-neutral-900);
+  --secondary: var(--color-blue-gray-500);
+  --secondary-foreground: var(--color-neutral-00);
+  --muted: var(--color-neutral-700);
+  --muted-foreground: var(--color-neutral-300);
+  --accent: var(--color-primary-600);
+  --accent-foreground: var(--color-neutral-00);
+  --destructive: #ff6b6b;
+  --destructive-foreground: var(--color-neutral-00);
+  --border: var(--color-neutral-700);
+  --input: var(--color-neutral-700);
+  --ring: var(--color-primary-300);
+}
+
+/* 2) Tailwind v4 매핑 레이어:
+   CSS 변수 -> 유틸리티 토큰으로 연결(색상 하드코딩 중복 방지) */
+@theme inline {
+  --font-sans: "Pretendard Variable", "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  /* 타이틀(Titles) */
+  --text-title-42: 2.625rem;
+  --text-title-42--line-height: 3.625rem;
+  --text-title-42--font-weight: 700;
+  --text-title-32: 2rem;
+  --text-title-32--line-height: 2.5rem;
+  --text-title-32--font-weight: 700;
+  --text-title-24-bold: 1.5rem;
+  --text-title-24-bold--line-height: 2.25rem;
+  --text-title-24-bold--font-weight: 700;
+  --text-title-24-medium: 1.5rem;
+  --text-title-24-medium--line-height: 2.25rem;
+  --text-title-24-medium--font-weight: 500;
+
+  /* 서브타이틀(Subtitles) */
+  --text-subtitle-20-bold: 1.25rem;
+  --text-subtitle-20-bold--line-height: 1.5rem;
+  --text-subtitle-20-bold--font-weight: 700;
+  --text-subtitle-20-medium: 1.25rem;
+  --text-subtitle-20-medium--line-height: 1.5rem;
+  --text-subtitle-20-medium--font-weight: 500;
+  --text-subtitle-18-bold: 1.125rem;
+  --text-subtitle-18-bold--line-height: 1.375rem;
+  --text-subtitle-18-bold--font-weight: 700;
+  --text-subtitle-18-semibold: 1.125rem;
+  --text-subtitle-18-semibold--line-height: 1.375rem;
+  --text-subtitle-18-semibold--font-weight: 600;
+  --text-subtitle-18-medium: 1.125rem;
+  --text-subtitle-18-medium--line-height: 1.375rem;
+  --text-subtitle-18-medium--font-weight: 500;
+  --text-subtitle-18-regular: 1.125rem;
+  --text-subtitle-18-regular--line-height: 1.375rem;
+  --text-subtitle-18-regular--font-weight: 400;
+  --text-subtitle-16-semibold: 1rem;
+  --text-subtitle-16-semibold--line-height: 1.25rem;
+  --text-subtitle-16-semibold--font-weight: 600;
+
+  /* 본문(Body) */
+  --text-body-16-medium: 1rem;
+  --text-body-16-medium--line-height: 1.5rem;
+  --text-body-16-medium--font-weight: 500;
+  --text-body-16-regular: 1rem;
+  --text-body-16-regular--line-height: 1.5rem;
+  --text-body-16-regular--font-weight: 400;
+  --text-body-14-medium: 0.875rem;
+  --text-body-14-medium--line-height: 1.375rem;
+  --text-body-14-medium--font-weight: 500;
+  --text-body-14-regular: 0.875rem;
+  --text-body-14-regular--line-height: 1.375rem;
+  --text-body-14-regular--font-weight: 400;
+
+  /* 캡션(Caption) */
+  --text-caption-12-medium: 0.75rem;
+  --text-caption-12-medium--line-height: 1.25rem;
+  --text-caption-12-medium--font-weight: 500;
+  --text-caption-12-regular: 0.75rem;
+  --text-caption-12-regular--line-height: 1.25rem;
+  --text-caption-12-regular--font-weight: 400;
+}
+
+/* 3) 기본(Base) 레이어 */
+@layer base {
+  * {
+    box-sizing: border-box;
+    @apply border-border;
+  }
+
+  html,
+  body,
+  #root {
+    margin: 0;
+    width: 100%;
+    min-height: 100%;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
 }

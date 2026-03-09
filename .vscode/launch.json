@@ -1,0 +1,16 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "pwa-chrome",
+      "request": "launch",
+      "name": "Frontend (Vite) 디버그",
+      "url": "http://localhost:5173",
+      "webRoot": "${workspaceFolder}/Fronted",
+      "skipFiles": [
+        "<node_internals>/**",
+        "${workspaceFolder}/Fronted/node_modules/**"
+      ]
+    }
+  ]
+}

@@ -1,8 +1,8 @@
+/* Pretendard 웹폰트 */
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css");
 /* Tailwind v4 기본 불러오기 */
 @import "tailwindcss";
 @import "tw-animate-css";
-/* Pretendard 웹폰트 */
-@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css");
 
 /* 1) 디자인 토큰 원본(UX-Swarm 팔레트) */
 :root {

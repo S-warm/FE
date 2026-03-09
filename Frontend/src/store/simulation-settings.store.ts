@@ -4,6 +4,18 @@ type DeviceType = "desktop" | "tablet" | "mobile"
 type AgeGroup = "10s" | "20s" | "30s" | "40s" | "50plus"
 type GenderType = "all" | "female" | "male"
 
+interface SimulationSettingsSnapshot {
+  searchKeyword: string
+  threshold: number
+  device: DeviceType
+  ageGroup: AgeGroup
+  gender: GenderType
+  categories: string[]
+  includeLowContrast: boolean
+  includeWarnings: boolean
+  tags: string[]
+}
+
 interface SimulationSettingsState {
   searchKeyword: string
   threshold: number
@@ -24,10 +36,11 @@ interface SimulationSettingsState {
   setIncludeWarnings: (value: boolean) => void
   removeTag: (value: string) => void
   addTag: (value: string) => void
+  applySettings: (snapshot: SimulationSettingsSnapshot) => void
   reset: () => void
 }
 
-const initialState = {
+const initialState: SimulationSettingsSnapshot = {
   searchKeyword: "",
   threshold: 65,
   device: "desktop" as DeviceType,
@@ -62,7 +75,17 @@ export const useSimulationSettingsStore = create<SimulationSettingsState>((set) 
     set((state) => ({
       tags: state.tags.includes(value) ? state.tags : [...state.tags, value],
     })),
+  applySettings: (snapshot) =>
+    set({
+      ...snapshot,
+    }),
   reset: () => set(initialState),
 }))
 
-export type { AgeGroup, DeviceType, GenderType, SimulationSettingsState }
+export type {
+  AgeGroup,
+  DeviceType,
+  GenderType,
+  SimulationSettingsState,
+  SimulationSettingsSnapshot,
+}

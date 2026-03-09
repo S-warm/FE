@@ -1,15 +1,10 @@
 import { useState } from "react"
 
-import { HeaderBar, Sidebar, StepIndicator, TabMenu } from "@/components/layout"
+import { HorizontalBarChart, HeatmapGrid } from "@/components/charts"
+import { HeaderBar, Sidebar, TabMenu } from "@/components/layout"
+import { IssueCard, SummaryPanel } from "@/components/sections"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { RESPONSIVE_BREAKPOINTS, RESPONSIVE_GUIDE } from "@/constants/responsive"
-
-const flowSteps = [
-  { id: "step-1", label: "A-Mall 로그인 접근", done: true },
-  { id: "step-2", label: "로그인 폼 입력", done: true },
-  { id: "step-3", label: "오류 메시지 확인", done: false },
-  { id: "step-4", label: "로그인 성공 후 이동", done: false },
-]
+import { donutData, heatmapData, issueData, progressData, summaryScore } from "@/mocks/data-visualization.mock"
 
 function App() {
   const [tab, setTab] = useState("overview")
@@ -25,64 +20,37 @@ function App() {
           <HeaderBar />
 
           <Card>
-            <CardContent className="py-3">
-              <p className="text-caption-12-regular text-muted-foreground">
-                반응형 기준: {RESPONSIVE_GUIDE[0]} / {RESPONSIVE_GUIDE[1]} / {RESPONSIVE_GUIDE[2]}
-              </p>
-              <p className="mt-1 text-caption-12-regular text-muted-foreground">
-                px 기준: mobile ≤ {RESPONSIVE_BREAKPOINTS.mobileMax}, tablet ≥{" "}
-                {RESPONSIVE_BREAKPOINTS.tabletMin}, desktop ≥ {RESPONSIVE_BREAKPOINTS.desktopMin}
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
             <CardContent className="p-0">
               <TabMenu value={tab} onChange={setTab} />
             </CardContent>
           </Card>
 
-          <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
-            <Card className="h-fit">
+          <SummaryPanel score={summaryScore} distribution={donutData} />
+
+          <div className="grid gap-4 xl:grid-cols-[1fr_380px]">
+            <Card>
               <CardHeader>
-                <CardTitle>Step Indicator</CardTitle>
+                <CardTitle>진행도 차트</CardTitle>
               </CardHeader>
               <CardContent>
-                <StepIndicator steps={flowSteps} currentStepId="step-3" />
+                <HorizontalBarChart data={progressData} />
               </CardContent>
             </Card>
 
-            <div className="grid gap-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle>요약 패널 (빈 데이터)</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid gap-3 md:grid-cols-3">
-                    <div className="rounded-lg border border-dashed border-border bg-muted/30 p-4 text-body-14-regular text-muted-foreground">
-                      점수 데이터 없음
-                    </div>
-                    <div className="rounded-lg border border-dashed border-border bg-muted/30 p-4 text-body-14-regular text-muted-foreground">
-                      카테고리 분포 없음
-                    </div>
-                    <div className="rounded-lg border border-dashed border-border bg-muted/30 p-4 text-body-14-regular text-muted-foreground">
-                      최근 이슈 없음
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle>히트맵 그리드</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <HeatmapGrid data={heatmapData} />
+              </CardContent>
+            </Card>
+          </div>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>{tab === "overview" ? "개요 영역" : "콘텐츠 영역"}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="rounded-lg border border-dashed border-border bg-muted/30 p-6 text-body-14-regular text-muted-foreground">
-                    빈 상태에서도 페이지 골격이 유지되도록 구성된 영역입니다.
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+          <div className="grid gap-4">
+            {issueData.map((issue) => (
+              <IssueCard key={issue.id} issue={issue} />
+            ))}
           </div>
         </div>
       </section>

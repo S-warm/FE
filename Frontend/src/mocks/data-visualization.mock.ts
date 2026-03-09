@@ -37,9 +37,13 @@ export const progressData: ProgressDatum[] = [
   { label: "폼 피드백", score: 59 },
 ]
 
+function seededPercent(index: number) {
+  return (index * 37 + 23) % 100
+}
+
 export const heatmapData: HeatmapCell[] = Array.from({ length: 64 }, (_, index) => ({
   id: `cell-${index}`,
-  value: Math.floor(Math.random() * 100),
+  value: seededPercent(index),
 }))
 
 export const issueData: IssueItem[] = [

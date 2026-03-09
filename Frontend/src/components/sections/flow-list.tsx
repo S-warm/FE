@@ -6,21 +6,29 @@ import { SearchField } from "@/components/forms"
 import { StepIndicator } from "@/components/layout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useFlowListStore } from "@/store/flow-list.store"
+import { useShallow } from "zustand/react/shallow"
 
 function FlowList() {
   const [newFlowName, setNewFlowName] = useState("")
 
-  const {
-    flows,
-    selectedFlowId,
-    searchKeyword,
-    setSearchKeyword,
-    selectFlow,
-    addFlow,
-    removeFlow,
-    moveFlowUp,
-    moveFlowDown,
-  } = useFlowListStore()
+  const { flows, selectedFlowId, searchKeyword } = useFlowListStore(
+    useShallow((state) => ({
+      flows: state.flows,
+      selectedFlowId: state.selectedFlowId,
+      searchKeyword: state.searchKeyword,
+    }))
+  )
+  const { setSearchKeyword, selectFlow, addFlow, removeFlow, moveFlowUp, moveFlowDown } =
+    useFlowListStore(
+      useShallow((state) => ({
+        setSearchKeyword: state.setSearchKeyword,
+        selectFlow: state.selectFlow,
+        addFlow: state.addFlow,
+        removeFlow: state.removeFlow,
+        moveFlowUp: state.moveFlowUp,
+        moveFlowDown: state.moveFlowDown,
+      }))
+    )
 
   const filteredFlows = useMemo(
     () =>

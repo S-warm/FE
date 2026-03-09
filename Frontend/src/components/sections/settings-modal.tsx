@@ -26,6 +26,7 @@ import {
   type GenderType,
   type SimulationSettingsSnapshot,
 } from "@/store/simulation-settings.store"
+import { useShallow } from "zustand/react/shallow"
 
 const deviceOptions: { label: string; value: DeviceType }[] = [
   { label: "데스크탑", value: "desktop" },
@@ -54,17 +55,19 @@ const categoryOptions = [
 ]
 
 function SettingsModal() {
-  const settingsSnapshot = useSimulationSettingsStore((state) => ({
-    searchKeyword: state.searchKeyword,
-    threshold: state.threshold,
-    device: state.device,
-    ageGroup: state.ageGroup,
-    gender: state.gender,
-    categories: state.categories,
-    includeLowContrast: state.includeLowContrast,
-    includeWarnings: state.includeWarnings,
-    tags: state.tags,
-  }))
+  const settingsSnapshot = useSimulationSettingsStore(
+    useShallow((state) => ({
+      searchKeyword: state.searchKeyword,
+      threshold: state.threshold,
+      device: state.device,
+      ageGroup: state.ageGroup,
+      gender: state.gender,
+      categories: state.categories,
+      includeLowContrast: state.includeLowContrast,
+      includeWarnings: state.includeWarnings,
+      tags: state.tags,
+    }))
+  )
   const applySettings = useSimulationSettingsStore((state) => state.applySettings)
 
   const [open, setOpen] = useState(false)

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useState } from "react"
 
 import { CommonButton } from "@/components/atoms"
 import {
@@ -73,14 +73,16 @@ function SettingsModal() {
   const [open, setOpen] = useState(false)
   const [draft, setDraft] = useState<SimulationSettingsSnapshot>(settingsSnapshot)
 
-  useEffect(() => {
-    if (open) {
-      setDraft(settingsSnapshot)
-    }
-  }, [open, settingsSnapshot])
-
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        setOpen(nextOpen)
+        if (nextOpen) {
+          setDraft(settingsSnapshot)
+        }
+      }}
+    >
       <DialogTrigger render={<CommonButton variant="secondary" size="sm" />}>고급설정</DialogTrigger>
       <DialogContent className="max-w-2xl">
         <DialogHeader>

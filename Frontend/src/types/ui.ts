@@ -5,4 +5,4 @@ export type InteractionState = "default" | "hover" | "active" | "disabled" | "er
 export type ComponentState = InteractionState | "loading"
 
 // cva로 만든 variant 타입을 다른 파일에서 재사용하기 위한 유틸 타입입니다.
-export type VariantOf<T extends (...args: any[]) => string> = VariantProps<T>
+export type VariantOf<T extends (...args: unknown[]) => string> = VariantProps<T>

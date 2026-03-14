@@ -47,7 +47,8 @@ function PasswordField({
   disabled,
   ...props
 }: PasswordFieldProps) {
-  const fieldId = id ?? React.useId()
+  const fallbackId = React.useId()
+  const fieldId = id ?? fallbackId
   const [visible, setVisible] = React.useState(false)
 
   const isDisabled = disabled || state === "disabled" || state === "loading"

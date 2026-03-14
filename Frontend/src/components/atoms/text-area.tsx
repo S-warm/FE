@@ -45,7 +45,8 @@ function TextArea({
   disabled,
   ...props
 }: TextAreaProps) {
-  const fieldId = id ?? React.useId()
+  const fallbackId = React.useId()
+  const fieldId = id ?? fallbackId
   const isDisabled = disabled || state === "disabled" || state === "loading"
   const isError = state === "error" || Boolean(errorMessage)
 

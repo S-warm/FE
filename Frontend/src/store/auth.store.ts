@@ -9,7 +9,8 @@ interface AuthUser {
 interface AuthState {
   isAuthenticated: boolean
   user: AuthUser | null
-  login: (username: string, password: string) => boolean
+  canLogin: (username: string, password: string) => boolean
+  login: (username: string) => void
   logout: () => void
 }
 
@@ -24,20 +25,23 @@ export const useAuthStore = create<AuthState>()(
     (set) => ({
       isAuthenticated: false,
       user: null,
-      login: (username, password) => {
+      canLogin: (username, password) => {
         const normalizedUsername = username.trim()
         if (
           normalizedUsername === DUMMY_CREDENTIALS.username &&
           password === DUMMY_CREDENTIALS.password
         ) {
-          set({
-            isAuthenticated: true,
-            user: { initials: DUMMY_CREDENTIALS.initials, username: normalizedUsername },
-          })
           return true
         }
 
         return false
+      },
+      login: (username) => {
+        const normalizedUsername = username.trim()
+        set({
+          isAuthenticated: true,
+          user: { initials: DUMMY_CREDENTIALS.initials, username: normalizedUsername },
+        })
       },
       logout: () => set({ isAuthenticated: false, user: null }),
     }),

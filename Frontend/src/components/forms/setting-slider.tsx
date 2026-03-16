@@ -1,3 +1,5 @@
+import { useEffect, useState } from "react"
+
 import { Slider } from "@/components/ui/slider"
 import { cn } from "@/lib/utils"
 import type { ComponentState } from "@/types/ui"
@@ -11,6 +13,11 @@ interface SettingSliderProps {
   unit?: string
   size?: "sm" | "md"
   state?: ComponentState
+  showLabel?: boolean
+  showInlineValue?: boolean
+  showFloatingValue?: boolean
+  floatingValueFormatter?: (value: number) => string
+  className?: string
   onChange: (value: number) => void
 }
 
@@ -34,30 +41,81 @@ function SettingSlider({
   unit = "%",
   size = "md",
   state = "default",
+  showLabel = true,
+  showInlineValue = true,
+  showFloatingValue = false,
+  floatingValueFormatter,
+  className,
   onChange,
 }: SettingSliderProps) {
   const isDisabled = state === "disabled" || state === "loading"
+  const progress = ((value - min) / (max - min)) * 100
+  const [isHovered, setIsHovered] = useState(false)
+  const [isDragging, setIsDragging] = useState(false)
+
+  useEffect(() => {
+    if (!isDragging) return
+
+    const handlePointerUp = () => {
+      setIsDragging(false)
+    }
+
+    window.addEventListener("pointerup", handlePointerUp)
+
+    return () => {
+      window.removeEventListener("pointerup", handlePointerUp)
+    }
+  }, [isDragging])
+
+  const shouldShowFloatingValue = showFloatingValue && (isHovered || isDragging)
 
   return (
-    <div className={cn("grid", sizeClassMap[size], stateClassMap[state as keyof typeof stateClassMap])}>
-      <div className="flex items-center justify-between">
-        <p className="text-body-14-medium text-foreground">{label}</p>
-        <span className="rounded-md bg-secondary px-2 py-1 text-caption-12-medium text-secondary-foreground">
-          {value}
-          {unit}
-        </span>
-      </div>
-      <Slider
-        value={[value]}
-        min={min}
-        max={max}
-        step={step}
-        disabled={isDisabled}
-        onValueChange={(nextValue) => {
-          const resolved = Array.isArray(nextValue) ? nextValue[0] : nextValue
-          onChange(resolved ?? value)
+    <div className={cn("grid", sizeClassMap[size], stateClassMap[state as keyof typeof stateClassMap], className)}>
+      {showLabel || showInlineValue ? (
+        <div className="flex items-center justify-between">
+          {showLabel ? <p className="text-body-14-medium text-[#283452]">{label}</p> : <span />}
+          {showInlineValue ? (
+            <span className="rounded-md bg-[#eef2ff] px-2 py-1 text-caption-12-medium text-[#4f66bf]">
+              {value}
+              {unit}
+            </span>
+          ) : null}
+        </div>
+      ) : null}
+
+      <div
+        className="relative pt-5"
+        onPointerEnter={() => setIsHovered(true)}
+        onPointerLeave={() => setIsHovered(false)}
+        onPointerDown={() => {
+          if (isHovered) {
+            setIsDragging(true)
+          }
         }}
-      />
+      >
+        {shouldShowFloatingValue ? (
+          <div
+            className="pointer-events-none absolute top-0 z-10 -translate-x-1/2"
+            style={{ left: `calc(${progress}% + (1 - ${progress} / 100) * 0px)` }}
+          >
+            <div className="relative rounded-[18px] bg-[var(--color-neutral-600)] px-4 py-2 text-[11px] font-medium leading-none text-white shadow-sm">
+              {floatingValueFormatter ? floatingValueFormatter(value) : value}
+              <span className="absolute left-1/2 top-full h-0 w-0 -translate-x-1/2 border-x-[8px] border-t-[10px] border-x-transparent border-t-[var(--color-neutral-600)]" />
+            </div>
+          </div>
+        ) : null}
+        <Slider
+          value={[value]}
+          min={min}
+          max={max}
+          step={step}
+          disabled={isDisabled}
+          onValueChange={(nextValue) => {
+            const resolved = Array.isArray(nextValue) ? nextValue[0] : nextValue
+            onChange(resolved ?? value)
+          }}
+        />
+      </div>
     </div>
   )
 }

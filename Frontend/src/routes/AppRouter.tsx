@@ -4,6 +4,7 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom"
 import HomePage from "@/pages/HomePage"
 import GeneratePage from "@/pages/GeneratePage"
 import LoginPage from "@/pages/LoginPage"
+import SimulationSetupPage from "@/pages/SimulationSetupPage"
 import SignUpPage from "@/pages/SignUpPage"
 import routes from "@/constants/routes"
 import { useAuthStore } from "@/store/auth.store"
@@ -52,6 +53,14 @@ export default function AppRouter() {
           element={
             <RequireAuth>
               <GeneratePage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path={routes.simulationSetup}
+          element={
+            <RequireAuth>
+              <SimulationSetupPage />
             </RequireAuth>
           }
         />

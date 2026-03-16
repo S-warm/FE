@@ -1,14 +1,16 @@
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts"
 
+import { cn } from "@/lib/utils"
 import type { DonutDatum } from "@/mocks/data-visualization.mock"
 
 interface DonutChartProps {
   data: DonutDatum[]
+  heightClassName?: string
 }
 
-function DonutChart({ data }: DonutChartProps) {
+function DonutChart({ data, heightClassName = "h-[220px]" }: DonutChartProps) {
   return (
-    <div className="h-[220px] w-full">
+    <div className={cn(heightClassName, "w-full")}>
       <ResponsiveContainer width="100%" height="100%">
         <PieChart>
           <Pie
@@ -19,6 +21,7 @@ function DonutChart({ data }: DonutChartProps) {
             outerRadius={80}
             stroke="transparent"
             paddingAngle={2}
+            isAnimationActive={false}
           >
             {data.map((entry) => (
               <Cell key={entry.name} fill={entry.color} />

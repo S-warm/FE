@@ -5,10 +5,12 @@ import { AuthBrandingShell } from "@/components/sections/auth"
 import { LOGIN_TRANSITION_MS } from "@/components/sections/auth/login-panel"
 import { AuthLayout } from "@/layouts/AuthLayout"
 import { cn } from "@/lib/utils"
+import { useNavigate } from "react-router-dom"
+import routes from "@/constants/routes"
 
 function GeneratePage() {
-  const [statusMessage, setStatusMessage] = useState("")
   const [visible, setVisible] = useState(false)
+  const navigate = useNavigate()
 
   useEffect(() => {
     window.requestAnimationFrame(() => {
@@ -31,12 +33,8 @@ function GeneratePage() {
         >
           <SimulationButton
             className="w-full rounded-xl bg-accent text-primary hover:bg-accent/80"
-            onClick={() => setStatusMessage("시뮬레이션 실행 플로우는 준비 중입니다.")}
+            onClick={() => navigate(routes.simulationSetup)}
           />
-
-          {statusMessage ? (
-            <p className="mt-4 text-caption-12-regular text-muted-foreground">{statusMessage}</p>
-          ) : null}
         </div>
       </AuthBrandingShell>
     </AuthLayout>

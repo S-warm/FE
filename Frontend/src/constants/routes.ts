@@ -3,6 +3,7 @@ const routes = {
   login: "/login",
   signup: "/signup",
   generate: "/generate",
+  simulationSetup: "/simulation/setup",
   error: "*",
 } as const
 

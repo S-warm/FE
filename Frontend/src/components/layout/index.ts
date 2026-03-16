@@ -1,4 +1,5 @@
 export { Sidebar } from "@/components/layout/sidebar"
 export { HeaderBar } from "@/components/layout/header-bar"
+export { ProfileMenu } from "@/components/layout/profile-menu"
 export { TabMenu } from "@/components/layout/tab-menu"
 export { StepIndicator } from "@/components/layout/step-indicator"

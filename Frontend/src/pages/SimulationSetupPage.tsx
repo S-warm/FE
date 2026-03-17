@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react"
+import { useNavigate } from "react-router-dom"
 
 import { DonutChart } from "@/components/charts"
 import { Card, CardContent } from "@/components/ui/card"
@@ -12,6 +13,7 @@ import {
 } from "@/components/sections/simulation-setup"
 import { TextArea, TextField } from "@/components/atoms"
 import { AuthLayout } from "@/layouts/AuthLayout"
+import routes from "@/constants/routes"
 
 function SimulationSetupPage() {
   const [personaCount, setPersonaCount] = useState(500)
@@ -24,6 +26,12 @@ function SimulationSetupPage() {
   })
   const [displayAgeRatios, setDisplayAgeRatios] = useState(ageRatios)
   const animationFrameRef = useRef<number | null>(null)
+  const displayAgeRatiosRef = useRef(displayAgeRatios)
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    displayAgeRatiosRef.current = displayAgeRatios
+  }, [displayAgeRatios])
 
   const redistributeAgeRatio = (changedKey: keyof typeof ageRatios, nextValue: number) => {
     const clamped = Math.min(100, Math.max(0, Math.round(nextValue)))
@@ -78,7 +86,7 @@ function SimulationSetupPage() {
     }
 
     const start = performance.now()
-    const from = displayAgeRatios
+    const from = displayAgeRatiosRef.current
     const to = ageRatios
     const duration = 300
 
@@ -131,7 +139,7 @@ function SimulationSetupPage() {
       mainClassName="items-start justify-start overflow-hidden pb-0"
       headerLeft={<BrandingHeader compact showTagline={false} align="left" className="origin-left scale-150" />}
     >
-      <section className="grid w-full max-w-[1560px] gap-16 pb-0 pt-2 pl-20 sm:grid-cols-[760px_400px] sm:pl-28">
+      <section className="grid w-full max-w-[1560px] gap-16 pb-0 pt-2 sm:grid-cols-[760px_400px]">
         <div className="grid gap-5">
           <section className="grid w-full max-w-[760px] gap-3">
             <SetupSectionTitle title="타겟 URL" description="시뮬레이션이 시작되는 페이지" />
@@ -279,7 +287,7 @@ function SimulationSetupPage() {
             onChange={(event) => setSuccessCondition(event.target.value)}
             variant="default"
             size="md"
-            className="h-[112px] resize-none overflow-y-auto overscroll-contain rounded-2xl border-[#cfd7ea] bg-white px-4 py-3 text-[#435176] placeholder:text-[#a0a8bb]"
+            className="h-[104px] resize-none overflow-y-auto overscroll-contain rounded-2xl border-[#cfd7ea] bg-white px-4 py-3 text-[#435176] placeholder:text-[#a0a8bb]"
           />
           </section>
 
@@ -292,11 +300,12 @@ function SimulationSetupPage() {
             digitalLiteracy={digitalLiteracy}
             ageRatios={summaryAgeRatios}
             successCondition={successCondition}
-            className="min-h-[560px] self-end"
+            className="min-h-[440px]"
           />
           <button
             type="button"
             className="flex h-[72px] w-full items-center justify-center self-end rounded-2xl bg-[#e3e8fb] px-4 text-subtitle-18-semibold text-[var(--color-primary-main)] transition-colors hover:bg-[#d8e0fb]"
+            onClick={() => navigate(routes.simulationProcess)}
           >
             시뮬레이션 시작
           </button>

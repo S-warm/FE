@@ -19,12 +19,12 @@ function SummaryRow({
   scrollable?: boolean
 }) {
   return (
-    <div className="grid gap-2 text-left">
+    <div className="grid gap-1.5 text-left">
       <p className="text-body-14-medium font-semibold text-[#2f3950]">{title}</p>
       <p
         className={cn(
-          "rounded-lg bg-[#f1f3f9] px-4 py-3 text-caption-12-regular leading-5 text-[#33415e]",
-          scrollable && "h-[76px] overflow-y-auto overscroll-contain"
+          "rounded-lg bg-[#f1f3f9] px-3 py-2 text-caption-12-regular leading-5 text-[#33415e]",
+          scrollable && "h-[56px] overflow-y-auto overscroll-contain"
         )}
       >
         {value}
@@ -48,7 +48,7 @@ function SimulationSummaryCard({
 }) {
   return (
     <Card className={cn("rounded-2xl border border-[#c7d2ea] bg-[#f8faff] shadow-none", className)}>
-      <CardContent className="flex flex-col gap-6 px-6 py-6 text-left">
+      <CardContent className="flex flex-col gap-3 px-4 py-3 text-left">
         <SummaryRow title="페르소나 횟수" value={`총 ${personaCount.toLocaleString()}회 시뮬레이션`} />
         <div className="h-px bg-[#eef0f5]" />
         <SummaryRow title="디지털 리터러시" value={literacyLabelMap[digitalLiteracy]} />

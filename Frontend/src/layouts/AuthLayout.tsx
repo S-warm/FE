@@ -1,15 +1,26 @@
 import type { ReactNode } from "react"
 import { useState } from "react"
+import { matchPath, useLocation, useNavigate } from "react-router-dom"
 
 import { Menu } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { ProfileMenu } from "@/components/layout/profile-menu"
 import { useAuthStore } from "@/store/auth.store"
+import { buildResultOverviewPath } from "@/constants/routes"
+import { recentSimulations } from "@/mocks/simulation.mock"
 
-const DUMMY_PROJECT = { title: "A - Mall 로그인 플로우", date: "2026-01-01" }
-
-function AuthSidebar({ open, onToggle }: { open: boolean; onToggle: () => void }) {
+function AuthSidebar({
+  open,
+  activeSimulationId,
+  onToggle,
+  onSelectSimulation,
+}: {
+  open: boolean
+  activeSimulationId?: string
+  onToggle: () => void
+  onSelectSimulation: (simulationId: string) => void
+}) {
   return (
     <aside
       className={[
@@ -36,13 +47,25 @@ function AuthSidebar({ open, onToggle }: { open: boolean; onToggle: () => void }
       >
         <p className="text-caption-12-regular text-muted-foreground">최근 프로젝트</p>
         <div className="mt-3 grid gap-3">
-          <button
-            type="button"
-            className="rounded-xl border border-[#c8d2ea] bg-white px-4 py-3 text-left transition-colors ring-1 ring-[#dbe2f1]"
-          >
-            <p className="text-body-14-medium text-foreground">{DUMMY_PROJECT.title}</p>
-            <p className="mt-1 text-caption-12-regular text-muted-foreground">{DUMMY_PROJECT.date}</p>
-          </button>
+          {recentSimulations.map((item) => {
+            const isActive = item.id === activeSimulationId
+            return (
+              <button
+                key={item.id}
+                type="button"
+                className={cn(
+                  "rounded-xl border bg-white px-4 py-3 text-left transition-colors hover:bg-[#f8faff]",
+                  isActive
+                    ? "border-[#97a6e3] ring-2 ring-[#97a6e3]/40"
+                    : "border-[#c8d2ea]"
+                )}
+                onClick={() => onSelectSimulation(item.id)}
+              >
+                <p className="text-body-14-medium text-foreground">{item.title}</p>
+                <p className="mt-1 text-caption-12-regular text-muted-foreground">{item.createdAt}</p>
+              </button>
+            )
+          })}
         </div>
 
         <div className="mt-8 border-t border-border pt-6" />
@@ -60,13 +83,22 @@ function AuthLayout({
   mainClassName?: string
   headerLeft?: ReactNode
 }) {
-  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(true)
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
   const initials = useAuthStore((state) => state.user?.initials ?? "CN")
+  const navigate = useNavigate()
+  const location = useLocation()
+  const resultMatch = matchPath("/result/:simulationId/*", location.pathname)
+  const activeSimulationId = resultMatch?.params?.simulationId
 
   return (
     <div className="relative min-h-screen bg-background text-foreground">
-      <AuthSidebar open={sidebarOpen} onToggle={() => setSidebarOpen((prev) => !prev)} />
+      <AuthSidebar
+        open={sidebarOpen}
+        activeSimulationId={activeSimulationId}
+        onToggle={() => setSidebarOpen((prev) => !prev)}
+        onSelectSimulation={(simulationId) => navigate(buildResultOverviewPath(simulationId))}
+      />
 
       <div
         className={cn(

@@ -1,5 +1,5 @@
-import googleIconUrl from "@/assets/google-icon.svg"
-import swarmIconUrl from "@/assets/swarm-icon.svg"
+import googleIconUrl from "@/assets/icons/ic-google.svg"
+import swarmIconUrl from "@/assets/logos/logo-swarm.svg"
 import { cn } from "@/lib/utils"
 
 const APP_TITLE = "Swarm"
@@ -53,4 +53,3 @@ function GoogleStartButton() {
 }
 
 export { BrandingHeader, GoogleStartButton }
-

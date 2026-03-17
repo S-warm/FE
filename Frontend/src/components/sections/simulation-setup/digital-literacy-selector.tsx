@@ -1,5 +1,6 @@
-import { CommonButton } from "@/components/atoms"
 import { cn } from "@/lib/utils"
+
+import { DigitalLiteracyDetailModal } from "@/components/sections/simulation-setup/digital-literacy-detail-modal"
 
 type DigitalLiteracyLevel = "low" | "medium" | "high"
 
@@ -36,14 +37,9 @@ function DigitalLiteracySelector({
         </button>
       ))}
 
-      <CommonButton
-        type="button"
-        variant="secondary"
-        size="sm"
-        className="ml-1 flex-[1.35] rounded-md border border-[#d3dbee] bg-[#f4f6fb] px-3 text-caption-12-medium text-[#66708e] hover:bg-[#e9edf7]"
-      >
-        세부설정 +
-      </CommonButton>
+      <DigitalLiteracyDetailModal
+        triggerClassName="ml-1 flex-[1.35] rounded-md border border-[#d3dbee] bg-[#f4f6fb] px-3 text-caption-12-medium text-[#66708e] hover:bg-[#e9edf7]"
+      />
     </div>
   )
 }

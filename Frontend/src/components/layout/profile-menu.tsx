@@ -23,15 +23,15 @@ function MenuItem({
       type="button"
       role="menuitem"
       className={cn(
-        "flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
+        "flex w-full items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
         tone === "primary"
           ? "text-primary hover:bg-muted"
           : "text-muted-foreground hover:bg-muted hover:text-foreground"
       )}
       onClick={onClick}
     >
-      <span className="grid size-6 place-items-center">{icon}</span>
-      <span className="text-body-16-medium">{label}</span>
+      <span className="grid size-5 place-items-center">{icon}</span>
+      <span className="text-body-14-medium">{label}</span>
     </button>
   )
 }
@@ -95,19 +95,19 @@ function ProfileMenu({ initials = "CN" }: { initials?: string }) {
           ref={menuRef}
           role="menu"
           aria-label="프로필 메뉴"
-          className="absolute right-0 top-full z-50 mt-2 w-56 rounded-xl border border-border bg-card p-1.5 shadow-sm ring-1 ring-border/70"
+          className="absolute right-0 top-full z-50 mt-2 w-48 rounded-lg border border-border bg-card p-1 shadow-sm ring-1 ring-border/70"
         >
-          <MenuItem icon={<User className="size-5" />} label="마이페이지" onClick={closeMenu} />
-          <MenuItem icon={<CreditCard className="size-5" />} label="결제버튼" onClick={closeMenu} />
+          <MenuItem icon={<User className="size-4" />} label="마이페이지" onClick={closeMenu} />
+          <MenuItem icon={<CreditCard className="size-4" />} label="결제버튼" onClick={closeMenu} />
 
-          <div className="my-1.5 h-px bg-border" />
+          <div className="my-1 h-px bg-border" />
 
-          <MenuItem icon={<Settings className="size-5" />} label="설정" onClick={closeMenu} />
+          <MenuItem icon={<Settings className="size-4" />} label="설정" onClick={closeMenu} />
 
-          <div className="my-1.5 h-px bg-border" />
+          <div className="my-1 h-px bg-border" />
 
           <MenuItem
-            icon={<LogOut className="size-5" />}
+            icon={<LogOut className="size-4" />}
             label="로그아웃"
             tone="muted"
             onClick={() => {

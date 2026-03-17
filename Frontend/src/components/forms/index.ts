@@ -1,4 +1,5 @@
 export { SearchField } from "@/components/forms/search-field"
+export { RangeSlider } from "@/components/forms/range-slider"
 export { SettingSlider } from "@/components/forms/setting-slider"
 export { ChipTag } from "@/components/forms/chip-tag"
 export { SelectionSelect } from "@/components/forms/selection-select"

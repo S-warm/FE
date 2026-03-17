@@ -4,11 +4,19 @@ import type { ProgressDatum } from "@/mocks/data-visualization.mock"
 
 interface HorizontalBarChartProps {
   data: ProgressDatum[]
+  heightClassName?: string
+  barColor?: string
+  barSize?: number
 }
 
-function HorizontalBarChart({ data }: HorizontalBarChartProps) {
+function HorizontalBarChart({
+  data,
+  heightClassName = "h-[240px]",
+  barColor = "var(--color-primary-main)",
+  barSize,
+}: HorizontalBarChartProps) {
   return (
-    <div className="h-[240px] w-full">
+    <div className={`${heightClassName} w-full`}>
       <ResponsiveContainer width="100%" height="100%">
         <BarChart
           data={data}
@@ -32,7 +40,7 @@ function HorizontalBarChart({ data }: HorizontalBarChartProps) {
               color: "var(--color-foreground)",
             }}
           />
-          <Bar dataKey="score" fill="var(--color-primary-main)" radius={[8, 8, 8, 8]} />
+          <Bar dataKey="score" fill={barColor} radius={[8, 8, 8, 8]} barSize={barSize} />
         </BarChart>
       </ResponsiveContainer>
     </div>

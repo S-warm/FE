@@ -1,5 +1,5 @@
 import type { ReactNode } from "react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { matchPath, useLocation, useNavigate } from "react-router-dom"
 
 import { Menu } from "lucide-react"
@@ -61,7 +61,7 @@ function AuthSidebar({
                 )}
                 onClick={() => onSelectSimulation(item.id)}
               >
-                <p className="text-body-14-medium text-foreground">{item.title}</p>
+                <p className="text-body-14-medium text-foreground">{item.siteName}</p>
                 <p className="mt-1 text-caption-12-regular text-muted-foreground">{item.createdAt}</p>
               </button>
             )
@@ -83,13 +83,17 @@ function AuthLayout({
   mainClassName?: string
   headerLeft?: ReactNode
 }) {
-  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
   const initials = useAuthStore((state) => state.user?.initials ?? "CN")
   const navigate = useNavigate()
   const location = useLocation()
   const resultMatch = matchPath("/result/:simulationId/*", location.pathname)
   const activeSimulationId = resultMatch?.params?.simulationId
+
+  useEffect(() => {
+    setSidebarOpen(false)
+  }, [isAuthenticated])
 
   return (
     <div className="relative min-h-screen bg-background text-foreground">

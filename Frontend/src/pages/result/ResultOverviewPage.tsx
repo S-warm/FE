@@ -16,20 +16,20 @@ function MetricCard({
   icon: React.ReactNode
 }) {
   return (
-    <Card className="rounded-2xl border border-[#d6ddea] bg-white shadow-none transition-colors hover:border-[#c7d2ea]">
+    <Card className="rounded-2xl border border-border-strong bg-card shadow-none transition-colors hover:border-border-strong-hover">
       <CardContent className="grid gap-3 px-5 py-4">
-        <div className="flex items-center justify-between text-[#8b96a8]">
+        <div className="flex items-center justify-between text-text-subtle">
           <div className="flex items-center gap-2">
-            <span className="grid size-6 place-items-center rounded-lg bg-[#f4f6fb]">{icon}</span>
+            <span className="grid size-6 place-items-center rounded-lg bg-surface-muted">{icon}</span>
             <p className="text-caption-12-medium">{title}</p>
           </div>
-          <button type="button" className="grid size-6 place-items-center rounded-lg hover:bg-[#eef1f7]" aria-label="도움말">
+          <button type="button" className="grid size-6 place-items-center rounded-lg hover:bg-surface-hover" aria-label="도움말">
             <AlertCircle className="size-4" />
           </button>
         </div>
         <div className="grid gap-1">
-          <p className="text-title-24-bold text-[#283452]">{value}</p>
-          <p className="text-caption-12-regular text-[#8b96a8]">{description}</p>
+          <p className="text-title-24-bold text-text-strong">{value}</p>
+          <p className="text-caption-12-regular text-text-subtle">{description}</p>
         </div>
       </CardContent>
     </Card>
@@ -47,8 +47,8 @@ function ResultOverviewPage() {
       </section>
 
       <section className="grid gap-3">
-        <p className="text-body-14-medium text-[#2f3950]">전환 패널 성공률</p>
-        <Card className="rounded-2xl border border-[#d6ddea] bg-white shadow-none">
+        <p className="text-body-14-medium text-text-body">전환 패널 성공률</p>
+        <Card className="rounded-2xl border border-border-strong bg-card shadow-none">
           <CardContent className="px-6 py-5">
             <HorizontalBarChart
               data={progressData.map((item) => ({ ...item, score: Math.min(100, item.score + 15) }))}
@@ -59,11 +59,11 @@ function ResultOverviewPage() {
       </section>
 
       <section className="grid gap-3">
-        <p className="text-body-14-medium text-[#2f3950]">연령대</p>
+        <p className="text-body-14-medium text-text-body">연령대</p>
         <div className="grid gap-3 md:grid-cols-2">
-          <Card className="group rounded-2xl border border-[#d6ddea] bg-white shadow-none">
+          <Card className="group rounded-2xl border border-border-strong bg-card shadow-none">
             <CardContent className="px-6 py-5">
-              <p className="text-body-14-medium text-[#2f3950] transition-colors group-hover:text-[#283452]">
+              <p className="text-body-14-medium text-text-body transition-colors group-hover:text-text-strong">
                 랜딩 페이지
               </p>
               <div className="mt-3">
@@ -81,9 +81,9 @@ function ResultOverviewPage() {
             </CardContent>
           </Card>
 
-          <Card className="group rounded-2xl border border-[#d6ddea] bg-white shadow-none">
+          <Card className="group rounded-2xl border border-border-strong bg-card shadow-none">
             <CardContent className="px-6 py-5">
-              <p className="text-body-14-medium text-[#2f3950] transition-colors group-hover:text-[#283452]">
+              <p className="text-body-14-medium text-text-body transition-colors group-hover:text-text-strong">
                 폼 시작
               </p>
               <div className="mt-3">
@@ -101,9 +101,9 @@ function ResultOverviewPage() {
             </CardContent>
           </Card>
 
-          <Card className="group rounded-2xl border border-[#d6ddea] bg-white shadow-none">
+          <Card className="group rounded-2xl border border-border-strong bg-card shadow-none">
             <CardContent className="px-6 py-5">
-              <p className="text-body-14-medium text-[#2f3950] transition-colors group-hover:text-[#283452]">
+              <p className="text-body-14-medium text-text-body transition-colors group-hover:text-text-strong">
                 필드 입력
               </p>
               <div className="mt-3">
@@ -121,9 +121,9 @@ function ResultOverviewPage() {
             </CardContent>
           </Card>
 
-          <Card className="group rounded-2xl border border-[#d6ddea] bg-white shadow-none">
+          <Card className="group rounded-2xl border border-border-strong bg-card shadow-none">
             <CardContent className="px-6 py-5">
-              <p className="text-body-14-medium text-[#2f3950] transition-colors group-hover:text-[#283452]">
+              <p className="text-body-14-medium text-text-body transition-colors group-hover:text-text-strong">
                 유효성 검사
               </p>
               <div className="mt-3">

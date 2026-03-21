@@ -24,7 +24,7 @@ function AuthSidebar({
   return (
     <aside
       className={[
-        "fixed inset-y-0 left-0 z-30 overflow-hidden border-r border-[#d6ddea] bg-[#f2f4f9] transition-all duration-300",
+        "fixed inset-y-0 left-0 z-30 overflow-hidden border-r border-border-strong bg-surface-app transition-all duration-300",
         open ? "w-72 sm:w-80" : "w-16 sm:w-[4.5rem]",
       ].join(" ")}
     >
@@ -32,7 +32,7 @@ function AuthSidebar({
         <button
           type="button"
           aria-label={open ? "사이드바 접기" : "사이드바 펼치기"}
-          className="grid size-8 place-items-center rounded-full bg-[#d9deeb] text-[#5c6b96] transition-colors hover:bg-[#cfd6e8] hover:text-[#40558f]"
+          className="grid size-8 place-items-center rounded-full bg-surface-control text-text-secondary-2 transition-colors hover:bg-surface-control-hover hover:text-text-secondary-3"
           onClick={onToggle}
         >
           <Menu className="size-4" />
@@ -54,10 +54,10 @@ function AuthSidebar({
                 key={item.id}
                 type="button"
                 className={cn(
-                  "rounded-xl border bg-white px-4 py-3 text-left transition-colors hover:bg-[#f8faff]",
+                  "rounded-xl border bg-card px-4 py-3 text-left transition-colors hover:bg-surface-hover-2",
                   isActive
-                    ? "border-[#97a6e3] ring-2 ring-[#97a6e3]/40"
-                    : "border-[#c8d2ea]"
+                    ? "border-border-focus ring-2 ring-border-focus/40"
+                    : "border-border-soft-3"
                 )}
                 onClick={() => onSelectSimulation(item.id)}
               >

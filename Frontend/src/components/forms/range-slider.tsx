@@ -72,8 +72,8 @@ function RangeSlider({
 
   return (
     <div className={cn("grid gap-0.5", className)}>
-      <div className="flex items-center gap-2">
-        <span className={cn("shrink-0 text-body-16-medium leading-none text-[#9499B0]", labelClassName)}>
+      <div className="flex items-start gap-2">
+        <span className={cn("shrink-0 pt-7 text-body-16-medium leading-none text-[#9499B0]", labelClassName)}>
           {startLabel ?? (
             <>
               {min}
@@ -114,7 +114,7 @@ function RangeSlider({
           />
         </div>
 
-        <span className={cn("shrink-0 text-body-16-medium leading-none text-[#9499B0]", labelClassName)}>
+        <span className={cn("shrink-0 pt-7 text-body-16-medium leading-none text-[#9499B0]", labelClassName)}>
           {endLabel ?? (
             <>
               {max}
@@ -128,4 +128,3 @@ function RangeSlider({
 }
 
 export { RangeSlider }
-

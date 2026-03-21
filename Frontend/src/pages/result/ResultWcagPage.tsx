@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { ResultPageSidePanel } from "@/components/sections/result/page-side-panel"
 import { Card, CardContent } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
+import { motion } from "@/lib/motion"
 import type { WcagDetailIssue, WcagIssueDistribution, WcagSeverity } from "@/mocks/result-wcag.mock"
 import { wcagResultMock } from "@/mocks/result-wcag.mock"
 import { resultPagesMock } from "@/mocks/result-pages.mock"
@@ -59,7 +60,7 @@ function MetricCard({
   rightSlot?: React.ReactNode
 }) {
   return (
-    <Card className="rounded-2xl border border-border-strong bg-card shadow-none">
+    <Card className={cn("rounded-2xl border border-border-strong bg-card shadow-none", motion.card)}>
       <CardContent className="grid gap-3 px-5 py-4">
         <div className="flex items-start justify-between gap-3 text-text-subtle">
           <div className="flex items-center gap-2">
@@ -235,7 +236,7 @@ function ResultWcagPage() {
           subtitle={`${summary.totalTests}개 테스트 중`}
           icon={<ClipboardCheck className="size-4" />}
         />
-        <Card className="rounded-2xl border border-border-strong bg-card shadow-none">
+        <Card className={cn("rounded-2xl border border-border-strong bg-card shadow-none", motion.card)}>
           <CardContent className="grid gap-4 px-5 py-4">
             <div className="grid gap-3">
               <div className="flex items-start justify-between gap-3 text-text-subtle">
@@ -262,7 +263,7 @@ function ResultWcagPage() {
         </Card>
       </section>
 
-      <Card className="rounded-2xl border border-border-strong bg-card shadow-none">
+      <Card className={cn("rounded-2xl border border-border-strong bg-card shadow-none", motion.card)}>
         <CardContent className="grid gap-4 px-6 py-5">
           <div className="flex flex-wrap items-center gap-2">
             <p className="text-body-14-medium text-text-body">검출 이슈 분석</p>

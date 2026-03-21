@@ -1,4 +1,5 @@
 import type { ReactNode } from "react"
+import { Suspense, lazy } from "react"
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom"
 
 import HomePage from "@/pages/HomePage"
@@ -9,12 +10,21 @@ import SimulationSetupPage from "@/pages/SimulationSetupPage"
 import SignUpPage from "@/pages/SignUpPage"
 import ResultLayoutPage from "@/pages/result/ResultLayoutPage"
 import ResultOverviewPage from "@/pages/result/ResultOverviewPage"
-import ResultIssuesPage from "@/pages/result/ResultIssuesPage"
-import ResultWcagPage from "@/pages/result/ResultWcagPage"
-import ResultAiFixPage from "@/pages/result/ResultAiFixPage"
-import ResultHeatmapPage from "@/pages/result/ResultHeatmapPage"
 import routes from "@/constants/routes"
 import { useAuthStore } from "@/store/auth.store"
+
+const ResultIssuesPage = lazy(() => import("@/pages/result/ResultIssuesPage"))
+const ResultWcagPage = lazy(() => import("@/pages/result/ResultWcagPage"))
+const ResultAiFixPage = lazy(() => import("@/pages/result/ResultAiFixPage"))
+const ResultHeatmapPage = lazy(() => import("@/pages/result/ResultHeatmapPage"))
+
+function RouteFallback() {
+  return (
+    <div className="grid min-h-[240px] place-items-center text-caption-12-regular text-text-muted">
+      로딩 중...
+    </div>
+  )
+}
 
 function RequireAuth({ children }: { children: ReactNode }) {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
@@ -89,10 +99,38 @@ export default function AppRouter() {
         >
           <Route index element={<Navigate to="overview" replace />} />
           <Route path="overview" element={<ResultOverviewPage />} />
-          <Route path="issues" element={<ResultIssuesPage />} />
-          <Route path="heatmap" element={<ResultHeatmapPage />} />
-          <Route path="wcag" element={<ResultWcagPage />} />
-          <Route path="ai" element={<ResultAiFixPage />} />
+          <Route
+            path="issues"
+            element={
+              <Suspense fallback={<RouteFallback />}>
+                <ResultIssuesPage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="heatmap"
+            element={
+              <Suspense fallback={<RouteFallback />}>
+                <ResultHeatmapPage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="wcag"
+            element={
+              <Suspense fallback={<RouteFallback />}>
+                <ResultWcagPage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="ai"
+            element={
+              <Suspense fallback={<RouteFallback />}>
+                <ResultAiFixPage />
+              </Suspense>
+            }
+          />
         </Route>
         <Route
           path={routes.error}

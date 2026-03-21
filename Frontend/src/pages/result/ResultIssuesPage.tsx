@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from "react"
+﻿import { useEffect, useMemo, useRef, useState } from "react"
 import { useLocation, useNavigate, useParams } from "react-router-dom"
 
 import { AlertTriangle, ArrowRight, Sparkles } from "lucide-react"
 
 import { CommonButton, IssueBadge } from "@/components/atoms"
-import { DonutChart } from "@/components/charts"
+import { DonutChartDetail } from "@/components/charts/donut-chart-detail"
 import { ChipTag } from "@/components/forms"
 import { ResultPageSidePanel } from "@/components/sections/result/page-side-panel"
 import { Card, CardContent } from "@/components/ui/card"
@@ -102,27 +102,31 @@ function IssueCard({ issue }: { issue: ResultIssue }) {
 
 function buildCategoryDonut(issues: ResultIssue[]) {
   const total = issues.length || 1
-  const counts = filterCategories.reduce<Record<IssueCategory, number>>(
-    (acc, category) => {
-      acc[category] = 0
-      return acc
-    },
-    {} as Record<IssueCategory, number>
-  )
-
-  for (const issue of issues) {
-    counts[issue.category] = (counts[issue.category] ?? 0) + 1
-  }
 
   return filterCategories.map((category) => {
-    const count = counts[category] ?? 0
+    const categoryIssues = issues.filter((i) => i.category === category)
+    const count = categoryIssues.length
     const percent = Math.round((count / total) * 100)
+    const high = categoryIssues.filter((i) => i.severity === "error").length
+    const mid = categoryIssues.filter((i) => i.severity === "warning").length
+    const low = categoryIssues.filter((i) => i.severity === "info").length
+    const sub = count || 1
+    const titleMap: Record<string, number> = {}
+    for (const issue of categoryIssues) {
+      titleMap[issue.title] = (titleMap[issue.title] ?? 0) + 1
+    }
+    const items = Object.entries(titleMap).map(([label, c]) => ({
+      label,
+      count: c,
+      percent: Math.round((c / sub) * 100),
+    }))
     return {
       name: category,
+      value: Math.max(0, percent),
+      color: categoryColorMap[category],
       count,
       percent,
-      color: categoryColorMap[category],
-      value: Math.max(0, percent),
+      details: count > 0 ? { high: Math.round((high / sub) * 100), mid: Math.round((mid / sub) * 100), low: Math.round((low / sub) * 100), items } : undefined,
     }
   })
 }
@@ -144,12 +148,7 @@ function ResultIssuesPage() {
     () =>
       resultPagesMock.map((page) => {
         const issueCount = resultIssuePages.find((item) => item.id === page.id)?.issues.length ?? 0
-        return {
-          id: page.id,
-          name: page.name,
-          screenshotUrl: page.screenshotUrl,
-          metaText: `${issueCount}건 이슈`,
-        }
+        return { id: page.id, name: page.name, screenshotUrl: page.screenshotUrl, metaText: `${issueCount}건 이슈` }
       }),
     []
   )
@@ -170,7 +169,6 @@ function ResultIssuesPage() {
         onSelectPage={setSelectedPageId}
         onExpandPage={setExpandedPageId}
       />
-
       <div className="grid gap-4">
         <Card className={cn("rounded-2xl border border-border-strong bg-card shadow-none", motion.card)}>
           <CardContent className="grid gap-4 px-6 py-5">
@@ -180,7 +178,6 @@ function ResultIssuesPage() {
                   <p className="text-caption-12-regular text-text-subtle">페이지</p>
                   <p className="text-body-14-medium text-text-body">{selectedPage.name}</p>
                 </div>
-
                 <div className="flex flex-wrap items-center gap-2">
                   <p className="text-caption-12-medium text-text-muted">필터링</p>
                   <div className="flex flex-wrap gap-2">
@@ -204,7 +201,6 @@ function ResultIssuesPage() {
                   </div>
                 </div>
               </div>
-
               <div className="flex items-center justify-end">
                 <CommonButton
                   size="sm"
@@ -219,32 +215,18 @@ function ResultIssuesPage() {
                 </CommonButton>
               </div>
             </div>
-
             <div className="grid gap-3">
               <p className="text-body-14-medium text-text-body">카테고리별 분류</p>
               <div className="grid gap-4 md:grid-cols-[280px_minmax(0,1fr)] md:items-center">
-                <DonutChart
-                  heightClassName="h-[200px]"
-                  data={donut.map((item) => ({
-                    name: item.name,
-                    value: item.value,
-                    color: item.color,
-                  }))}
-                />
+                <DonutChartDetail heightClassName="h-[200px]" data={donut} />
                 <div className="grid gap-2">
                   {donut.map((item) => (
                     <div key={item.name} className="flex items-center justify-between gap-3">
                       <div className="flex items-center gap-2">
-                        <span
-                          className="size-2.5 rounded-full"
-                          style={{ backgroundColor: item.color }}
-                          aria-hidden="true"
-                        />
+                        <span className="size-2.5 rounded-full" style={{ backgroundColor: item.color }} aria-hidden="true" />
                         <p className="text-caption-12-regular text-text-muted">{item.name}</p>
                       </div>
-                      <p className="text-caption-12-medium text-text-muted">
-                        {item.count}건 / {item.percent}%
-                      </p>
+                      <p className="text-caption-12-medium text-text-muted">{item.count}건 / {item.percent}%</p>
                     </div>
                   ))}
                 </div>
@@ -252,7 +234,6 @@ function ResultIssuesPage() {
             </div>
           </CardContent>
         </Card>
-
         <section ref={issuesSectionRef} className="grid gap-3">
           <p className="text-body-14-medium text-text-body">이슈목록</p>
           <div className="grid gap-3">

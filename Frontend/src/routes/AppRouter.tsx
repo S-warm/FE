@@ -13,6 +13,7 @@ import ResultIssuesPage from "@/pages/result/ResultIssuesPage"
 import ResultWcagPage from "@/pages/result/ResultWcagPage"
 import ResultAiFixPage from "@/pages/result/ResultAiFixPage"
 import ResultHeatmapPage from "@/pages/result/ResultHeatmapPage"
+import ResultJourneyPage from "@/pages/result/ResultJourneyPage"
 import routes from "@/constants/routes"
 import { useAuthStore } from "@/store/auth.store"
 
@@ -91,6 +92,7 @@ export default function AppRouter() {
           <Route path="overview" element={<ResultOverviewPage />} />
           <Route path="issues" element={<ResultIssuesPage />} />
           <Route path="heatmap" element={<ResultHeatmapPage />} />
+          <Route path="journey" element={<ResultJourneyPage />} />
           <Route path="wcag" element={<ResultWcagPage />} />
           <Route path="ai" element={<ResultAiFixPage />} />
         </Route>

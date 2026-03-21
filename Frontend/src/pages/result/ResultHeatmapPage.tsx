@@ -1,23 +1,17 @@
-import { useMemo, useState } from "react"
+import { useMemo, useRef, useState } from "react"
 
 import { AlertTriangle, ChevronDown, Eye, Hand, MousePointerClick, Route, ScrollText, Smartphone } from "lucide-react"
 
 import { CommonButton, StatusBadge } from "@/components/atoms"
 import { RangeSlider } from "@/components/forms"
 import { Card, CardContent } from "@/components/ui/card"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
 import { defaultHeatmapPageId, heatmapAgeBands, heatmapPagesMock } from "@/mocks/result-heatmap.mock"
-import type { HeatmapAgeBand, HeatmapDevice, HeatmapMode, HeatmapPageMock, HeatmapPoint, HeatmapView } from "@/mocks/result-heatmap.mock"
+import type { HeatmapAgeBand, HeatmapDevice, HeatmapMode, HeatmapPageMock, HeatmapPoint } from "@/mocks/result-heatmap.mock"
 
 const deviceOptions: Array<{ value: HeatmapDevice; label: string; icon: React.ReactNode }> = [
   { value: "desktop", label: "Desktop", icon: <Hand className="size-4" /> },
   { value: "mobile", label: "Mobile", icon: <Smartphone className="size-4" /> },
-]
-
-const viewOptions: Array<{ value: HeatmapView; label: string }> = [
-  { value: "heatmap", label: "Heat map" },
-  { value: "journey", label: "Journey" },
 ]
 
 const modeOptions: Array<{ value: HeatmapMode; label: string; icon: React.ReactNode }> = [
@@ -36,33 +30,49 @@ function PagePreview({ src, alt }: { src: string; alt: string }) {
 }
 
 function HeatDot({ point }: { point: HeatmapPoint }) {
-  const alpha = Math.min(0.85, 0.12 + point.intensity * 0.65)
-  const size = 140 + point.intensity * 120
+  const alpha = Math.min(0.95, 0.25 + point.intensity * 0.7)
+  const size = 72 + point.intensity * 110
+  const hue = Math.round(55 - point.intensity * 55) // yellow -> red
+  const core = `hsla(${hue}, 96%, 58%, ${alpha})`
+  const mid = `hsla(${Math.max(30, hue)}, 96%, 58%, ${Math.min(0.55, alpha * 0.55)})`
 
   return (
     <div
-      className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 rounded-full blur-2xl"
+      className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 rounded-full blur-xl"
       style={{
         left: `${point.x}%`,
         top: `${point.y}%`,
         width: `${size}px`,
         height: `${size}px`,
-        background: `radial-gradient(circle, rgba(245,121,104,${alpha}) 0%, rgba(245,121,104,0.0) 70%)`,
+        background: `radial-gradient(circle, ${core} 0%, ${mid} 42%, rgba(255, 204, 0, 0.0) 72%)`,
       }}
       aria-hidden="true"
     />
   )
 }
 
-function Marker({ x, y, label, severity }: { x: number; y: number; label: string; severity: "critical" | "warning" }) {
+function Marker({
+  x,
+  y,
+  label,
+  severity,
+  active,
+}: {
+  x: number
+  y: number
+  label: string
+  severity: "critical" | "warning"
+  active: boolean
+}) {
   const isCritical = severity === "critical"
   return (
     <div
       className={cn(
-        "absolute -translate-x-1/2 -translate-y-1/2 rounded-full border px-2 py-1 text-[12px] font-semibold shadow-sm",
+        "absolute -translate-x-1/2 -translate-y-1/2 rounded-full border px-2 py-1 text-[12px] font-semibold shadow-sm transition-transform",
         isCritical
           ? "border-[#f57968]/40 bg-[#fff4f1] text-[#e35a48]"
-          : "border-[#f6c48b]/50 bg-[#fff8f0] text-[#d97912]"
+          : "border-[#f6c48b]/50 bg-[#fff8f0] text-[#d97912]",
+        active ? "scale-110 ring-4 ring-[#2f5ae8]/25 animate-pulse" : "scale-100"
       )}
       style={{ left: `${x}%`, top: `${y}%` }}
       aria-label={`마커 ${label}`}
@@ -79,10 +89,12 @@ function HeatmapCanvas({
   screenshotUrl,
   points,
   markers,
+  activeMarkerLabel,
 }: {
   screenshotUrl: string
   points: HeatmapPoint[]
   markers: HeatmapPageMock["markers"]
+  activeMarkerLabel?: string | null
 }) {
   return (
     <div className="relative overflow-hidden rounded-2xl border border-[#eef1f7] bg-white">
@@ -92,20 +104,32 @@ function HeatmapCanvas({
           <HeatDot key={point.id} point={point} />
         ))}
         {markers.map((marker) => (
-          <Marker key={marker.id} x={marker.x} y={marker.y} label={marker.label} severity={marker.severity} />
+          <Marker
+            key={marker.id}
+            x={marker.x}
+            y={marker.y}
+            label={marker.label}
+            severity={marker.severity}
+            active={Boolean(activeMarkerLabel && marker.label === activeMarkerLabel)}
+          />
         ))}
       </div>
     </div>
   )
 }
 
+function stripCodeToLabel(code: string) {
+  return code.replaceAll("\"", "").trim()
+}
+
 function ResultHeatmapPage() {
   const [device, setDevice] = useState<HeatmapDevice>("desktop")
-  const [view, setView] = useState<HeatmapView>("heatmap")
   const [selectedPageId, setSelectedPageId] = useState<string>(defaultHeatmapPageId)
   const [expandedPageId, setExpandedPageId] = useState<string>(defaultHeatmapPageId)
   const [mode, setMode] = useState<HeatmapMode>("click")
   const [ageIndex, setAgeIndex] = useState<number>(2)
+  const [activeMarkerLabel, setActiveMarkerLabel] = useState<string | null>(null)
+  const canvasRef = useRef<HTMLDivElement | null>(null)
 
   const selectedPage = useMemo(() => heatmapPagesMock.find((page) => page.id === selectedPageId) ?? heatmapPagesMock[0], [selectedPageId])
   const selectedAge: HeatmapAgeBand = heatmapAgeBands[Math.min(heatmapAgeBands.length - 1, Math.max(0, ageIndex))] ?? "30대"
@@ -136,19 +160,6 @@ function ResultHeatmapPage() {
                 )
               })}
             </div>
-
-            <Select value={view} onValueChange={(value) => value && setView(value as HeatmapView)}>
-              <SelectTrigger className="h-10 rounded-xl border-[#e6ebf6] bg-[#fbfcff] px-3 py-2 text-sm">
-                <SelectValue placeholder="보기" />
-              </SelectTrigger>
-              <SelectContent align="start">
-                {viewOptions.map((item) => (
-                  <SelectItem key={item.value} value={item.value}>
-                    {item.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
           </div>
 
           <div className="grid gap-2">
@@ -223,7 +234,7 @@ function ResultHeatmapPage() {
                 </div>
               </div>
 
-              <div className="grid gap-3">
+              <div ref={canvasRef} className="grid gap-3">
                 <div className="grid grid-cols-4 overflow-hidden rounded-xl border border-[#e6ebf6] bg-white">
                   {modeOptions.map((item) => {
                     const active = item.value === mode
@@ -251,7 +262,12 @@ function ResultHeatmapPage() {
                   })}
                 </div>
 
-                <HeatmapCanvas screenshotUrl={selectedPage.screenshotUrl} points={points} markers={selectedPage.markers} />
+                <HeatmapCanvas
+                  screenshotUrl={selectedPage.screenshotUrl}
+                  points={points}
+                  markers={selectedPage.markers}
+                  activeMarkerLabel={activeMarkerLabel}
+                />
 
                 <RangeSlider
                   value={ageIndex}
@@ -281,10 +297,18 @@ function ResultHeatmapPage() {
                 </div>
 
                 <div className="grid gap-2">
-                  {selectedPage.defects.map((defect, index) => (
+                      {selectedPage.defects.map((defect, index) => (
                     <Card key={defect.id} className="rounded-2xl border border-[#d6ddea] bg-white shadow-none">
                       <CardContent className="grid gap-2 px-4 py-3">
-                        <div className="flex items-start justify-between gap-3">
+                        <button
+                          type="button"
+                          className="flex items-start justify-between gap-3 text-left"
+                          onClick={() => {
+                            const label = stripCodeToLabel(defect.code)
+                            setActiveMarkerLabel(label)
+                            canvasRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
+                          }}
+                        >
                           <div className="min-w-0">
                             <div className="flex items-center gap-2">
                               <span className="grid size-7 place-items-center rounded-xl bg-[#fff4f1] text-[#f25a3c]">
@@ -299,7 +323,7 @@ function ResultHeatmapPage() {
                           <StatusBadge variant={index === 0 ? "high" : index === 1 ? "medium" : "low"} size="sm">
                             {index === 0 ? "높음" : index === 1 ? "중간" : "낮음"}
                           </StatusBadge>
-                        </div>
+                        </button>
 
                         <p className="text-caption-12-medium text-[#2f5ae8]">영향받은 사용자 : {defect.impactedUsers.toLocaleString()} 명</p>
                       </CardContent>
@@ -308,12 +332,6 @@ function ResultHeatmapPage() {
                 </div>
               </div>
             </div>
-
-            {view === "journey" ? (
-              <p className="text-caption-12-regular text-[#8b96a8]">
-                Journey 뷰는 더미 상태입니다. (추후 여정 데이터/경로 렌더링 연동 예정)
-              </p>
-            ) : null}
           </CardContent>
         </Card>
       </div>
@@ -322,4 +340,3 @@ function ResultHeatmapPage() {
 }
 
 export default ResultHeatmapPage
-

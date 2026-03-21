@@ -6,12 +6,11 @@
 ## 주요 변경사항
 ### Routing / Tabs
 - 결과 탭 라우트 실구현 연결
-  - `/result/:simulationId/issues` → `ResultIssuesPage`
-  - `/result/:simulationId/wcag` → `ResultWcagPage`
-  - `/result/:simulationId/ai` → `ResultAiFixPage`
-  - `/result/:simulationId/heatmap` → `ResultHeatmapPage`
-  - `/result/:simulationId/journey` → `ResultJourneyPage`
-- 탭 네비게이션에서 “히트맵”과 “여정” 분리
+    - `/result/:simulationId/issues` → `ResultIssuesPage`
+    - `/result/:simulationId/wcag` → `ResultWcagPage`
+    - `/result/:simulationId/ai` → `ResultAiFixPage`
+    - `/result/:simulationId/heatmap` → `ResultHeatmapPage`
+  - 탭 네비게이션에서 “히트맵” 탭 제공
 
 ### 주요이슈(issues)
 - 좌측 필터(접근성/사용성/시각요소/기타) + 페이지 선택
@@ -28,10 +27,9 @@
 - 페이지별 수정안 선택 → 코드 비교(이전/이후) + 영향/변경 요약
 - 더미 코드 블록은 CSS로 통일
 
-### 히트맵(heatmap) / 여정(journey)
+### 히트맵(heatmap)
 - 스크린샷(더미 이미지) 위 히트맵 오버레이(퍼센트 좌표 기준)
 - 결함 리스트 클릭 시 해당 마커 강조 + 캔버스 자동 스크롤
-- 여정 탭은 별도 라우트로 분리(더미 경로 렌더링)
 
 ## 더미 데이터 / 에셋
 - 더미 데이터 중앙화
@@ -44,11 +42,10 @@
 
 ## 문서
 - 탭별 작업 내용 정리
-  - `Frontend/docs/result-issues-tab.md`
-  - `Frontend/docs/result-wcag-tab.md`
-  - `Frontend/docs/result-ai-tab.md`
-  - `Frontend/docs/result-heatmap-tab.md`
-  - `Frontend/docs/result-journey-tab.md`
+    - `Frontend/docs/result-issues-tab.md`
+    - `Frontend/docs/result-wcag-tab.md`
+    - `Frontend/docs/result-ai-tab.md`
+    - `Frontend/docs/result-heatmap-tab.md`
 
 ## 참고
 - 스크린샷은 추후 **백엔드 캡처 후 저장된 이미지 URL**로 교체 예정

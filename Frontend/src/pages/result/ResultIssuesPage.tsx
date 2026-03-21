@@ -8,10 +8,12 @@ import { DonutChart } from "@/components/charts"
 import { ChipTag } from "@/components/forms"
 import { ResultPageSidePanel } from "@/components/sections/result/page-side-panel"
 import { Card, CardContent } from "@/components/ui/card"
+import { cn } from "@/lib/utils"
 import type { IssueCategory, ResultIssue, ResultIssuePage } from "@/mocks/result-issues.mock"
 import { resultIssuePages } from "@/mocks/result-issues.mock"
 import { resultPagesMock } from "@/mocks/result-pages.mock"
 import { useResultPageParam } from "@/lib/result-page-param"
+import { motion } from "@/lib/motion"
 
 const filterCategories: IssueCategory[] = ["접근성", "사용성", "시각요소", "기타"]
 
@@ -170,7 +172,7 @@ function ResultIssuesPage() {
       />
 
       <div className="grid gap-4">
-        <Card className="rounded-2xl border border-border-strong bg-card shadow-none">
+        <Card className={cn("rounded-2xl border border-border-strong bg-card shadow-none", motion.card)}>
           <CardContent className="grid gap-4 px-6 py-5">
             <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
               <div className="grid gap-2">

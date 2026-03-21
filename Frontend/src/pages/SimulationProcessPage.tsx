@@ -43,8 +43,8 @@ function SimulationProcessPage() {
       mainClassName="items-start justify-start overflow-hidden"
       headerLeft={<BrandingHeader compact showTagline={false} align="left" className="origin-left scale-150" />}
     >
-      <section className="grid w-full max-w-[1200px] gap-5 pt-2">
-        <Card className="rounded-2xl border border-[#cdd6ea] bg-white shadow-none">
+      <section className="grid w-full gap-5 pt-2">
+        <Card className="rounded-2xl border border-border-strong bg-card shadow-none">
           <CardContent className="grid gap-4 px-6 py-5">
             <div className="grid gap-2 md:grid-cols-[auto_1fr_auto] md:items-center">
               <div className="grid gap-1">
@@ -55,21 +55,21 @@ function SimulationProcessPage() {
                 <p className="text-caption-12-regular text-muted-foreground">생성일</p>
                 <p className="text-body-16-regular text-foreground">{DUMMY_PROJECT.date}</p>
               </div>
-              <div className="flex items-center justify-end gap-2 rounded-xl border border-[#dbe2f1] bg-[#f8faff] px-4 py-2">
+              <div className="flex items-center justify-end gap-2 rounded-xl border border-border-soft-2 bg-surface-hover-2 px-4 py-2">
                 <Loader2 className="size-4 animate-spin text-[var(--color-primary-main)]" />
-                <span className="text-body-14-medium text-[#435176]">시뮬레이션 진행 중</span>
+                <span className="text-body-14-medium text-text-secondary">시뮬레이션 진행 중</span>
               </div>
             </div>
 
-            <div className="h-px bg-[#eef0f5]" />
+            <div className="h-px bg-border-subtle" />
 
             <div className="grid gap-4">
               <div className="grid gap-2">
                 <div className="flex items-center justify-between">
-                  <p className="text-body-14-medium text-[#2f3950]">진행률</p>
-                  <span className="text-caption-12-medium text-[#66708e]">{progress}%</span>
+                  <p className="text-body-14-medium text-text-body">진행률</p>
+                  <span className="text-caption-12-medium text-text-muted">{progress}%</span>
                 </div>
-                <div className="h-2 w-full overflow-hidden rounded-full bg-[#eef1f7]">
+                <div className="h-2 w-full overflow-hidden rounded-full bg-surface-hover">
                   <div
                     className="h-full rounded-full bg-[var(--color-primary-main)] transition-[width] duration-500"
                     style={{ width: `${progress}%` }}
@@ -86,13 +86,13 @@ function SimulationProcessPage() {
                     <div
                       key={step}
                       className={cn(
-                        "flex items-center justify-between rounded-2xl border border-[#e6eaf5] bg-[#f8faff] px-4 py-3",
-                        isActive && "border-[#c7d2ea] bg-white"
+                        "flex items-center justify-between rounded-2xl border border-border-soft bg-surface-hover-2 px-4 py-3",
+                        isActive && "border-border-strong-hover bg-card"
                       )}
                     >
                       <div className="grid gap-0.5">
-                        <p className="text-body-14-medium text-[#283452]">{step}</p>
-                        <p className="text-caption-12-regular text-[#8b96a8]">
+                        <p className="text-body-14-medium text-text-strong">{step}</p>
+                        <p className="text-caption-12-regular text-text-subtle">
                           {isDone ? "완료" : isActive ? "진행 중" : "대기"}
                         </p>
                       </div>
@@ -101,7 +101,7 @@ function SimulationProcessPage() {
                       ) : (
                         <div
                           className={cn(
-                            "size-2.5 rounded-full bg-[#cfd7ea]",
+                            "size-2.5 rounded-full bg-border-soft-3",
                             isActive && "bg-[var(--color-primary-main)]"
                           )}
                           aria-hidden
@@ -112,7 +112,7 @@ function SimulationProcessPage() {
                 })}
               </div>
 
-              <p className="text-caption-12-regular text-[#8b96a8]">
+              <p className="text-caption-12-regular text-text-subtle">
                 결과 화면은 다음 단계에서 연결합니다. (현재는 과정 페이지 임시)
               </p>
             </div>

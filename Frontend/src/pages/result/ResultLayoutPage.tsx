@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { BrandingHeader } from "@/components/sections/auth/branding-header"
 import { AuthLayout } from "@/layouts/AuthLayout"
 import { cn } from "@/lib/utils"
+import { motion } from "@/lib/motion"
 import { recentSimulations } from "@/mocks/simulation.mock"
 
 const tabs = [
@@ -39,7 +40,7 @@ function ResultLayoutPage() {
       mainClassName="items-start justify-start overflow-hidden pb-0"
       headerLeft={<BrandingHeader compact showTagline={false} align="left" className="origin-left scale-150" />}
     >
-      <section className="grid w-full max-w-[1320px] gap-4 pt-2 animate-in fade-in-0 duration-300 ease-out">
+      <section className="grid w-full gap-4 pt-2 animate-in fade-in-0 duration-300 ease-out">
         <Card className="rounded-2xl border border-border-strong bg-card shadow-none">
           <CardContent className="grid gap-4 px-6 py-5">
             <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
@@ -111,7 +112,7 @@ function ResultLayoutPage() {
         </Card>
 
         <div className="min-h-0 pb-12">
-          <div key={location.pathname} className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300 ease-out">
+          <div key={location.pathname} className={motion.page}>
             <Outlet />
           </div>
         </div>

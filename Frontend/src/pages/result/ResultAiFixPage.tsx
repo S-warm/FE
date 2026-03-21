@@ -6,6 +6,7 @@ import { StatusBadge } from "@/components/atoms"
 import { ResultPageSidePanel } from "@/components/sections/result/page-side-panel"
 import { Card, CardContent } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
+import { motion } from "@/lib/motion"
 import { aiFixPagesMock, defaultAiFixId, defaultAiFixPageId } from "@/mocks/result-ai-fix.mock"
 import type { AiFixItem, AiFixPage } from "@/mocks/result-ai-fix.mock"
 import { resultPagesMock } from "@/mocks/result-pages.mock"
@@ -24,6 +25,7 @@ function CodePanel({
     <Card
       className={cn(
         "rounded-2xl border bg-card shadow-none",
+        motion.card,
         active ? "border-border-focus" : "border-border-strong"
       )}
     >
@@ -90,7 +92,7 @@ function ResultAiFixPage() {
       />
 
       <div className="grid gap-4">
-        <Card className="rounded-2xl border border-border-strong bg-card shadow-none">
+        <Card className={cn("rounded-2xl border border-border-strong bg-card shadow-none", motion.card)}>
           <CardContent className="grid gap-4 px-6 py-5">
             <div className="flex flex-wrap items-center gap-2">
               <p className="text-caption-12-regular text-text-subtle">페이지</p>
@@ -142,7 +144,7 @@ function ResultAiFixPage() {
           <CodePanel title="AI 생성 수정 이후 코드" active code={selectedFix.afterCode} />
         </div>
 
-        <Card className="rounded-2xl border border-border-focus bg-card shadow-none">
+        <Card className={cn("rounded-2xl border border-border-focus bg-card shadow-none", motion.card)}>
           <CardContent className="grid gap-4 px-6 py-5">
             <div className="flex items-center gap-2">
               <TrendingUp className="size-4 text-text-link" />

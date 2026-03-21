@@ -2,6 +2,7 @@ import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts"
 
 import { cn } from "@/lib/utils"
 import type { DonutDatum } from "@/mocks/data-visualization.mock"
+import { chartTooltipContentStyle } from "@/components/charts/chart-tooltip"
 
 interface DonutChartProps {
   data: DonutDatum[]
@@ -28,12 +29,7 @@ function DonutChart({ data, heightClassName = "h-[220px]" }: DonutChartProps) {
             ))}
           </Pie>
           <Tooltip
-            contentStyle={{
-              borderRadius: "12px",
-              border: "1px solid var(--color-border)",
-              backgroundColor: "var(--color-background)",
-              color: "var(--color-foreground)",
-            }}
+            contentStyle={chartTooltipContentStyle}
           />
         </PieChart>
       </ResponsiveContainer>

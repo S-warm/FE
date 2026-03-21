@@ -7,6 +7,7 @@ import { RangeSlider } from "@/components/forms"
 import { ResultPageSidePanel } from "@/components/sections/result/page-side-panel"
 import { Card, CardContent } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
+import { motion } from "@/lib/motion"
 import { defaultHeatmapPageId, heatmapAgeBands, heatmapPagesMock } from "@/mocks/result-heatmap.mock"
 import type { HeatmapAgeBand, HeatmapMode, HeatmapPageMock, HeatmapPoint } from "@/mocks/result-heatmap.mock"
 import { resultPagesMock } from "@/mocks/result-pages.mock"
@@ -169,7 +170,7 @@ function ResultHeatmapPage() {
       />
 
       <div className="grid gap-4">
-        <Card className="rounded-2xl border border-border-strong bg-card shadow-none">
+        <Card className={cn("rounded-2xl border border-border-strong bg-card shadow-none", motion.card)}>
           <CardContent className="grid gap-4 px-6 py-5">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex flex-wrap items-center gap-2">

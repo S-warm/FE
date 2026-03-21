@@ -1,6 +1,7 @@
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
 
 import type { ProgressDatum } from "@/mocks/data-visualization.mock"
+import { chartTooltipContentStyle } from "@/components/charts/chart-tooltip"
 
 interface HorizontalBarChartProps {
   data: ProgressDatum[]
@@ -33,12 +34,7 @@ function HorizontalBarChart({
             tick={{ fill: "var(--color-foreground)", fontSize: 12 }}
           />
           <Tooltip
-            contentStyle={{
-              borderRadius: "12px",
-              border: "1px solid var(--color-border)",
-              backgroundColor: "var(--color-background)",
-              color: "var(--color-foreground)",
-            }}
+            contentStyle={chartTooltipContentStyle}
           />
           <Bar dataKey="score" fill={barColor} radius={[8, 8, 8, 8]} barSize={barSize} />
         </BarChart>

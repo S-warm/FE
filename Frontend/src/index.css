@@ -102,6 +102,11 @@
   --minor-accent: #b7c2d9;
 
   --code-surface: #3f3f3f;
+
+  /* Persona (setup/result) */
+  --color-persona-teen: #c8d0f6;
+  --color-persona-fifty: #d5b8f3;
+  --color-persona-eighty: #7edfe6;
 }
 
 /* Dark mode baseline */
@@ -167,6 +172,11 @@
   --minor-accent: var(--color-neutral-600);
 
   --code-surface: var(--color-neutral-800);
+
+  /* Persona (setup/result) */
+  --color-persona-teen: #c8d0f6;
+  --color-persona-fifty: #d5b8f3;
+  --color-persona-eighty: #7edfe6;
 }
 
 /* 2) Tailwind v4 mapping layer:

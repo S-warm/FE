@@ -118,9 +118,9 @@ function SimulationSetupPage() {
 
   const ageDonutData = useMemo(
     () => [
-      { name: "10대", value: displayAgeRatios.teen, color: "#c8d0f6" },
-      { name: "50대", value: displayAgeRatios.fifty, color: "#d5b8f3" },
-      { name: "80대", value: displayAgeRatios.eighty, color: "#7edfe6" },
+      { name: "10대", value: displayAgeRatios.teen, color: "var(--color-persona-teen)" },
+      { name: "50대", value: displayAgeRatios.fifty, color: "var(--color-persona-fifty)" },
+      { name: "80대", value: displayAgeRatios.eighty, color: "var(--color-persona-eighty)" },
     ],
     [displayAgeRatios]
   )
@@ -147,7 +147,7 @@ function SimulationSetupPage() {
               placeholder="URL 링크를 입력하세요."
               variant="default"
               size="lg"
-              className="h-11 rounded-xl border-[#cfd7ea] bg-white px-4 text-[#435176] placeholder:text-[#a0a8bb]"
+              className="h-11 rounded-xl border-border-soft-2 bg-card px-4 text-text-secondary placeholder:text-text-muted"
             />
           </section>
 
@@ -157,7 +157,7 @@ function SimulationSetupPage() {
                 title="페르소나 횟수"
                 description="테스트에 사용할 시뮬레이션별 페르소나 양"
               />
-              <Card className="h-[68px] rounded-2xl border border-[#cdd6ea] bg-white py-2 shadow-none">
+              <Card className="h-[68px] rounded-2xl border border-border-strong bg-card py-2 shadow-none">
                 <CardContent className="pt-0.5">
                   <PersonaRangeSlider value={personaCount} onChange={setPersonaCount} />
                 </CardContent>
@@ -194,11 +194,11 @@ function SimulationSetupPage() {
               </div>
 
               <div className="grid gap-3">
-                <Card className="rounded-2xl border border-[#cdd6ea] bg-white py-2 shadow-none">
+                <Card className="rounded-2xl border border-border-strong bg-card py-2 shadow-none">
                   <CardContent className="grid gap-2 md:grid-cols-[148px_minmax(0,1fr)] md:items-center">
-                    <div className="rounded-xl bg-[#f8f8f8] px-3 py-2.5">
+                    <div className="rounded-xl bg-surface-muted px-3 py-2.5">
                       <p className="text-subtitle-20-medium text-[var(--color-primary-600)]">10대</p>
-                      <p className="mt-1 text-body-14-regular text-[#9aa3b9]">
+                      <p className="mt-1 text-body-14-regular text-text-subtle">
                         트렌드에 민감한
                         <br />
                         알파 세대
@@ -210,18 +210,18 @@ function SimulationSetupPage() {
                       max={100}
                       step={1}
                       unit="%"
-                      color="#c8d0f6"
+                      color="var(--color-persona-teen)"
                       tooltipFormatter={(value) => `${value}%`}
                       onChange={(value) => redistributeAgeRatio("teen", value)}
                     />
                   </CardContent>
                 </Card>
 
-                <Card className="rounded-2xl border border-[#cdd6ea] bg-white py-2 shadow-none">
+                <Card className="rounded-2xl border border-border-strong bg-card py-2 shadow-none">
                   <CardContent className="grid gap-2 md:grid-cols-[148px_minmax(0,1fr)] md:items-center">
-                    <div className="rounded-xl bg-[#f8f8f8] px-3 py-2.5">
+                    <div className="rounded-xl bg-surface-muted px-3 py-2.5">
                       <p className="text-subtitle-20-medium text-[var(--color-primary-600)]">50대</p>
-                      <p className="mt-1 text-body-14-regular text-[#9aa3b9]">안정성과 신뢰를 중시하는 중장년층</p>
+                      <p className="mt-1 text-body-14-regular text-text-subtle">안정성과 신뢰를 중시하는 중장년층</p>
                     </div>
                     <PersonaRangeSlider
                       value={ageRatios.fifty}
@@ -229,18 +229,18 @@ function SimulationSetupPage() {
                       max={100}
                       step={1}
                       unit="%"
-                      color="#d5b8f3"
+                      color="var(--color-persona-fifty)"
                       tooltipFormatter={(value) => `${value}%`}
                       onChange={(value) => redistributeAgeRatio("fifty", value)}
                     />
                   </CardContent>
                 </Card>
 
-                <Card className="rounded-2xl border border-[#cdd6ea] bg-white py-2 shadow-none">
+                <Card className="rounded-2xl border border-border-strong bg-card py-2 shadow-none">
                   <CardContent className="grid gap-2 md:grid-cols-[148px_minmax(0,1fr)] md:items-center">
-                    <div className="rounded-xl bg-[#f8f8f8] px-3 py-2.5">
+                    <div className="rounded-xl bg-surface-muted px-3 py-2.5">
                       <p className="text-subtitle-20-medium text-[var(--color-primary-600)]">80대</p>
-                      <p className="mt-1 text-body-14-regular text-[#9aa3b9]">접근성 개선이 필요한 디지털 소외계층</p>
+                      <p className="mt-1 text-body-14-regular text-text-subtle">접근성 개선이 필요한 디지털 소외계층</p>
                     </div>
                     <PersonaRangeSlider
                       value={ageRatios.eighty}
@@ -248,7 +248,7 @@ function SimulationSetupPage() {
                       max={100}
                       step={1}
                       unit="%"
-                      color="#7edfe6"
+                      color="var(--color-persona-eighty)"
                       tooltipFormatter={(value) => `${value}%`}
                       onChange={(value) => redistributeAgeRatio("eighty", value)}
                     />
@@ -257,15 +257,15 @@ function SimulationSetupPage() {
               </div>
             </div>
 
-            <Card className="mt-[16px] self-end rounded-2xl border border-[#cdd6ea] bg-white py-3 shadow-none">
+            <Card className="mt-[16px] self-end rounded-2xl border border-border-strong bg-card py-3 shadow-none">
               <CardContent className="grid min-h-[330px] gap-4">
-                <p className="text-body-14-medium text-[#5b6990]">연령층 비율</p>
+                <p className="text-body-14-medium text-text-secondary-2">연령층 비율</p>
                 <div className="grid gap-3">
                   <div className="grid gap-2">
                     {ageDonutData.map((item) => (
                       <div key={item.name} className="flex items-center gap-2.5">
                         <span className="size-2.5 rounded-full" style={{ backgroundColor: item.color }} aria-hidden />
-                        <span className="text-caption-12-regular text-[#56627f]">
+                        <span className="text-caption-12-regular text-text-secondary">
                           {item.name} {Math.round(item.value)}%
                         </span>
                       </div>
@@ -281,14 +281,14 @@ function SimulationSetupPage() {
 
           <section className="grid w-full max-w-[760px] gap-3">
             <SetupSectionTitle title="성공 조건" description="페르소나의 최종 도착지를 지정" />
-          <TextArea
-            placeholder="성공조건을 입력하세요."
-            value={successCondition}
-            onChange={(event) => setSuccessCondition(event.target.value)}
-            variant="default"
-            size="md"
-            className="h-[104px] resize-none overflow-y-auto overscroll-contain rounded-2xl border-[#cfd7ea] bg-white px-4 py-3 text-[#435176] placeholder:text-[#a0a8bb]"
-          />
+            <TextArea
+              placeholder="성공조건을 입력하세요."
+              value={successCondition}
+              onChange={(event) => setSuccessCondition(event.target.value)}
+              variant="default"
+              size="md"
+              className="h-[104px] resize-none overflow-y-auto overscroll-contain rounded-2xl border-border-soft-2 bg-card px-4 py-3 text-text-secondary placeholder:text-text-muted"
+            />
           </section>
 
         </div>
@@ -304,7 +304,7 @@ function SimulationSetupPage() {
           />
           <button
             type="button"
-            className="flex h-[72px] w-full items-center justify-center self-end rounded-2xl bg-[#e3e8fb] px-4 text-subtitle-18-semibold text-[var(--color-primary-main)] transition-colors hover:bg-[#d8e0fb]"
+            className="flex h-[72px] w-full items-center justify-center self-end rounded-2xl bg-brand-subtle px-4 text-subtitle-18-semibold text-text-link transition-colors hover:bg-brand-subtle-hover"
             onClick={() => navigate(routes.simulationProcess)}
           >
             시뮬레이션 시작

@@ -1,7 +1,7 @@
 import type { ReactNode } from "react"
 import { NavLink, Outlet, useLocation, useParams } from "react-router-dom"
 
-import { AlertTriangle, Download, LayoutDashboard, Pencil, Route, Share2, ShieldCheck, Sparkles } from "lucide-react"
+import { AlertTriangle, Download, LayoutDashboard, Map, Pencil, Route, Share2, ShieldCheck, Sparkles } from "lucide-react"
 
 import { CommonButton } from "@/components/atoms"
 import { Card, CardContent } from "@/components/ui/card"
@@ -13,7 +13,8 @@ import { recentSimulations } from "@/mocks/simulation.mock"
 const tabs = [
   { value: "overview", label: "개요", icon: LayoutDashboard },
   { value: "issues", label: "주요이슈", icon: AlertTriangle },
-  { value: "heatmap", label: "히트맵 & 여정", icon: Route },
+  { value: "heatmap", label: "히트맵", icon: Map },
+  { value: "journey", label: "여정", icon: Route },
   { value: "wcag", label: "WCAG 검사", icon: ShieldCheck },
   { value: "ai", label: "AI 수정", icon: Sparkles },
 ] as const
@@ -84,7 +85,7 @@ function ResultLayoutPage() {
 
         <Card className="rounded-2xl border border-[#d6ddea] bg-white shadow-none">
           <CardContent className="px-6 py-2">
-            <nav className="grid grid-cols-2 gap-2 md:grid-cols-5 md:gap-3">
+            <nav className="grid grid-cols-2 gap-2 md:grid-cols-6 md:gap-3">
               {tabs.map((tab) => {
                 const Icon = tab.icon
                 return (

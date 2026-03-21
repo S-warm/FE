@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 
 import { AlertTriangle, ChevronDown, Eye, Hand, MousePointerClick, Route, ScrollText, Smartphone } from "lucide-react"
 
@@ -23,8 +23,8 @@ const modeOptions: Array<{ value: HeatmapMode; label: string; icon: React.ReactN
 
 function PagePreview({ src, alt }: { src: string; alt: string }) {
   return (
-    <div className="overflow-hidden rounded-xl border border-[#d6ddea] bg-white">
-      <img src={src} alt={alt} className="aspect-[16/10] w-full object-cover" />
+    <div className="overflow-hidden rounded-xl border border-border-strong bg-card">
+      <img src={src} alt={alt} loading="lazy" decoding="async" className="aspect-[16/10] w-full object-cover" />
     </div>
   )
 }
@@ -70,9 +70,9 @@ function Marker({
       className={cn(
         "absolute -translate-x-1/2 -translate-y-1/2 rounded-full border px-2 py-1 text-[12px] font-semibold shadow-sm transition-transform",
         isCritical
-          ? "border-[#f57968]/40 bg-[#fff4f1] text-[#e35a48]"
-          : "border-[#f6c48b]/50 bg-[#fff8f0] text-[#d97912]",
-        active ? "scale-110 ring-4 ring-[#2f5ae8]/25 animate-pulse" : "scale-100"
+          ? "border-critical-accent/40 bg-danger-surface text-critical-text"
+          : "border-moderate-accent/50 bg-warning-surface text-moderate-text",
+        active ? "scale-110 ring-4 ring-text-link/25 animate-pulse" : "scale-100"
       )}
       style={{ left: `${x}%`, top: `${y}%` }}
       aria-label={`마커 ${label}`}
@@ -97,8 +97,8 @@ function HeatmapCanvas({
   activeMarkerLabel?: string | null
 }) {
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-[#eef1f7] bg-white">
-      <img src={screenshotUrl} alt="페이지 스크린샷" className="block h-full w-full object-cover" />
+    <div className="relative overflow-hidden rounded-2xl border border-border-subtle bg-card">
+      <img src={screenshotUrl} alt="페이지 스크린샷" loading="lazy" decoding="async" className="block h-full w-full object-cover" />
       <div className="pointer-events-none absolute inset-0">
         {points.map((point) => (
           <HeatDot key={point.id} point={point} />
@@ -136,12 +136,16 @@ function ResultHeatmapPage() {
 
   const points = selectedPage.pointsByMode[mode]
 
+  useEffect(() => {
+    setActiveMarkerLabel(null)
+  }, [selectedPageId, mode])
+
   return (
     <div className="grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
-      <Card className="h-fit rounded-2xl border border-[#d6ddea] bg-white shadow-none">
+      <Card className="h-fit rounded-2xl border border-border-strong bg-card shadow-none">
         <CardContent className="grid gap-4 px-4 py-5">
           <div className="flex flex-wrap items-center gap-2">
-            <div className="flex items-center gap-1 rounded-xl border border-[#e6ebf6] bg-[#fbfcff] p-1">
+            <div className="flex items-center gap-1 rounded-xl border border-border-soft bg-surface-subtle p-1">
               {deviceOptions.map((item) => {
                 const active = device === item.value
                 return (
@@ -151,7 +155,7 @@ function ResultHeatmapPage() {
                     onClick={() => setDevice(item.value)}
                     className={cn(
                       "inline-flex h-8 items-center gap-1.5 rounded-lg px-3 text-body-14-medium transition-colors",
-                      active ? "bg-white text-[#283452] shadow-sm" : "text-[#66708e] hover:text-[#435176]"
+                      active ? "bg-card text-text-strong shadow-sm" : "text-text-muted hover:text-text-secondary"
                     )}
                   >
                     {item.icon}
@@ -163,18 +167,18 @@ function ResultHeatmapPage() {
           </div>
 
           <div className="grid gap-2">
-            <p className="text-caption-12-medium text-[#66708e]">페이지</p>
+            <p className="text-caption-12-medium text-text-muted">페이지</p>
             <div className="grid gap-2">
               {heatmapPagesMock.map((page) => {
                 const expanded = expandedPageId === page.id
                 const isSelected = selectedPageId === page.id
                 return (
-                  <div key={page.id} className="rounded-2xl border border-[#e6ebf6] bg-[#fbfcff]">
+                  <div key={page.id} className="rounded-2xl border border-border-soft bg-surface-subtle">
                     <button
                       type="button"
                       className={cn(
                         "flex w-full items-center justify-between gap-2 rounded-2xl px-3 py-2 text-body-14-medium transition-colors",
-                        isSelected ? "text-[#283452]" : "text-[#66708e] hover:text-[#435176]"
+                        isSelected ? "text-text-strong" : "text-text-muted hover:text-text-secondary"
                       )}
                       onClick={() => {
                         setSelectedPageId(page.id)
@@ -199,19 +203,19 @@ function ResultHeatmapPage() {
       </Card>
 
       <div className="grid gap-4">
-        <Card className="rounded-2xl border border-[#d6ddea] bg-white shadow-none">
+        <Card className="rounded-2xl border border-border-strong bg-card shadow-none">
           <CardContent className="grid gap-4 px-6 py-5">
             <div className="flex flex-wrap items-center gap-2">
-              <p className="text-caption-12-regular text-[#8b96a8]">페이지</p>
-              <p className="text-body-14-medium text-[#2f3950]">{selectedPage.name}</p>
-              <span className="mx-2 h-4 w-px bg-[#e6ebf6]" aria-hidden="true" />
-              <p className="text-caption-12-regular text-[#8b96a8]">연령대</p>
-              <p className="text-body-14-medium text-[#2f3950]">{selectedAge}</p>
+              <p className="text-caption-12-regular text-text-subtle">페이지</p>
+              <p className="text-body-14-medium text-text-body">{selectedPage.name}</p>
+              <span className="mx-2 h-4 w-px bg-border-soft" aria-hidden="true" />
+              <p className="text-caption-12-regular text-text-subtle">연령대</p>
+              <p className="text-body-14-medium text-text-body">{selectedAge}</p>
             </div>
 
-            <div className="grid gap-3 rounded-2xl border border-[#eef1f7] bg-[#fbfcff] p-4 lg:grid-cols-[88px_minmax(0,1fr)_280px]">
+            <div className="grid gap-3 rounded-2xl border border-border-subtle bg-surface-subtle p-4 lg:grid-cols-[88px_minmax(0,1fr)_280px]">
               <div className="grid content-start gap-2">
-                <p className="text-caption-12-medium text-[#66708e]">연령대</p>
+                <p className="text-caption-12-medium text-text-muted">연령대</p>
                 <div className="grid gap-2">
                   {heatmapAgeBands.map((band, index) => {
                     const active = index === ageIndex
@@ -223,8 +227,8 @@ function ResultHeatmapPage() {
                         className={cn(
                           "h-10 rounded-xl border px-3 text-body-14-medium transition-colors",
                           active
-                            ? "border-[#97a6e3] bg-white text-[#2f5ae8]"
-                            : "border-[#e6ebf6] bg-[#f4f6fb] text-[#66708e] hover:bg-white"
+                            ? "border-border-focus bg-card text-text-link"
+                            : "border-border-soft bg-surface-muted text-text-muted hover:bg-card"
                         )}
                       >
                         {band}
@@ -235,7 +239,7 @@ function ResultHeatmapPage() {
               </div>
 
               <div ref={canvasRef} className="grid gap-3">
-                <div className="grid grid-cols-4 overflow-hidden rounded-xl border border-[#e6ebf6] bg-white">
+                <div className="grid grid-cols-4 overflow-hidden rounded-xl border border-border-soft bg-card">
                   {modeOptions.map((item) => {
                     const active = item.value === mode
                     return (
@@ -245,14 +249,14 @@ function ResultHeatmapPage() {
                         onClick={() => setMode(item.value)}
                         className={cn(
                           "relative flex h-10 items-center justify-center gap-2 px-3 text-body-14-medium transition-colors",
-                          active ? "text-[#283452]" : "text-[#8b96a8] hover:text-[#435176]"
+                          active ? "text-text-strong" : "text-text-subtle hover:text-text-secondary"
                         )}
                       >
                         {item.icon}
                         {item.label}
                         <span
                           className={cn(
-                            "absolute inset-x-4 bottom-0 h-0.5 rounded-full bg-[#97a6e3] transition-transform",
+                            "absolute inset-x-4 bottom-0 h-0.5 rounded-full bg-border-focus transition-transform",
                             active ? "scale-x-100" : "scale-x-0"
                           )}
                           aria-hidden="true"
@@ -277,7 +281,7 @@ function ResultHeatmapPage() {
                   color="rgba(151, 166, 227, 0.7)"
                   startLabel={heatmapAgeBands[0]}
                   endLabel={heatmapAgeBands[heatmapAgeBands.length - 1]}
-                  labelClassName="text-caption-12-medium text-[#66708e]"
+                  labelClassName="text-caption-12-medium text-text-muted"
                   tooltipFormatter={(value) => heatmapAgeBands[value] ?? ""}
                   onChange={setAgeIndex}
                 />
@@ -285,11 +289,11 @@ function ResultHeatmapPage() {
 
               <div className="grid content-start gap-3">
                 <div className="flex items-center justify-between gap-2">
-                  <p className="text-body-14-medium text-[#2f3950]">치명적 결함</p>
+                  <p className="text-body-14-medium text-text-body">치명적 결함</p>
                   <CommonButton
                     size="sm"
                     variant="secondary"
-                    className="h-8 rounded-xl border border-[#dbe2f1] bg-white text-[#435176] hover:bg-[#eef1f7]"
+                    className="h-8 rounded-xl border border-border-soft-2 bg-card text-text-secondary hover:bg-surface-hover"
                     disabled
                   >
                     전체보기
@@ -297,8 +301,8 @@ function ResultHeatmapPage() {
                 </div>
 
                 <div className="grid gap-2">
-                      {selectedPage.defects.map((defect, index) => (
-                    <Card key={defect.id} className="rounded-2xl border border-[#d6ddea] bg-white shadow-none">
+                  {selectedPage.defects.map((defect, index) => (
+                    <Card key={defect.id} className="rounded-2xl border border-border-strong bg-card shadow-none">
                       <CardContent className="grid gap-2 px-4 py-3">
                         <button
                           type="button"
@@ -311,21 +315,23 @@ function ResultHeatmapPage() {
                         >
                           <div className="min-w-0">
                             <div className="flex items-center gap-2">
-                              <span className="grid size-7 place-items-center rounded-xl bg-[#fff4f1] text-[#f25a3c]">
+                              <span className="grid size-7 place-items-center rounded-xl bg-danger-surface text-danger-text">
                                 <AlertTriangle className="size-4" />
                               </span>
-                              <p className="truncate text-body-14-medium text-[#2f3950]">
+                              <p className="truncate text-body-14-medium text-text-body">
                                 {defect.code} {defect.title}
                               </p>
                             </div>
-                            <p className="mt-1 text-caption-12-regular text-[#8b96a8]">{defect.description}</p>
+                            <p className="mt-1 text-caption-12-regular text-text-subtle">{defect.description}</p>
                           </div>
                           <StatusBadge variant={index === 0 ? "high" : index === 1 ? "medium" : "low"} size="sm">
                             {index === 0 ? "높음" : index === 1 ? "중간" : "낮음"}
                           </StatusBadge>
                         </button>
 
-                        <p className="text-caption-12-medium text-[#2f5ae8]">영향받은 사용자 : {defect.impactedUsers.toLocaleString()} 명</p>
+                        <p className="text-caption-12-medium text-text-link">
+                          영향받은 사용자 : {defect.impactedUsers.toLocaleString()} 명
+                        </p>
                       </CardContent>
                     </Card>
                   ))}

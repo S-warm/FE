@@ -15,8 +15,8 @@ const deviceOptions: Array<{ value: HeatmapDevice; label: string; icon: React.Re
 
 function PagePreview({ src, alt }: { src: string; alt: string }) {
   return (
-    <div className="overflow-hidden rounded-xl border border-[#d6ddea] bg-white">
-      <img src={src} alt={alt} className="aspect-[16/10] w-full object-cover" />
+    <div className="overflow-hidden rounded-xl border border-border-strong bg-card">
+      <img src={src} alt={alt} loading="lazy" decoding="async" className="aspect-[16/10] w-full object-cover" />
     </div>
   )
 }
@@ -28,8 +28,8 @@ function JourneyCanvas({ screenshotUrl, points }: { screenshotUrl: string; point
     .join(" ")
 
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-[#eef1f7] bg-white">
-      <img src={screenshotUrl} alt="페이지 스크린샷" className="block h-full w-full object-cover" />
+    <div className="relative overflow-hidden rounded-2xl border border-border-subtle bg-card">
+      <img src={screenshotUrl} alt="페이지 스크린샷" loading="lazy" decoding="async" className="block h-full w-full object-cover" />
       <svg
         className="pointer-events-none absolute inset-0 h-full w-full"
         viewBox="0 0 100 100"
@@ -66,10 +66,10 @@ function ResultJourneyPage() {
 
   return (
     <div className="grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
-      <Card className="h-fit rounded-2xl border border-[#d6ddea] bg-white shadow-none">
+      <Card className="h-fit rounded-2xl border border-border-strong bg-card shadow-none">
         <CardContent className="grid gap-4 px-4 py-5">
           <div className="flex flex-wrap items-center gap-2">
-            <div className="flex items-center gap-1 rounded-xl border border-[#e6ebf6] bg-[#fbfcff] p-1">
+            <div className="flex items-center gap-1 rounded-xl border border-border-soft bg-surface-subtle p-1">
               {deviceOptions.map((item) => {
                 const active = device === item.value
                 return (
@@ -79,7 +79,7 @@ function ResultJourneyPage() {
                     onClick={() => setDevice(item.value)}
                     className={cn(
                       "inline-flex h-8 items-center gap-1.5 rounded-lg px-3 text-body-14-medium transition-colors",
-                      active ? "bg-white text-[#283452] shadow-sm" : "text-[#66708e] hover:text-[#435176]"
+                      active ? "bg-card text-text-strong shadow-sm" : "text-text-muted hover:text-text-secondary"
                     )}
                   >
                     {item.icon}
@@ -91,18 +91,18 @@ function ResultJourneyPage() {
           </div>
 
           <div className="grid gap-2">
-            <p className="text-caption-12-medium text-[#66708e]">페이지</p>
+            <p className="text-caption-12-medium text-text-muted">페이지</p>
             <div className="grid gap-2">
               {heatmapPagesMock.map((page) => {
                 const expanded = expandedPageId === page.id
                 const isSelected = selectedPageId === page.id
                 return (
-                  <div key={page.id} className="rounded-2xl border border-[#e6ebf6] bg-[#fbfcff]">
+                  <div key={page.id} className="rounded-2xl border border-border-soft bg-surface-subtle">
                     <button
                       type="button"
                       className={cn(
                         "flex w-full items-center justify-between gap-2 rounded-2xl px-3 py-2 text-body-14-medium transition-colors",
-                        isSelected ? "text-[#283452]" : "text-[#66708e] hover:text-[#435176]"
+                        isSelected ? "text-text-strong" : "text-text-muted hover:text-text-secondary"
                       )}
                       onClick={() => {
                         setSelectedPageId(page.id)
@@ -127,18 +127,18 @@ function ResultJourneyPage() {
       </Card>
 
       <div className="grid gap-4">
-        <Card className="rounded-2xl border border-[#d6ddea] bg-white shadow-none">
+        <Card className="rounded-2xl border border-border-strong bg-card shadow-none">
           <CardContent className="grid gap-4 px-6 py-5">
             <div className="flex flex-wrap items-center gap-2">
-              <p className="text-caption-12-regular text-[#8b96a8]">페이지</p>
-              <p className="text-body-14-medium text-[#2f3950]">{selectedPage.name}</p>
-              <span className="mx-2 h-4 w-px bg-[#e6ebf6]" aria-hidden="true" />
-              <p className="text-caption-12-regular text-[#8b96a8]">연령대</p>
-              <p className="text-body-14-medium text-[#2f3950]">{selectedAge}</p>
+              <p className="text-caption-12-regular text-text-subtle">페이지</p>
+              <p className="text-body-14-medium text-text-body">{selectedPage.name}</p>
+              <span className="mx-2 h-4 w-px bg-border-soft" aria-hidden="true" />
+              <p className="text-caption-12-regular text-text-subtle">연령대</p>
+              <p className="text-body-14-medium text-text-body">{selectedAge}</p>
             </div>
 
-            <div className="grid gap-3 rounded-2xl border border-[#eef1f7] bg-[#fbfcff] p-4">
-              <p className="text-caption-12-regular text-[#8b96a8]">
+            <div className="grid gap-3 rounded-2xl border border-border-subtle bg-surface-subtle p-4">
+              <p className="text-caption-12-regular text-text-subtle">
                 여정 탭은 “이동 경로” 렌더링을 위한 더미 화면입니다. (추후 단계/노드/전환 로그 연동 예정)
               </p>
 
@@ -152,7 +152,7 @@ function ResultJourneyPage() {
                   color="rgba(151, 166, 227, 0.7)"
                   startLabel={heatmapAgeBands[0]}
                   endLabel={heatmapAgeBands[heatmapAgeBands.length - 1]}
-                  labelClassName="text-caption-12-medium text-[#66708e]"
+                  labelClassName="text-caption-12-medium text-text-muted"
                   tooltipFormatter={(value) => heatmapAgeBands[value] ?? ""}
                   onChange={(value) => {
                     setAgeIndex(value)
@@ -169,4 +169,3 @@ function ResultJourneyPage() {
 }
 
 export default ResultJourneyPage
-

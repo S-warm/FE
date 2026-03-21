@@ -23,10 +23,10 @@ const categoryColorMap: Record<IssueCategory, string> = {
 
 function PagePreview({ label }: { label: string }) {
   return (
-    <div className="relative overflow-hidden rounded-xl border border-[#d6ddea] bg-gradient-to-br from-[#f2f5ff] via-white to-[#f4fbff]">
+    <div className="relative overflow-hidden rounded-xl border border-border-strong bg-gradient-to-br from-brand-subtle via-card to-surface-subtle">
       <div className="aspect-[16/10] w-full" />
       <div className="absolute inset-0 grid place-items-center">
-        <p className="rounded-full bg-white/85 px-3 py-1 text-caption-12-medium text-[#435176] shadow-sm">{label}</p>
+        <p className="rounded-full bg-card/85 px-3 py-1 text-caption-12-medium text-text-secondary shadow-sm">{label}</p>
       </div>
     </div>
   )
@@ -38,53 +38,53 @@ function IssueCard({ issue }: { issue: ResultIssue }) {
   const resolvedId = simulationId ?? "unknown"
 
   return (
-    <Card className="rounded-2xl border border-[#d6ddea] bg-white shadow-none">
+    <Card className="rounded-2xl border border-border-strong bg-card shadow-none">
       <CardContent className="grid gap-4 px-5 py-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-start">
         <div className="grid gap-2">
           <div className="flex items-start gap-2">
-            <span className="mt-0.5 grid size-7 shrink-0 place-items-center rounded-xl bg-[#fff4f1] text-[#f25a3c]">
+            <span className="mt-0.5 grid size-7 shrink-0 place-items-center rounded-xl bg-danger-surface text-danger-text">
               <AlertTriangle className="size-4" />
             </span>
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
-                <p className="text-body-14-medium text-[#2f3950]">{issue.title}</p>
+                <p className="text-body-14-medium text-text-body">{issue.title}</p>
                 <IssueBadge variant={issue.severity} size="sm">
                   {issue.category}
                 </IssueBadge>
                 {issue.tags.map((tag) => (
                   <span
                     key={tag}
-                    className="inline-flex h-5 items-center rounded-full border border-[#e6ebf6] bg-[#f7f9ff] px-2 text-[11px] font-medium text-[#66708e]"
+                    className="inline-flex h-5 items-center rounded-full border border-border-soft bg-surface-subtle px-2 text-[11px] font-medium text-text-muted"
                   >
                     {tag}
                   </span>
                 ))}
               </div>
-              <p className="mt-1 text-caption-12-regular text-[#8b96a8]">
+              <p className="mt-1 text-caption-12-regular text-text-subtle">
                 {issue.affectedUsers.count}명 사용자 영향 ({issue.affectedUsers.percent}%)
               </p>
             </div>
           </div>
 
-          <p className="text-caption-12-regular text-[#66708e]">{issue.description}</p>
+          <p className="text-caption-12-regular text-text-muted">{issue.description}</p>
 
           <div className="grid gap-1">
-            <p className="text-caption-12-medium text-[#8b96a8]">영향받는 요소</p>
-            <code className="w-fit rounded-xl bg-[#f4f6fb] px-3 py-2 text-[12px] text-[#2f3950]">
+            <p className="text-caption-12-medium text-text-subtle">영향받는 요소</p>
+            <code className="w-fit rounded-xl bg-surface-muted px-3 py-2 text-[12px] text-text-body">
               {issue.selector}
             </code>
           </div>
         </div>
 
         <div className="flex flex-row flex-wrap items-center justify-end gap-2 md:flex-col md:items-end md:justify-start">
-          <span className="inline-flex h-6 items-center rounded-full bg-[#4463d0] px-3 text-caption-12-medium text-white">
+          <span className="inline-flex h-6 items-center rounded-full bg-brand-accent px-3 text-caption-12-medium text-white">
             {issue.expectedBenefit.label} {issue.expectedBenefit.delta}
           </span>
           <div className="flex items-center gap-2">
             <CommonButton
               size="sm"
               variant="secondary"
-              className="rounded-xl border border-[#dbe2f1] bg-[#eef3ff] text-[#2f5ae8] hover:bg-[#e2eaff]"
+              className="rounded-xl border border-border-soft-2 bg-brand-subtle text-text-link hover:bg-brand-subtle-hover"
               onClick={() => navigate(`/result/${resolvedId}/ai`)}
             >
               <Sparkles className="size-4" />
@@ -93,7 +93,7 @@ function IssueCard({ issue }: { issue: ResultIssue }) {
             <CommonButton
               size="sm"
               variant="secondary"
-              className="rounded-xl border border-[#dbe2f1] bg-[#f4f6fb] text-[#435176] hover:bg-[#e9edf7]"
+              className="rounded-xl border border-border-soft-2 bg-surface-muted text-text-secondary hover:bg-surface-muted-hover"
               onClick={() => navigate(`/result/${resolvedId}/heatmap`)}
             >
               히트맵에서 보기
@@ -151,10 +151,10 @@ function ResultIssuesPage() {
 
   return (
     <div className="grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
-      <Card className="h-fit rounded-2xl border border-[#d6ddea] bg-white shadow-none">
+      <Card className="h-fit rounded-2xl border border-border-strong bg-card shadow-none">
         <CardContent className="grid gap-5 px-4 py-5">
           <div className="grid gap-3">
-            <p className="text-caption-12-medium text-[#66708e]">필터링</p>
+            <p className="text-caption-12-medium text-text-muted">필터링</p>
             <div className="flex flex-wrap gap-2">
               {filterCategories.map((category) => {
                 const selected = activeFilters.includes(category)
@@ -177,18 +177,18 @@ function ResultIssuesPage() {
           </div>
 
           <div className="grid gap-3">
-            <p className="text-caption-12-medium text-[#66708e]">페이지</p>
+            <p className="text-caption-12-medium text-text-muted">페이지</p>
             <div className="grid gap-2">
               {resultIssuePages.map((page) => {
                 const expanded = expandedPageId === page.id
                 const isSelected = selectedPageId === page.id
                 return (
-                  <div key={page.id} className="rounded-2xl border border-[#e6ebf6] bg-[#fbfcff]">
+                  <div key={page.id} className="rounded-2xl border border-border-soft bg-surface-subtle">
                     <button
                       type="button"
                       className={cn(
                         "flex w-full items-center justify-between gap-2 rounded-2xl px-3 py-2 text-body-14-medium transition-colors",
-                        isSelected ? "text-[#283452]" : "text-[#66708e] hover:text-[#435176]"
+                        isSelected ? "text-text-strong" : "text-text-muted hover:text-text-secondary"
                       )}
                       onClick={() => {
                         setSelectedPageId(page.id)
@@ -206,7 +206,7 @@ function ResultIssuesPage() {
                           {page.highlights.map((highlight) => (
                             <span
                               key={highlight}
-                              className="inline-flex h-6 items-center rounded-full border border-[#dbe2f1] bg-white px-2 text-caption-12-medium text-[#66708e]"
+                              className="inline-flex h-6 items-center rounded-full border border-border-soft-2 bg-card px-2 text-caption-12-medium text-text-muted"
                             >
                               {highlight}
                             </span>
@@ -223,11 +223,11 @@ function ResultIssuesPage() {
       </Card>
 
       <div className="grid gap-4">
-        <Card className="rounded-2xl border border-[#d6ddea] bg-white shadow-none">
+        <Card className="rounded-2xl border border-border-strong bg-card shadow-none">
           <CardContent className="grid gap-5 px-6 py-5">
             <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
               <div className="flex flex-wrap items-center gap-3">
-                <p className="text-caption-12-regular text-[#8b96a8]">페이지</p>
+                <p className="text-caption-12-regular text-text-subtle">페이지</p>
                 <Select
                   value={selectedPageId}
                   onValueChange={(value) => {
@@ -236,7 +236,7 @@ function ResultIssuesPage() {
                     setExpandedPageId(value)
                   }}
                 >
-                  <SelectTrigger className="rounded-xl border-[#dbe2f1] bg-[#fbfcff] px-3 py-2 text-sm">
+                  <SelectTrigger className="rounded-xl border-border-soft-2 bg-surface-subtle px-3 py-2 text-sm">
                     <SelectValue placeholder="페이지 선택" />
                   </SelectTrigger>
                   <SelectContent align="start">
@@ -253,7 +253,7 @@ function ResultIssuesPage() {
                 <CommonButton
                   size="sm"
                   variant="secondary"
-                  className="rounded-xl border border-[#dbe2f1] bg-[#f4f6fb] text-[#435176] hover:bg-[#e9edf7]"
+                  className="rounded-xl border border-border-soft-2 bg-surface-muted text-text-secondary hover:bg-surface-muted-hover"
                   onClick={() => {
                     setActiveFilters(filterCategories)
                     issuesSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
@@ -265,7 +265,7 @@ function ResultIssuesPage() {
             </div>
 
             <div className="grid gap-3">
-              <p className="text-body-14-medium text-[#2f3950]">카테고리별 분류</p>
+              <p className="text-body-14-medium text-text-body">카테고리별 분류</p>
               <div className="grid gap-4 md:grid-cols-[280px_minmax(0,1fr)] md:items-center">
                 <DonutChart
                   heightClassName="h-[200px]"
@@ -284,9 +284,9 @@ function ResultIssuesPage() {
                           style={{ backgroundColor: item.color }}
                           aria-hidden="true"
                         />
-                        <p className="text-caption-12-regular text-[#66708e]">{item.name}</p>
+                        <p className="text-caption-12-regular text-text-muted">{item.name}</p>
                       </div>
-                      <p className="text-caption-12-medium text-[#66708e]">
+                      <p className="text-caption-12-medium text-text-muted">
                         {item.count}건 / {item.percent}%
                       </p>
                     </div>
@@ -298,7 +298,7 @@ function ResultIssuesPage() {
         </Card>
 
         <section ref={issuesSectionRef} className="grid gap-3">
-          <p className="text-body-14-medium text-[#2f3950]">이슈목록</p>
+          <p className="text-body-14-medium text-text-body">이슈목록</p>
           <div className="grid gap-3">
             {filteredIssues.map((issue) => (
               <IssueCard key={issue.id} issue={issue} />

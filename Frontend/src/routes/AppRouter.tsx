@@ -9,10 +9,10 @@ import SimulationSetupPage from "@/pages/SimulationSetupPage"
 import SignUpPage from "@/pages/SignUpPage"
 import ResultLayoutPage from "@/pages/result/ResultLayoutPage"
 import ResultOverviewPage from "@/pages/result/ResultOverviewPage"
-import ResultPlaceholderPage from "@/pages/result/ResultPlaceholderPage"
 import ResultIssuesPage from "@/pages/result/ResultIssuesPage"
 import ResultWcagPage from "@/pages/result/ResultWcagPage"
 import ResultAiFixPage from "@/pages/result/ResultAiFixPage"
+import ResultHeatmapPage from "@/pages/result/ResultHeatmapPage"
 import routes from "@/constants/routes"
 import { useAuthStore } from "@/store/auth.store"
 
@@ -90,7 +90,7 @@ export default function AppRouter() {
           <Route index element={<Navigate to="overview" replace />} />
           <Route path="overview" element={<ResultOverviewPage />} />
           <Route path="issues" element={<ResultIssuesPage />} />
-          <Route path="heatmap" element={<ResultPlaceholderPage title="히트맵 & 여정" />} />
+          <Route path="heatmap" element={<ResultHeatmapPage />} />
           <Route path="wcag" element={<ResultWcagPage />} />
           <Route path="ai" element={<ResultAiFixPage />} />
         </Route>

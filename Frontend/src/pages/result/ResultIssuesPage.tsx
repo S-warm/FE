@@ -1,16 +1,17 @@
-import { useMemo, useRef, useState } from "react"
-import { useNavigate, useParams } from "react-router-dom"
+import { useEffect, useMemo, useRef, useState } from "react"
+import { useLocation, useNavigate, useParams } from "react-router-dom"
 
-import { AlertTriangle, ArrowRight, ChevronDown, Sparkles } from "lucide-react"
+import { AlertTriangle, ArrowRight, Sparkles } from "lucide-react"
 
 import { CommonButton, IssueBadge } from "@/components/atoms"
 import { DonutChart } from "@/components/charts"
 import { ChipTag } from "@/components/forms"
+import { ResultPageSidePanel } from "@/components/sections/result/page-side-panel"
 import { Card, CardContent } from "@/components/ui/card"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { cn } from "@/lib/utils"
 import type { IssueCategory, ResultIssue, ResultIssuePage } from "@/mocks/result-issues.mock"
 import { resultIssuePages } from "@/mocks/result-issues.mock"
+import { resultPagesMock } from "@/mocks/result-pages.mock"
+import { useResultPageParam } from "@/lib/result-page-param"
 
 const filterCategories: IssueCategory[] = ["접근성", "사용성", "시각요소", "기타"]
 
@@ -21,21 +22,12 @@ const categoryColorMap: Record<IssueCategory, string> = {
   기타: "#B7C2D9",
 }
 
-function PagePreview({ label }: { label: string }) {
-  return (
-    <div className="relative overflow-hidden rounded-xl border border-border-strong bg-gradient-to-br from-brand-subtle via-card to-surface-subtle">
-      <div className="aspect-[16/10] w-full" />
-      <div className="absolute inset-0 grid place-items-center">
-        <p className="rounded-full bg-card/85 px-3 py-1 text-caption-12-medium text-text-secondary shadow-sm">{label}</p>
-      </div>
-    </div>
-  )
-}
-
 function IssueCard({ issue }: { issue: ResultIssue }) {
   const { simulationId } = useParams()
   const navigate = useNavigate()
+  const location = useLocation()
   const resolvedId = simulationId ?? "unknown"
+  const search = location.search
 
   return (
     <Card className="rounded-2xl border border-border-strong bg-card shadow-none">
@@ -85,7 +77,7 @@ function IssueCard({ issue }: { issue: ResultIssue }) {
               size="sm"
               variant="secondary"
               className="rounded-xl border border-border-soft-2 bg-brand-subtle text-text-link hover:bg-brand-subtle-hover"
-              onClick={() => navigate(`/result/${resolvedId}/ai`)}
+              onClick={() => navigate(`/result/${resolvedId}/ai${search}`)}
             >
               <Sparkles className="size-4" />
               AI 수정 받기
@@ -94,7 +86,7 @@ function IssueCard({ issue }: { issue: ResultIssue }) {
               size="sm"
               variant="secondary"
               className="rounded-xl border border-border-soft-2 bg-surface-muted text-text-secondary hover:bg-surface-muted-hover"
-              onClick={() => navigate(`/result/${resolvedId}/heatmap`)}
+              onClick={() => navigate(`/result/${resolvedId}/heatmap${search}`)}
             >
               히트맵에서 보기
               <ArrowRight className="size-4" />
@@ -134,13 +126,31 @@ function buildCategoryDonut(issues: ResultIssue[]) {
 }
 
 function ResultIssuesPage() {
-  const [selectedPageId, setSelectedPageId] = useState<string>(resultIssuePages[0]?.id ?? "login")
-  const [expandedPageId, setExpandedPageId] = useState<string>(resultIssuePages[0]?.id ?? "login")
+  const { selectedPageId, setSelectedPageId } = useResultPageParam()
+  const [expandedPageId, setExpandedPageId] = useState<string>(selectedPageId)
   const [activeFilters, setActiveFilters] = useState<IssueCategory[]>(["접근성", "사용성", "시각요소"])
   const issuesSectionRef = useRef<HTMLDivElement>(null)
 
+  useEffect(() => {
+    setExpandedPageId(selectedPageId)
+  }, [selectedPageId])
+
   const selectedPage: ResultIssuePage =
     resultIssuePages.find((page) => page.id === selectedPageId) ?? resultIssuePages[0]
+
+  const sidePages = useMemo(
+    () =>
+      resultPagesMock.map((page) => {
+        const issueCount = resultIssuePages.find((item) => item.id === page.id)?.issues.length ?? 0
+        return {
+          id: page.id,
+          name: page.name,
+          screenshotUrl: page.screenshotUrl,
+          metaText: `${issueCount}건 이슈`,
+        }
+      }),
+    []
+  )
 
   const filteredIssues = useMemo(() => {
     if (!activeFilters.length) return selectedPage.issues
@@ -151,102 +161,46 @@ function ResultIssuesPage() {
 
   return (
     <div className="grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
-      <Card className="h-fit rounded-2xl border border-border-strong bg-card shadow-none">
-        <CardContent className="grid gap-5 px-4 py-5">
-          <div className="grid gap-3">
-            <p className="text-caption-12-medium text-text-muted">필터링</p>
-            <div className="flex flex-wrap gap-2">
-              {filterCategories.map((category) => {
-                const selected = activeFilters.includes(category)
-                return (
-                  <ChipTag
-                    key={category}
-                    selected={selected}
-                    className="h-7 px-2.5 text-[12px]"
-                    onClick={() => {
-                      setActiveFilters((prev) =>
-                        prev.includes(category) ? prev.filter((item) => item !== category) : [...prev, category]
-                      )
-                    }}
-                  >
-                    {category}
-                  </ChipTag>
-                )
-              })}
-            </div>
-          </div>
-
-          <div className="grid gap-3">
-            <p className="text-caption-12-medium text-text-muted">페이지</p>
-            <div className="grid gap-2">
-              {resultIssuePages.map((page) => {
-                const expanded = expandedPageId === page.id
-                const isSelected = selectedPageId === page.id
-                return (
-                  <div key={page.id} className="rounded-2xl border border-border-soft bg-surface-subtle">
-                    <button
-                      type="button"
-                      className={cn(
-                        "flex w-full items-center justify-between gap-2 rounded-2xl px-3 py-2 text-body-14-medium transition-colors",
-                        isSelected ? "text-text-strong" : "text-text-muted hover:text-text-secondary"
-                      )}
-                      onClick={() => {
-                        setSelectedPageId(page.id)
-                        setExpandedPageId(page.id)
-                      }}
-                    >
-                      <span className="truncate">{page.name}</span>
-                      <ChevronDown className={cn("size-4 transition-transform", expanded ? "rotate-180" : "")} />
-                    </button>
-
-                    {expanded ? (
-                      <div className="grid gap-2 px-3 pb-3">
-                        <PagePreview label={page.name} />
-                        <div className="flex flex-wrap gap-1.5">
-                          {page.highlights.map((highlight) => (
-                            <span
-                              key={highlight}
-                              className="inline-flex h-6 items-center rounded-full border border-border-soft-2 bg-card px-2 text-caption-12-medium text-text-muted"
-                            >
-                              {highlight}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    ) : null}
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <ResultPageSidePanel
+        pages={sidePages}
+        selectedPageId={selectedPageId}
+        expandedPageId={expandedPageId}
+        onSelectPage={setSelectedPageId}
+        onExpandPage={setExpandedPageId}
+      />
 
       <div className="grid gap-4">
         <Card className="rounded-2xl border border-border-strong bg-card shadow-none">
-          <CardContent className="grid gap-5 px-6 py-5">
+          <CardContent className="grid gap-4 px-6 py-5">
             <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
-              <div className="flex flex-wrap items-center gap-3">
-                <p className="text-caption-12-regular text-text-subtle">페이지</p>
-                <Select
-                  value={selectedPageId}
-                  onValueChange={(value) => {
-                    if (!value) return
-                    setSelectedPageId(value)
-                    setExpandedPageId(value)
-                  }}
-                >
-                  <SelectTrigger className="rounded-xl border-border-soft-2 bg-surface-subtle px-3 py-2 text-sm">
-                    <SelectValue placeholder="페이지 선택" />
-                  </SelectTrigger>
-                  <SelectContent align="start">
-                    {resultIssuePages.map((page) => (
-                      <SelectItem key={page.id} value={page.id}>
-                        {page.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <div className="grid gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="text-caption-12-regular text-text-subtle">페이지</p>
+                  <p className="text-body-14-medium text-text-body">{selectedPage.name}</p>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="text-caption-12-medium text-text-muted">필터링</p>
+                  <div className="flex flex-wrap gap-2">
+                    {filterCategories.map((category) => {
+                      const selected = activeFilters.includes(category)
+                      return (
+                        <ChipTag
+                          key={category}
+                          selected={selected}
+                          className="h-7 px-2.5 text-[12px]"
+                          onClick={() => {
+                            setActiveFilters((prev) =>
+                              prev.includes(category) ? prev.filter((item) => item !== category) : [...prev, category]
+                            )
+                          }}
+                        >
+                          {category}
+                        </ChipTag>
+                      )
+                    })}
+                  </div>
+                </div>
               </div>
 
               <div className="flex items-center justify-end">

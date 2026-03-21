@@ -15,7 +15,7 @@ interface SidebarProps {
 const sidebarItems: SidebarItem[] = [
   { id: "overview", label: "개요", icon: LayoutDashboard },
   { id: "issues", label: "주요 이슈", icon: FileSearch },
-  { id: "heatmap", label: "히트맵&여정", icon: Route },
+  { id: "heatmap", label: "히트맵", icon: Route },
   { id: "wcag", label: "WCAG 검사", icon: ShieldCheck },
   { id: "reports", label: "리포트", icon: BarChart3 },
 ]

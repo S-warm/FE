@@ -4,10 +4,13 @@ import { useMemo, useState } from "react"
 import { AlertCircle, ChevronDown, ClipboardCheck, ShieldCheck, TriangleAlert } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
+import { ResultPageSidePanel } from "@/components/sections/result/page-side-panel"
 import { Card, CardContent } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 import type { WcagDetailIssue, WcagIssueDistribution, WcagSeverity } from "@/mocks/result-wcag.mock"
 import { wcagResultMock } from "@/mocks/result-wcag.mock"
+import { resultPagesMock } from "@/mocks/result-pages.mock"
+import { useResultPageParam } from "@/lib/result-page-param"
 
 const severityStyleMap: Record<
   WcagSeverity,
@@ -15,6 +18,7 @@ const severityStyleMap: Record<
     bar: string
     badge: string
     iconWrapper: string
+    text: string
     icon: ComponentType<{ className?: string }>
   }
 > = {
@@ -22,18 +26,21 @@ const severityStyleMap: Record<
     bar: "bg-critical-accent",
     badge: "bg-critical-accent/15 text-critical-text border-critical-accent/30",
     iconWrapper: "bg-danger-surface text-danger-text",
+    text: "text-critical-text",
     icon: TriangleAlert,
   },
   moderate: {
     bar: "bg-moderate-accent",
     badge: "bg-moderate-accent/20 text-moderate-text border-moderate-accent/40",
     iconWrapper: "bg-warning-surface text-warning-text",
+    text: "text-moderate-text",
     icon: AlertCircle,
   },
   minor: {
     bar: "bg-minor-accent",
     badge: "bg-surface-hover text-text-muted border-border-soft-2",
     iconWrapper: "bg-surface-hover text-text-muted",
+    text: "text-text-muted",
     icon: ShieldCheck,
   },
 }
@@ -109,21 +116,10 @@ function DistributionSummary({ distribution }: { distribution: WcagIssueDistribu
             key={item.severity}
             className="grid place-items-center gap-1 rounded-2xl border border-border-subtle bg-card px-4 py-3"
           >
-            <p className={cn("text-title-24-bold", item.severity === "minor" ? "text-text-muted" : "")}>
-              {item.count}
-            </p>
-            <p className={cn("text-caption-12-medium", item.severity === "critical" ? "text-critical-text" : "")}>
-              {item.label}
-            </p>
-            <p
-              className={cn(
-                "text-caption-12-regular",
-                item.severity === "critical" ? "text-critical-text" : "text-text-subtle"
-              )}
-            >
-              {item.description}
-            </p>
-            <span className={cn("mt-1 h-0.5 w-5 rounded-full", style.bar)} aria-hidden="true" />
+            <p className="text-title-24-bold text-text-strong">{item.count}</p>
+            <p className={cn("text-caption-12-medium", style.text)}>{item.label}</p>
+            <p className="text-caption-12-regular text-text-subtle">{item.description}</p>
+            <span className={cn("mt-2 h-0.5 w-8 rounded-full", style.bar)} aria-hidden="true" />
           </div>
         )
       })}
@@ -191,13 +187,42 @@ function DetailIssueRow({
 
 function ResultWcagPage() {
   const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set())
+  const { selectedPageId, setSelectedPageId } = useResultPageParam()
+  const [expandedPageId, setExpandedPageId] = useState<string>(selectedPageId)
 
   const summary = wcagResultMock
   const distributionTotal = useMemo(() => summary.distribution.reduce((acc, item) => acc + item.count, 0), [summary])
+  const selectedPageName = resultPagesMock.find((page) => page.id === selectedPageId)?.name ?? "로그인 페이지"
+  const sidePages = useMemo(
+    () =>
+      resultPagesMock.map((page) => ({
+        id: page.id,
+        name: page.name,
+        screenshotUrl: page.screenshotUrl,
+      })),
+    []
+  )
 
   return (
-    <div className="grid gap-5">
-      <section className="grid gap-3 md:grid-cols-[240px_240px_minmax(0,1fr)]">
+    <div className="grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
+      <ResultPageSidePanel
+        pages={sidePages}
+        selectedPageId={selectedPageId}
+        expandedPageId={expandedPageId}
+        onSelectPage={(pageId) => {
+          setSelectedPageId(pageId)
+          setExpandedPageId(pageId)
+        }}
+        onExpandPage={setExpandedPageId}
+      />
+
+      <div className="grid gap-5">
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="text-caption-12-regular text-text-subtle">페이지</p>
+          <p className="text-body-14-medium text-text-body">{selectedPageName}</p>
+        </div>
+
+        <section className="grid gap-3 md:grid-cols-[240px_240px_minmax(0,1fr)]">
         <MetricCard
           title="준수 점수"
           value={`${summary.complianceScore}%`}
@@ -211,7 +236,7 @@ function ResultWcagPage() {
           icon={<ClipboardCheck className="size-4" />}
         />
         <Card className="rounded-2xl border border-border-strong bg-card shadow-none">
-          <CardContent className="grid gap-4 px-5 py-4 md:grid-cols-[160px_minmax(0,1fr)] md:items-center">
+          <CardContent className="grid gap-4 px-5 py-4">
             <div className="grid gap-3">
               <div className="flex items-start justify-between gap-3 text-text-subtle">
                 <div className="flex items-center gap-2">
@@ -231,17 +256,6 @@ function ResultWcagPage() {
               <div className="grid gap-1">
                 <p className="text-title-24-bold text-text-strong">{summary.foundIssues}</p>
                 <p className="text-caption-12-regular text-text-subtle">{summary.foundIssues}건 발견됨</p>
-              </div>
-            </div>
-
-            <div className="max-h-[86px] overflow-auto rounded-2xl border border-border-subtle bg-surface-subtle px-4 py-3">
-              <div className="grid gap-1">
-                {summary.pageFindings.map((item) => (
-                  <p key={item.pageName} className="text-caption-12-regular text-text-muted">
-                    {item.pageName}: {item.total}건 (높음 {item.breakdown.critical}, 중간 {item.breakdown.moderate}, 낮음{" "}
-                    {item.breakdown.minor})
-                  </p>
-                ))}
               </div>
             </div>
           </CardContent>
@@ -285,6 +299,7 @@ function ResultWcagPage() {
           })}
         </div>
       </section>
+      </div>
     </div>
   )
 }

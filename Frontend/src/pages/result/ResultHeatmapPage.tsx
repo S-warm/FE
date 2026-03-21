@@ -1,18 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 
-import { AlertTriangle, ChevronDown, Eye, Hand, MousePointerClick, Route, ScrollText, Smartphone } from "lucide-react"
+import { AlertTriangle, Eye, MousePointerClick, Route, ScrollText } from "lucide-react"
 
 import { CommonButton, StatusBadge } from "@/components/atoms"
 import { RangeSlider } from "@/components/forms"
+import { ResultPageSidePanel } from "@/components/sections/result/page-side-panel"
 import { Card, CardContent } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 import { defaultHeatmapPageId, heatmapAgeBands, heatmapPagesMock } from "@/mocks/result-heatmap.mock"
-import type { HeatmapAgeBand, HeatmapDevice, HeatmapMode, HeatmapPageMock, HeatmapPoint } from "@/mocks/result-heatmap.mock"
-
-const deviceOptions: Array<{ value: HeatmapDevice; label: string; icon: React.ReactNode }> = [
-  { value: "desktop", label: "Desktop", icon: <Hand className="size-4" /> },
-  { value: "mobile", label: "Mobile", icon: <Smartphone className="size-4" /> },
-]
+import type { HeatmapAgeBand, HeatmapMode, HeatmapPageMock, HeatmapPoint } from "@/mocks/result-heatmap.mock"
+import { resultPagesMock } from "@/mocks/result-pages.mock"
+import { useResultPageParam } from "@/lib/result-page-param"
 
 const modeOptions: Array<{ value: HeatmapMode; label: string; icon: React.ReactNode }> = [
   { value: "click", label: "클릭", icon: <MousePointerClick className="size-4" /> },
@@ -21,24 +19,16 @@ const modeOptions: Array<{ value: HeatmapMode; label: string; icon: React.ReactN
   { value: "attention", label: "주의", icon: <Eye className="size-4" /> },
 ]
 
-function PagePreview({ src, alt }: { src: string; alt: string }) {
-  return (
-    <div className="overflow-hidden rounded-xl border border-border-strong bg-card">
-      <img src={src} alt={alt} loading="lazy" decoding="async" className="aspect-[16/10] w-full object-cover" />
-    </div>
-  )
-}
-
 function HeatDot({ point }: { point: HeatmapPoint }) {
-  const alpha = Math.min(0.95, 0.25 + point.intensity * 0.7)
-  const size = 72 + point.intensity * 110
+  const alpha = Math.min(0.98, 0.35 + point.intensity * 0.65)
+  const size = 84 + point.intensity * 140
   const hue = Math.round(55 - point.intensity * 55) // yellow -> red
   const core = `hsla(${hue}, 96%, 58%, ${alpha})`
-  const mid = `hsla(${Math.max(30, hue)}, 96%, 58%, ${Math.min(0.55, alpha * 0.55)})`
+  const mid = `hsla(${Math.max(26, hue)}, 96%, 55%, ${Math.min(0.7, alpha * 0.7)})`
 
   return (
     <div
-      className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 rounded-full blur-xl"
+      className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 rounded-full blur-lg"
       style={{
         left: `${point.x}%`,
         top: `${point.y}%`,
@@ -97,8 +87,14 @@ function HeatmapCanvas({
   activeMarkerLabel?: string | null
 }) {
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-border-subtle bg-card">
-      <img src={screenshotUrl} alt="페이지 스크린샷" loading="lazy" decoding="async" className="block h-full w-full object-cover" />
+    <div className="relative w-full overflow-hidden rounded-2xl border border-border-subtle bg-card h-[clamp(520px,65vh,860px)]">
+      <img
+        src={screenshotUrl}
+        alt="페이지 스크린샷"
+        loading="lazy"
+        decoding="async"
+        className="block h-full w-full object-cover"
+      />
       <div className="pointer-events-none absolute inset-0">
         {points.map((point) => (
           <HeatDot key={point.id} point={point} />
@@ -123,100 +119,176 @@ function stripCodeToLabel(code: string) {
 }
 
 function ResultHeatmapPage() {
-  const [device, setDevice] = useState<HeatmapDevice>("desktop")
-  const [selectedPageId, setSelectedPageId] = useState<string>(defaultHeatmapPageId)
+  const { selectedPageId, setSelectedPageId } = useResultPageParam()
   const [expandedPageId, setExpandedPageId] = useState<string>(defaultHeatmapPageId)
-  const [mode, setMode] = useState<HeatmapMode>("click")
+  const [mode, setMode] = useState<HeatmapMode>("attention")
   const [ageIndex, setAgeIndex] = useState<number>(2)
   const [activeMarkerLabel, setActiveMarkerLabel] = useState<string | null>(null)
   const canvasRef = useRef<HTMLDivElement | null>(null)
 
-  const selectedPage = useMemo(() => heatmapPagesMock.find((page) => page.id === selectedPageId) ?? heatmapPagesMock[0], [selectedPageId])
+  const selectedPage = useMemo(
+    () => heatmapPagesMock.find((page) => page.id === selectedPageId) ?? heatmapPagesMock[0],
+    [selectedPageId]
+  )
   const selectedAge: HeatmapAgeBand = heatmapAgeBands[Math.min(heatmapAgeBands.length - 1, Math.max(0, ageIndex))] ?? "30대"
 
   const points = selectedPage.pointsByMode[mode]
+  const sidePages = useMemo(
+    () =>
+      resultPagesMock.map((page) => {
+        const defectCount = heatmapPagesMock.find((item) => item.id === page.id)?.defects.length ?? 0
+        return {
+          id: page.id,
+          name: page.name,
+          screenshotUrl: page.screenshotUrl,
+          metaText: `${defectCount}건 결함`,
+        }
+      }),
+    []
+  )
 
   useEffect(() => {
     setActiveMarkerLabel(null)
   }, [selectedPageId, mode])
 
+  useEffect(() => {
+    setExpandedPageId(selectedPageId)
+  }, [selectedPageId])
+
   return (
     <div className="grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
-      <Card className="h-fit rounded-2xl border border-border-strong bg-card shadow-none">
-        <CardContent className="grid gap-4 px-4 py-5">
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="flex items-center gap-1 rounded-xl border border-border-soft bg-surface-subtle p-1">
-              {deviceOptions.map((item) => {
-                const active = device === item.value
-                return (
-                  <button
-                    key={item.value}
-                    type="button"
-                    onClick={() => setDevice(item.value)}
-                    className={cn(
-                      "inline-flex h-8 items-center gap-1.5 rounded-lg px-3 text-body-14-medium transition-colors",
-                      active ? "bg-card text-text-strong shadow-sm" : "text-text-muted hover:text-text-secondary"
-                    )}
-                  >
-                    {item.icon}
-                    {item.label}
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-
-          <div className="grid gap-2">
-            <p className="text-caption-12-medium text-text-muted">페이지</p>
-            <div className="grid gap-2">
-              {heatmapPagesMock.map((page) => {
-                const expanded = expandedPageId === page.id
-                const isSelected = selectedPageId === page.id
-                return (
-                  <div key={page.id} className="rounded-2xl border border-border-soft bg-surface-subtle">
-                    <button
-                      type="button"
-                      className={cn(
-                        "flex w-full items-center justify-between gap-2 rounded-2xl px-3 py-2 text-body-14-medium transition-colors",
-                        isSelected ? "text-text-strong" : "text-text-muted hover:text-text-secondary"
-                      )}
-                      onClick={() => {
-                        setSelectedPageId(page.id)
-                        setExpandedPageId(page.id)
-                      }}
-                    >
-                      <span className="truncate">{page.name}</span>
-                      <ChevronDown className={cn("size-4 transition-transform", expanded ? "rotate-180" : "")} />
-                    </button>
-
-                    {expanded ? (
-                      <div className="grid gap-2 px-3 pb-3">
-                        <PagePreview src={page.screenshotUrl} alt={page.name} />
-                      </div>
-                    ) : null}
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <ResultPageSidePanel
+        pages={sidePages}
+        selectedPageId={selectedPageId}
+        expandedPageId={expandedPageId}
+        onSelectPage={(pageId) => {
+          setSelectedPageId(pageId)
+          setExpandedPageId(pageId)
+        }}
+        onExpandPage={setExpandedPageId}
+      />
 
       <div className="grid gap-4">
         <Card className="rounded-2xl border border-border-strong bg-card shadow-none">
           <CardContent className="grid gap-4 px-6 py-5">
-            <div className="flex flex-wrap items-center gap-2">
-              <p className="text-caption-12-regular text-text-subtle">페이지</p>
-              <p className="text-body-14-medium text-text-body">{selectedPage.name}</p>
-              <span className="mx-2 h-4 w-px bg-border-soft" aria-hidden="true" />
-              <p className="text-caption-12-regular text-text-subtle">연령대</p>
-              <p className="text-body-14-medium text-text-body">{selectedAge}</p>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="text-caption-12-regular text-text-subtle">페이지</p>
+                <p className="text-body-14-medium text-text-body">{selectedPage.name}</p>
+                <span className="mx-2 h-4 w-px bg-border-soft" aria-hidden="true" />
+                <p className="text-caption-12-regular text-text-subtle">연령대</p>
+                <p className="text-body-14-medium text-text-body">{selectedAge}</p>
+              </div>
+
+              <RangeSlider
+                className="w-full max-w-[520px] md:w-[380px]"
+                value={ageIndex}
+                min={0}
+                max={heatmapAgeBands.length - 1}
+                step={1}
+                color="rgba(151, 166, 227, 0.7)"
+                startLabel={heatmapAgeBands[0]}
+                endLabel={heatmapAgeBands[heatmapAgeBands.length - 1]}
+                labelClassName="text-caption-12-medium text-text-muted"
+                tooltipFormatter={(value) => heatmapAgeBands[value] ?? ""}
+                onChange={setAgeIndex}
+              />
             </div>
 
-            <div className="grid gap-3 rounded-2xl border border-border-subtle bg-surface-subtle p-4 lg:grid-cols-[88px_minmax(0,1fr)_280px]">
-              <div className="grid content-start gap-2">
+            <div ref={canvasRef} className="grid gap-3 rounded-2xl border border-border-subtle bg-surface-subtle p-4">
+              <div className="grid grid-cols-4 overflow-hidden rounded-xl border border-border-soft bg-card">
+                {modeOptions.map((item) => {
+                  const active = item.value === mode
+                  return (
+                    <button
+                      key={item.value}
+                      type="button"
+                      onClick={() => setMode(item.value)}
+                      className={cn(
+                        "relative flex h-10 items-center justify-center gap-2 px-3 text-body-14-medium transition-colors",
+                        active ? "text-text-strong" : "text-text-subtle hover:text-text-secondary"
+                      )}
+                    >
+                      {item.icon}
+                      {item.label}
+                      <span
+                        className={cn(
+                          "absolute inset-x-4 bottom-0 h-0.5 rounded-full bg-border-focus transition-transform",
+                          active ? "scale-x-100" : "scale-x-0"
+                        )}
+                        aria-hidden="true"
+                      />
+                    </button>
+                  )
+                })}
+              </div>
+
+              <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start">
+                <div className="grid gap-3">
+                  <HeatmapCanvas
+                    screenshotUrl={selectedPage.screenshotUrl}
+                    points={points}
+                    markers={selectedPage.markers}
+                    activeMarkerLabel={activeMarkerLabel}
+                  />
+                </div>
+
+                <section className="grid gap-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-body-14-medium text-text-body">치명적 결함</p>
+                    <CommonButton
+                      size="sm"
+                      variant="secondary"
+                      className="h-8 rounded-xl border border-border-soft-2 bg-card text-text-secondary hover:bg-surface-hover"
+                      disabled
+                    >
+                      전체보기
+                    </CommonButton>
+                  </div>
+
+                  <div className="grid gap-2">
+                    {selectedPage.defects.map((defect, index) => (
+                      <Card key={defect.id} className="rounded-2xl border border-border-strong bg-card shadow-none">
+                        <CardContent className="grid gap-2 px-4 py-3">
+                          <button
+                            type="button"
+                            className="flex items-start justify-between gap-3 text-left"
+                            onClick={() => {
+                              const label = stripCodeToLabel(defect.code)
+                              setMode("attention")
+                              setActiveMarkerLabel(label)
+                              canvasRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
+                            }}
+                          >
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="grid size-7 place-items-center rounded-xl bg-danger-surface text-danger-text">
+                                  <AlertTriangle className="size-4" />
+                                </span>
+                                <p className="truncate text-body-14-medium text-text-body">
+                                  {defect.code} {defect.title}
+                                </p>
+                              </div>
+                              <p className="mt-1 text-caption-12-regular text-text-subtle">{defect.description}</p>
+                            </div>
+                            <StatusBadge variant={index === 0 ? "high" : index === 1 ? "medium" : "low"} size="sm">
+                              {index === 0 ? "높음" : index === 1 ? "중간" : "낮음"}
+                            </StatusBadge>
+                          </button>
+
+                          <p className="text-caption-12-medium text-text-link">
+                            영향받은 사용자 : {defect.impactedUsers.toLocaleString()} 명
+                          </p>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </section>
+              </div>
+
+              <div className="grid gap-2">
                 <p className="text-caption-12-medium text-text-muted">연령대</p>
-                <div className="grid gap-2">
+                <div className="flex flex-wrap gap-2">
                   {heatmapAgeBands.map((band, index) => {
                     const active = index === ageIndex
                     return (
@@ -225,7 +297,7 @@ function ResultHeatmapPage() {
                         type="button"
                         onClick={() => setAgeIndex(index)}
                         className={cn(
-                          "h-10 rounded-xl border px-3 text-body-14-medium transition-colors",
+                          "h-10 rounded-xl border px-4 text-body-14-medium transition-colors",
                           active
                             ? "border-border-focus bg-card text-text-link"
                             : "border-border-soft bg-surface-muted text-text-muted hover:bg-card"
@@ -235,106 +307,6 @@ function ResultHeatmapPage() {
                       </button>
                     )
                   })}
-                </div>
-              </div>
-
-              <div ref={canvasRef} className="grid gap-3">
-                <div className="grid grid-cols-4 overflow-hidden rounded-xl border border-border-soft bg-card">
-                  {modeOptions.map((item) => {
-                    const active = item.value === mode
-                    return (
-                      <button
-                        key={item.value}
-                        type="button"
-                        onClick={() => setMode(item.value)}
-                        className={cn(
-                          "relative flex h-10 items-center justify-center gap-2 px-3 text-body-14-medium transition-colors",
-                          active ? "text-text-strong" : "text-text-subtle hover:text-text-secondary"
-                        )}
-                      >
-                        {item.icon}
-                        {item.label}
-                        <span
-                          className={cn(
-                            "absolute inset-x-4 bottom-0 h-0.5 rounded-full bg-border-focus transition-transform",
-                            active ? "scale-x-100" : "scale-x-0"
-                          )}
-                          aria-hidden="true"
-                        />
-                      </button>
-                    )
-                  })}
-                </div>
-
-                <HeatmapCanvas
-                  screenshotUrl={selectedPage.screenshotUrl}
-                  points={points}
-                  markers={selectedPage.markers}
-                  activeMarkerLabel={activeMarkerLabel}
-                />
-
-                <RangeSlider
-                  value={ageIndex}
-                  min={0}
-                  max={heatmapAgeBands.length - 1}
-                  step={1}
-                  color="rgba(151, 166, 227, 0.7)"
-                  startLabel={heatmapAgeBands[0]}
-                  endLabel={heatmapAgeBands[heatmapAgeBands.length - 1]}
-                  labelClassName="text-caption-12-medium text-text-muted"
-                  tooltipFormatter={(value) => heatmapAgeBands[value] ?? ""}
-                  onChange={setAgeIndex}
-                />
-              </div>
-
-              <div className="grid content-start gap-3">
-                <div className="flex items-center justify-between gap-2">
-                  <p className="text-body-14-medium text-text-body">치명적 결함</p>
-                  <CommonButton
-                    size="sm"
-                    variant="secondary"
-                    className="h-8 rounded-xl border border-border-soft-2 bg-card text-text-secondary hover:bg-surface-hover"
-                    disabled
-                  >
-                    전체보기
-                  </CommonButton>
-                </div>
-
-                <div className="grid gap-2">
-                  {selectedPage.defects.map((defect, index) => (
-                    <Card key={defect.id} className="rounded-2xl border border-border-strong bg-card shadow-none">
-                      <CardContent className="grid gap-2 px-4 py-3">
-                        <button
-                          type="button"
-                          className="flex items-start justify-between gap-3 text-left"
-                          onClick={() => {
-                            const label = stripCodeToLabel(defect.code)
-                            setActiveMarkerLabel(label)
-                            canvasRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
-                          }}
-                        >
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-2">
-                              <span className="grid size-7 place-items-center rounded-xl bg-danger-surface text-danger-text">
-                                <AlertTriangle className="size-4" />
-                              </span>
-                              <p className="truncate text-body-14-medium text-text-body">
-                                {defect.code} {defect.title}
-                              </p>
-                            </div>
-                            <p className="mt-1 text-caption-12-regular text-text-subtle">{defect.description}</p>
-                          </div>
-                          <StatusBadge variant={index === 0 ? "high" : index === 1 ? "medium" : "low"} size="sm">
-                            {index === 0 ? "높음" : index === 1 ? "중간" : "낮음"}
-                          </StatusBadge>
-                        </button>
-
-                        <p className="text-caption-12-medium text-text-link">
-                          영향받은 사용자 : {defect.impactedUsers.toLocaleString()} 명
-                        </p>
-                      </CardContent>
-                    </Card>
-                  ))}
                 </div>
               </div>
             </div>

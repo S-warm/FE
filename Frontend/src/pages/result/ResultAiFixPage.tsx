@@ -1,23 +1,15 @@
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 
-import { ChevronDown, Sparkles, TrendingUp } from "lucide-react"
+import { Sparkles, TrendingUp } from "lucide-react"
 
 import { StatusBadge } from "@/components/atoms"
+import { ResultPageSidePanel } from "@/components/sections/result/page-side-panel"
 import { Card, CardContent } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 import { aiFixPagesMock, defaultAiFixId, defaultAiFixPageId } from "@/mocks/result-ai-fix.mock"
 import type { AiFixItem, AiFixPage } from "@/mocks/result-ai-fix.mock"
-
-function PagePreview({ label }: { label: string }) {
-  return (
-    <div className="relative overflow-hidden rounded-xl border border-border-strong bg-gradient-to-br from-brand-subtle via-card to-surface-subtle">
-      <div className="aspect-[16/10] w-full" />
-      <div className="absolute inset-0 grid place-items-center">
-        <p className="rounded-full bg-card/85 px-3 py-1 text-caption-12-medium text-text-secondary shadow-sm">{label}</p>
-      </div>
-    </div>
-  )
-}
+import { resultPagesMock } from "@/mocks/result-pages.mock"
+import { useResultPageParam } from "@/lib/result-page-param"
 
 function CodePanel({
   title,
@@ -52,9 +44,15 @@ function severityLabel(severity: AiFixItem["severity"]) {
 }
 
 function ResultAiFixPage() {
-  const [selectedPageId, setSelectedPageId] = useState<string>(defaultAiFixPageId)
+  const { selectedPageId, setSelectedPageId } = useResultPageParam()
   const [expandedPageId, setExpandedPageId] = useState<string>(defaultAiFixPageId)
   const [selectedFixId, setSelectedFixId] = useState<string>(defaultAiFixId)
+
+  useEffect(() => {
+    setExpandedPageId(selectedPageId)
+    const nextFixId = aiFixPagesMock.find((item) => item.id === selectedPageId)?.fixes[0]?.id
+    if (nextFixId) setSelectedFixId(nextFixId)
+  }, [selectedPageId])
 
   const selectedPage: AiFixPage = aiFixPagesMock.find((page) => page.id === selectedPageId) ?? aiFixPagesMock[0]
 
@@ -62,48 +60,34 @@ function ResultAiFixPage() {
     selectedPage.fixes.find((fix) => fix.id === selectedFixId) ?? selectedPage.fixes[0]
 
   const fixes = useMemo(() => selectedPage.fixes, [selectedPage])
+  const sidePages = useMemo(
+    () =>
+      resultPagesMock.map((page) => {
+        const fixCount = aiFixPagesMock.find((item) => item.id === page.id)?.fixes.length ?? 0
+        return {
+          id: page.id,
+          name: page.name,
+          screenshotUrl: page.screenshotUrl,
+          metaText: `${fixCount}건 수정 제안`,
+        }
+      }),
+    []
+  )
 
   return (
     <div className="grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
-      <Card className="h-fit rounded-2xl border border-border-strong bg-card shadow-none">
-        <CardContent className="grid gap-4 px-4 py-5">
-          <div className="grid gap-3">
-            <p className="text-caption-12-medium text-text-muted">페이지</p>
-            <div className="grid gap-2">
-              {aiFixPagesMock.map((page) => {
-                const expanded = expandedPageId === page.id
-                const isSelected = selectedPageId === page.id
-                return (
-                  <div key={page.id} className="rounded-2xl border border-border-soft bg-surface-subtle">
-                    <button
-                      type="button"
-                      className={cn(
-                        "flex w-full items-center justify-between gap-2 rounded-2xl px-3 py-2 text-body-14-medium transition-colors",
-                        isSelected ? "text-text-strong" : "text-text-muted hover:text-text-secondary"
-                      )}
-                      onClick={() => {
-                        setSelectedPageId(page.id)
-                        setExpandedPageId(page.id)
-                        setSelectedFixId(page.fixes[0]?.id ?? selectedFixId)
-                      }}
-                    >
-                      <span className="truncate">{page.name}</span>
-                      <ChevronDown className={cn("size-4 transition-transform", expanded ? "rotate-180" : "")} />
-                    </button>
-
-                    {expanded ? (
-                      <div className="grid gap-2 px-3 pb-3">
-                        <PagePreview label={page.name} />
-                        <p className="text-caption-12-regular text-text-subtle">{page.fixes.length}건 수정 제안</p>
-                      </div>
-                    ) : null}
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <ResultPageSidePanel
+        pages={sidePages}
+        selectedPageId={selectedPageId}
+        expandedPageId={expandedPageId}
+        onSelectPage={(pageId) => {
+          const nextFixId = aiFixPagesMock.find((item) => item.id === pageId)?.fixes[0]?.id
+          setSelectedPageId(pageId)
+          setSelectedFixId(nextFixId ?? selectedFixId)
+          setExpandedPageId(pageId)
+        }}
+        onExpandPage={setExpandedPageId}
+      />
 
       <div className="grid gap-4">
         <Card className="rounded-2xl border border-border-strong bg-card shadow-none">
@@ -121,7 +105,7 @@ function ResultAiFixPage() {
 
             <div className="grid gap-3">
               <p className="text-caption-12-medium text-text-muted">수정 할 이슈 선택</p>
-              <div className="flex gap-3 overflow-x-auto pb-1">
+              <div className="grid gap-3 md:grid-cols-3">
                 {fixes.map((fix) => {
                   const active = fix.id === selectedFixId
                   return (
@@ -130,7 +114,7 @@ function ResultAiFixPage() {
                       type="button"
                       onClick={() => setSelectedFixId(fix.id)}
                       className={cn(
-                        "min-w-[260px] rounded-2xl border p-4 text-left transition-colors",
+                        "rounded-2xl border p-4 text-left transition-colors",
                         active
                           ? "border-border-focus bg-card"
                           : "border-border-soft bg-surface-subtle hover:bg-card"

@@ -1,7 +1,5 @@
 import mockScreenshot from "@/assets/mocks/mock-page-screenshot.svg"
 
-export type HeatmapDevice = "desktop" | "mobile"
-export type HeatmapView = "heatmap" | "journey"
 export type HeatmapMode = "click" | "move" | "scroll" | "attention"
 
 export type HeatmapAgeBand = "10대" | "20대" | "30대" | "40대" | "50대" | "60대" | "70대" | "80대"
@@ -166,4 +164,3 @@ export const heatmapPagesMock: HeatmapPageMock[] = [
 ]
 
 export const defaultHeatmapPageId = heatmapPagesMock[0]?.id ?? "login"
-

@@ -32,6 +32,7 @@ function ResultLayoutPage() {
   const simulation = recentSimulations.find((item) => item.id === simulationId) ?? recentSimulations[0]
   const resolvedId = simulation?.id ?? "unknown"
   const location = useLocation()
+  const search = location.search
 
   return (
     <AuthLayout
@@ -90,7 +91,7 @@ function ResultLayoutPage() {
                 return (
                   <NavLink
                     key={tab.value}
-                    to={`/result/${resolvedId}/${tab.value}`}
+                    to={{ pathname: `/result/${resolvedId}/${tab.value}`, search }}
                     className={({ isActive }) =>
                       cn(
                         "relative flex h-11 items-center justify-center gap-2 rounded-xl border border-transparent px-4 text-body-14-medium text-text-subtle transition-colors after:absolute after:inset-x-4 after:bottom-1 after:h-0.5 after:rounded-full after:bg-border-focus after:origin-left after:scale-x-0 after:transition-transform after:duration-200 hover:after:scale-x-100",

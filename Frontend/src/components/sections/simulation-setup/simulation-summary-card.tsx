@@ -34,12 +34,18 @@ function SummaryRow({
 }
 
 function SimulationSummaryCard({
+  projectTitle,
+  targetUrl,
+  startedAtLabel,
   personaCount,
   digitalLiteracy,
   ageRatios,
   successCondition,
   className,
 }: {
+  projectTitle: string
+  targetUrl: string
+  startedAtLabel: string
   personaCount: number
   digitalLiteracy: DigitalLiteracyLevel
   ageRatios: Array<{ label: string; value: number }>
@@ -49,6 +55,16 @@ function SimulationSummaryCard({
   return (
     <Card className={cn("rounded-2xl border border-[#c7d2ea] bg-[#f8faff] shadow-none", className)}>
       <CardContent className="flex flex-col gap-3 px-4 py-3 text-left">
+        <div className="grid gap-2 rounded-xl border border-[#eef0f5] bg-white/70 px-3 py-2">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-body-14-medium font-semibold text-[#2f3950]">
+              {projectTitle.trim() || "프로젝트 제목을 입력하세요"}
+            </p>
+            <p className="text-caption-12-regular text-[#33415e]">{startedAtLabel}</p>
+          </div>
+          <p className="text-caption-12-regular text-[#33415e]">{targetUrl.trim() || "타겟 URL을 입력하세요"}</p>
+        </div>
+
         <SummaryRow title="페르소나 횟수" value={`총 ${personaCount.toLocaleString()}회 시뮬레이션`} />
         <div className="h-px bg-[#eef0f5]" />
         <SummaryRow title="디지털 리터러시" value={literacyLabelMap[digitalLiteracy]} />

@@ -249,9 +249,6 @@ function ResultHeatmapPage() {
           <CardContent className="grid gap-4 px-6 py-5">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex flex-wrap items-center gap-2">
-                <p className="text-caption-12-regular text-text-subtle">페이지</p>
-                <p className="text-body-14-medium text-text-body">{selectedPage.name}</p>
-                <span className="mx-2 h-4 w-px bg-border-soft" aria-hidden="true" />
                 <p className="text-caption-12-regular text-text-subtle">연령대</p>
                 <p className="text-body-14-medium text-text-body">{selectedAge}</p>
               </div>

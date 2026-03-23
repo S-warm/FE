@@ -33,7 +33,7 @@ function ResultPageSidePanel({
         {topSlot ? <div>{topSlot}</div> : null}
 
         <div className="grid gap-2">
-          <p className="text-caption-12-medium text-text-muted">{title}</p>
+          <p className="text-caption-12-medium text-text-secondary">{title}</p>
           <div className="grid gap-2">
             {pages.map((page) => {
               const expanded = expandedPageId === page.id
@@ -44,7 +44,7 @@ function ResultPageSidePanel({
                     type="button"
                     className={cn(
                       "flex w-full items-center justify-between gap-2 rounded-2xl px-3 py-2 text-body-14-medium transition-colors",
-                      isSelected ? "text-text-strong" : "text-text-muted hover:text-text-secondary"
+                      isSelected ? "text-text-strong" : "text-text-secondary hover:text-text-strong"
                     )}
                     onClick={() => {
                       onSelectPage(page.id)
@@ -82,4 +82,3 @@ function ResultPageSidePanel({
 }
 
 export { ResultPageSidePanel }
-

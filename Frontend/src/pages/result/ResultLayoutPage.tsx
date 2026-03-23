@@ -10,6 +10,7 @@ import { AuthLayout } from "@/layouts/AuthLayout"
 import { cn } from "@/lib/utils"
 import { motion } from "@/lib/motion"
 import { recentSimulations } from "@/mocks/simulation.mock"
+import { formatRelativeTime } from "@/utils/format-relative-time"
 
 const tabs = [
   { value: "overview", label: "개요", icon: LayoutDashboard },
@@ -37,7 +38,7 @@ function ResultLayoutPage() {
 
   return (
     <AuthLayout
-      mainClassName="items-start justify-start overflow-hidden pb-0"
+      mainClassName="items-start justify-start pb-0"
       headerLeft={<BrandingHeader compact showTagline={false} align="left" className="origin-left scale-150" />}
     >
       <section className="grid w-full gap-4 pt-2 animate-in fade-in-0 duration-300 ease-out">
@@ -50,7 +51,7 @@ function ResultLayoutPage() {
                     <p className="truncate text-body-16-medium text-foreground">{simulation?.title ?? "-"}</p>
                     <button
                       type="button"
-                      className="grid size-7 shrink-0 place-items-center rounded-lg text-text-subtle hover:bg-surface-hover hover:text-text-secondary"
+                      className="grid size-7 shrink-0 place-items-center rounded-lg text-text-muted hover:bg-surface-hover hover:text-text-secondary"
                       aria-label="시뮬레이션 이름 수정"
                     >
                       <Pencil className="size-4" />
@@ -58,7 +59,13 @@ function ResultLayoutPage() {
                   </div>
                 </MetaRow>
                 <MetaRow label="생성일">
-                  <p className="text-body-16-regular text-text-muted">{simulation?.createdAt ?? "-"}</p>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="text-body-16-medium text-text-secondary">
+                      {formatRelativeTime(simulation?.createdAt ?? "-")}
+                    </p>
+                    <span className="h-4 w-px bg-border-soft" aria-hidden="true" />
+                    <p className="text-body-16-regular text-text-muted">{simulation?.createdAt ?? "-"}</p>
+                  </div>
                 </MetaRow>
               </div>
 
@@ -95,7 +102,7 @@ function ResultLayoutPage() {
                     to={{ pathname: `/result/${resolvedId}/${tab.value}`, search }}
                     className={({ isActive }) =>
                       cn(
-                        "relative flex h-11 items-center justify-center gap-2 rounded-xl border border-transparent px-4 text-body-14-medium text-text-subtle transition-colors after:absolute after:inset-x-4 after:bottom-1 after:h-0.5 after:rounded-full after:bg-border-focus after:origin-left after:scale-x-0 after:transition-transform after:duration-200 hover:after:scale-x-100",
+                        "relative flex h-11 items-center justify-center gap-2 rounded-xl border border-transparent px-4 text-body-14-medium text-text-muted transition-colors after:absolute after:inset-x-4 after:bottom-1 after:h-0.5 after:rounded-full after:bg-border-focus after:origin-left after:scale-x-0 after:transition-transform after:duration-200 hover:after:scale-x-100",
                         isActive
                           ? "bg-card text-text-strong after:scale-x-100 md:rounded-none"
                           : "hover:bg-surface-hover-2 hover:text-text-secondary"

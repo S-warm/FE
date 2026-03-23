@@ -9,9 +9,9 @@ const statusBadgeVariants = cva(
   {
     variants: {
       variant: {
-        high: "border-destructive/30 bg-destructive/10 text-destructive",
-        medium: "border-accent bg-accent text-accent-foreground",
-        low: "border-secondary bg-secondary text-secondary-foreground",
+        high: "border-critical-accent/40 bg-danger-surface text-critical-text",
+        medium: "border-moderate-accent/50 bg-warning-surface text-moderate-text",
+        low: "border-border-soft bg-surface-muted text-text-secondary",
       },
       size: {
         sm: "h-5 px-2 text-[11px]",

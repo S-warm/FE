@@ -95,18 +95,13 @@ function ResultAiFixPage() {
         <Card className={cn("rounded-2xl border border-border-strong bg-card shadow-none", motion.card)}>
           <CardContent className="grid gap-4 px-6 py-5">
             <div className="flex flex-wrap items-center gap-2">
-              <p className="text-caption-12-regular text-text-subtle">페이지</p>
-              <p className="text-body-14-medium text-text-body">{selectedPage.name}</p>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2">
               <Sparkles className="size-4 text-text-link" />
               <p className="text-body-14-medium text-text-body">AI 생성 수정 사항</p>
               <p className="text-caption-12-regular text-text-subtle">감지된 접근성 및 UX 이슈에 대한 자동화된 코드 솔루션</p>
             </div>
 
             <div className="grid gap-3">
-              <p className="text-caption-12-medium text-text-muted">수정 할 이슈 선택</p>
+              <p className="text-caption-12-medium text-text-secondary">수정 할 이슈 선택</p>
               <div className="grid gap-3 md:grid-cols-3">
                 {fixes.map((fix) => {
                   const active = fix.id === selectedFixId
@@ -156,7 +151,7 @@ function ResultAiFixPage() {
             </div>
 
             <div className="rounded-2xl border border-border-subtle bg-card px-4 py-3">
-              <p className="text-caption-12-medium text-text-muted">{selectedFix.changeSummaryTitle}</p>
+              <p className="text-caption-12-medium text-text-secondary">{selectedFix.changeSummaryTitle}</p>
               <p className="mt-2 text-caption-12-regular leading-relaxed text-text-body">{selectedFix.changeSummaryBody}</p>
             </div>
           </CardContent>

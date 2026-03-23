@@ -20,10 +20,10 @@ function SummaryRow({
 }) {
   return (
     <div className="grid gap-1.5 text-left">
-      <p className="text-body-14-medium font-semibold text-[#2f3950]">{title}</p>
+      <p className="text-body-14-medium font-semibold text-text-body">{title}</p>
       <p
         className={cn(
-          "rounded-lg bg-[#f1f3f9] px-3 py-2 text-caption-12-regular leading-5 text-[#33415e]",
+          "rounded-xl bg-surface-muted px-3 py-2 text-caption-12-regular leading-5 text-text-secondary",
           scrollable && "h-[56px] overflow-y-auto overscroll-contain"
         )}
       >
@@ -53,36 +53,36 @@ function SimulationSummaryCard({
   className?: string
 }) {
   return (
-    <Card className={cn("rounded-2xl border border-[#c7d2ea] bg-[#f8faff] shadow-none", className)}>
+    <Card className={cn("rounded-2xl border border-border-strong bg-surface-subtle shadow-none", className)}>
       <CardContent className="flex flex-col gap-3 px-4 py-3 text-left">
-        <div className="grid gap-2 rounded-xl border border-[#eef0f5] bg-white/70 px-3 py-2">
+        <div className="grid gap-2 rounded-xl border border-border-subtle bg-card/70 px-3 py-2">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className="text-body-14-medium font-semibold text-[#2f3950]">
+            <p className="text-body-14-medium font-semibold text-text-body">
               {projectTitle.trim() || "프로젝트 제목을 입력하세요"}
             </p>
-            <p className="text-caption-12-regular text-[#33415e]">{startedAtLabel}</p>
+            <p className="text-caption-12-regular text-text-muted">{startedAtLabel}</p>
           </div>
-          <p className="text-caption-12-regular text-[#33415e]">{targetUrl.trim() || "타겟 URL을 입력하세요"}</p>
+          <p className="text-caption-12-regular text-text-muted">{targetUrl.trim() || "타겟 URL을 입력하세요"}</p>
         </div>
 
         <SummaryRow title="페르소나 횟수" value={`총 ${personaCount.toLocaleString()}회 시뮬레이션`} />
-        <div className="h-px bg-[#eef0f5]" />
+        <div className="h-px bg-border-subtle" />
         <SummaryRow title="디지털 리터러시" value={literacyLabelMap[digitalLiteracy]} />
-        <div className="h-px bg-[#eef0f5]" />
+        <div className="h-px bg-border-subtle" />
         <SummaryRow
           title="연령별 투입 비율"
           value={ageRatios.map((item) => `${item.label} ${item.value}%`).join("  ")}
         />
-        <div className="h-px bg-[#eef0f5]" />
+        <div className="h-px bg-border-subtle" />
         <SummaryRow
           title="성공조건"
           value={successCondition.trim() || "가입 완료 또는 구매 완료를 목표로 설정합니다."}
           scrollable
         />
-        <div className="h-px bg-[#eef0f5]" />
+        <div className="h-px bg-border-subtle" />
         <div className="grid gap-2 text-left">
-          <p className="text-body-14-medium font-semibold text-[#2f3950]">소요 시간 / 소요 토큰</p>
-          <p className="text-caption-12-regular leading-5 text-[#33415e]">약 1시간 소요 / 100 Token 예상</p>
+          <p className="text-body-14-medium font-semibold text-text-body">소요 시간 / 소요 토큰</p>
+          <p className="text-caption-12-regular leading-5 text-text-secondary">약 1시간 소요 / 100 Token 예상</p>
         </div>
       </CardContent>
     </Card>

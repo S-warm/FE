@@ -81,7 +81,7 @@ function ResultOverviewPage() {
           <CardContent className="px-6 py-5">
             <HorizontalBarChart
               data={progressData.map((item) => ({ ...item, score: Math.min(100, item.score + 15) }))}
-              barColor="#9b9b9b"
+              barColor="var(--color-neutral-500)"
               emptyDescription="시뮬레이션을 시작하면 전환 패널 데이터가 표시됩니다."
             />
           </CardContent>

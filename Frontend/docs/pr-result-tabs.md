@@ -38,7 +38,7 @@
   - `Frontend/src/mocks/result-ai-fix.mock.ts`
   - `Frontend/src/mocks/result-heatmap.mock.ts`
 - 더미 스크린샷 이미지
-  - `Frontend/src/assets/mocks/mock-page-screenshot.svg`
+  - `Frontend/src/assets/mocks/mock-page-screenshot-photo.svg`
 
 ## 문서
 - 탭별 작업 내용 정리

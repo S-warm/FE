@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 
-import { AlertTriangle, Eye, MousePointerClick, Route, ScrollText } from "lucide-react"
+import { AlertTriangle } from "lucide-react"
 
 import { CommonButton, StatusBadge } from "@/components/atoms"
 import { RangeSlider } from "@/components/forms"
@@ -9,16 +9,9 @@ import { Card, CardContent } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 import { motion } from "@/lib/motion"
 import { defaultHeatmapPageId, heatmapAgeBands, heatmapPagesMock } from "@/mocks/result-heatmap.mock"
-import type { HeatmapAgeBand, HeatmapMode, HeatmapPageMock, HeatmapPoint } from "@/mocks/result-heatmap.mock"
+import type { HeatmapAgeBand, HeatmapPageMock, HeatmapPoint, HeatmapTargetRegion } from "@/mocks/result-heatmap.mock"
 import { resultPagesMock } from "@/mocks/result-pages.mock"
 import { useResultPageParam } from "@/lib/result-page-param"
-
-const modeOptions: Array<{ value: HeatmapMode; label: string; icon: React.ReactNode }> = [
-  { value: "click", label: "클릭", icon: <MousePointerClick className="size-4" /> },
-  { value: "move", label: "이동", icon: <Route className="size-4" /> },
-  { value: "scroll", label: "스크롤", icon: <ScrollText className="size-4" /> },
-  { value: "attention", label: "주의", icon: <Eye className="size-4" /> },
-]
 
 function HeatDot({ point }: { point: HeatmapPoint }) {
   const alpha = Math.min(0.98, 0.35 + point.intensity * 0.65)
@@ -81,35 +74,118 @@ function HeatmapCanvas({
   points,
   markers,
   activeMarkerLabel,
+  targetRegion,
 }: {
   screenshotUrl: string
   points: HeatmapPoint[]
   markers: HeatmapPageMock["markers"]
   activeMarkerLabel?: string | null
+  targetRegion?: HeatmapTargetRegion
 }) {
+  const viewportRef = useRef<HTMLDivElement | null>(null)
+
+  const [imageAspect, setImageAspect] = useState<number>(1400 / 880)
+  const [viewportSize, setViewportSize] = useState<{ width: number; height: number }>({ width: 0, height: 0 })
+  const [baseSize, setBaseSize] = useState<{ width: number; height: number }>({ width: 0, height: 0 })
+
+  useEffect(() => {
+    if (!viewportRef.current) return
+    const element = viewportRef.current
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0]
+      if (!entry) return
+      const { width, height } = entry.contentRect
+      setViewportSize({ width, height })
+    })
+    observer.observe(element)
+    return () => observer.disconnect()
+  }, [])
+
+  useEffect(() => {
+    if (!viewportSize.width || !viewportSize.height || !Number.isFinite(imageAspect) || imageAspect <= 0) return
+    const padding = 24
+    const maxWidth = Math.max(0, viewportSize.width - padding * 2)
+    const maxHeight = Math.max(0, viewportSize.height - padding * 2)
+    let width = maxWidth
+    let height = width / imageAspect
+    if (height > maxHeight) {
+      height = maxHeight
+      width = height * imageAspect
+    }
+    setBaseSize({ width, height })
+  }, [viewportSize.width, viewportSize.height, imageAspect])
+
+  function clamp(value: number, min: number, max: number) {
+    return Math.min(max, Math.max(min, value))
+  }
+
+  const clipPath = useMemo(() => {
+    if (!targetRegion) return undefined
+    const top = clamp(targetRegion.y, 0, 100)
+    const left = clamp(targetRegion.x, 0, 100)
+    const bottom = clamp(100 - (targetRegion.y + targetRegion.height), 0, 100)
+    const right = clamp(100 - (targetRegion.x + targetRegion.width), 0, 100)
+    return `inset(${top}% ${right}% ${bottom}% ${left}%)`
+  }, [targetRegion])
+
   return (
     <div className="relative w-full overflow-hidden rounded-2xl border border-border-subtle bg-card h-[clamp(520px,65vh,860px)]">
-      <img
-        src={screenshotUrl}
-        alt="페이지 스크린샷"
-        loading="lazy"
-        decoding="async"
-        className="block h-full w-full object-cover"
-      />
-      <div className="pointer-events-none absolute inset-0">
-        {points.map((point) => (
-          <HeatDot key={point.id} point={point} />
-        ))}
-        {markers.map((marker) => (
-          <Marker
-            key={marker.id}
-            x={marker.x}
-            y={marker.y}
-            label={marker.label}
-            severity={marker.severity}
-            active={Boolean(activeMarkerLabel && marker.label === activeMarkerLabel)}
+      <div
+        ref={viewportRef}
+        className="grid h-full w-full place-items-center bg-surface-subtle p-6"
+      >
+        <div
+          className="relative overflow-hidden rounded-2xl border border-border-soft bg-card shadow-sm"
+          style={{ width: `${baseSize.width}px`, height: `${baseSize.height}px` }}
+        >
+          <img
+            src={screenshotUrl}
+            alt="페이지 스크린샷"
+            loading="lazy"
+            decoding="async"
+            className="block h-full w-full object-cover"
+            onLoad={(event) => {
+              const img = event.currentTarget
+              if (img.naturalWidth && img.naturalHeight) {
+                setImageAspect(img.naturalWidth / img.naturalHeight)
+              }
+            }}
           />
-        ))}
+
+          <div
+            className="pointer-events-none absolute inset-0"
+            style={{
+              clipPath,
+            }}
+          >
+            {points.map((point) => (
+              <HeatDot key={point.id} point={point} />
+            ))}
+            {markers.map((marker) => (
+              <Marker
+                key={marker.id}
+                x={marker.x}
+                y={marker.y}
+                label={marker.label}
+                severity={marker.severity}
+                active={Boolean(activeMarkerLabel && marker.label === activeMarkerLabel)}
+              />
+            ))}
+          </div>
+
+          {targetRegion ? (
+            <div
+              className="pointer-events-none absolute rounded-xl border border-border-focus/60 bg-text-link/5 ring-1 ring-border-focus/25"
+              style={{
+                left: `${targetRegion.x}%`,
+                top: `${targetRegion.y}%`,
+                width: `${targetRegion.width}%`,
+                height: `${targetRegion.height}%`,
+              }}
+              aria-hidden="true"
+            />
+          ) : null}
+        </div>
       </div>
     </div>
   )
@@ -122,7 +198,6 @@ function stripCodeToLabel(code: string) {
 function ResultHeatmapPage() {
   const { selectedPageId, setSelectedPageId } = useResultPageParam()
   const [expandedPageId, setExpandedPageId] = useState<string>(defaultHeatmapPageId)
-  const [mode, setMode] = useState<HeatmapMode>("attention")
   const [ageIndex, setAgeIndex] = useState<number>(2)
   const [activeMarkerLabel, setActiveMarkerLabel] = useState<string | null>(null)
   const canvasRef = useRef<HTMLDivElement | null>(null)
@@ -133,7 +208,7 @@ function ResultHeatmapPage() {
   )
   const selectedAge: HeatmapAgeBand = heatmapAgeBands[Math.min(heatmapAgeBands.length - 1, Math.max(0, ageIndex))] ?? "30대"
 
-  const points = selectedPage.pointsByMode[mode]
+  const points = selectedPage.pointsByMode.click
   const sidePages = useMemo(
     () =>
       resultPagesMock.map((page) => {
@@ -150,7 +225,7 @@ function ResultHeatmapPage() {
 
   useEffect(() => {
     setActiveMarkerLabel(null)
-  }, [selectedPageId, mode])
+  }, [selectedPageId])
 
   useEffect(() => {
     setExpandedPageId(selectedPageId)
@@ -197,33 +272,6 @@ function ResultHeatmapPage() {
             </div>
 
             <div ref={canvasRef} className="grid gap-3 rounded-2xl border border-border-subtle bg-surface-subtle p-4">
-              <div className="grid grid-cols-4 overflow-hidden rounded-xl border border-border-soft bg-card">
-                {modeOptions.map((item) => {
-                  const active = item.value === mode
-                  return (
-                    <button
-                      key={item.value}
-                      type="button"
-                      onClick={() => setMode(item.value)}
-                      className={cn(
-                        "relative flex h-10 items-center justify-center gap-2 px-3 text-body-14-medium transition-colors",
-                        active ? "text-text-strong" : "text-text-subtle hover:text-text-secondary"
-                      )}
-                    >
-                      {item.icon}
-                      {item.label}
-                      <span
-                        className={cn(
-                          "absolute inset-x-4 bottom-0 h-0.5 rounded-full bg-border-focus transition-transform",
-                          active ? "scale-x-100" : "scale-x-0"
-                        )}
-                        aria-hidden="true"
-                      />
-                    </button>
-                  )
-                })}
-              </div>
-
               <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start">
                 <div className="grid gap-3">
                   <HeatmapCanvas
@@ -231,6 +279,7 @@ function ResultHeatmapPage() {
                     points={points}
                     markers={selectedPage.markers}
                     activeMarkerLabel={activeMarkerLabel}
+                    targetRegion={selectedPage.targetRegion}
                   />
                 </div>
 
@@ -256,7 +305,6 @@ function ResultHeatmapPage() {
                             className="flex items-start justify-between gap-3 text-left"
                             onClick={() => {
                               const label = stripCodeToLabel(defect.code)
-                              setMode("attention")
                               setActiveMarkerLabel(label)
                               canvasRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
                             }}

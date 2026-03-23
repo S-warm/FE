@@ -1,4 +1,4 @@
-import mockScreenshot from "@/assets/mocks/mock-page-screenshot.svg"
+import mockScreenshot from "@/assets/mocks/mock-page-screenshot-photo.svg"
 
 export type HeatmapMode = "click" | "move" | "scroll" | "attention"
 
@@ -27,10 +27,18 @@ export interface HeatmapDefect {
   impactedUsers: number
 }
 
+export interface HeatmapTargetRegion {
+  x: number
+  y: number
+  width: number
+  height: number
+}
+
 export interface HeatmapPageMock {
   id: string
   name: string
   screenshotUrl: string
+  targetRegion?: HeatmapTargetRegion
   pointsByMode: Record<HeatmapMode, HeatmapPoint[]>
   markers: HeatmapMarker[]
   defects: HeatmapDefect[]
@@ -63,6 +71,7 @@ export const heatmapPagesMock: HeatmapPageMock[] = [
     id: "login",
     name: "로그인 페이지",
     screenshotUrl: mockScreenshot,
+    targetRegion: { x: 30, y: 20, width: 58, height: 42 },
     pointsByMode: {
       click: points(1),
       move: points(2),
@@ -102,6 +111,7 @@ export const heatmapPagesMock: HeatmapPageMock[] = [
     id: "main",
     name: "메인 페이지",
     screenshotUrl: mockScreenshot,
+    targetRegion: { x: 26, y: 18, width: 62, height: 46 },
     pointsByMode: {
       click: points(6),
       move: points(7),
@@ -123,6 +133,7 @@ export const heatmapPagesMock: HeatmapPageMock[] = [
     id: "signup",
     name: "회원가입 페이지",
     screenshotUrl: mockScreenshot,
+    targetRegion: { x: 28, y: 22, width: 60, height: 44 },
     pointsByMode: {
       click: points(11),
       move: points(12),
@@ -144,6 +155,7 @@ export const heatmapPagesMock: HeatmapPageMock[] = [
     id: "payment",
     name: "결제 페이지",
     screenshotUrl: mockScreenshot,
+    targetRegion: { x: 30, y: 26, width: 58, height: 44 },
     pointsByMode: {
       click: points(16),
       move: points(17),

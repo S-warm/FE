@@ -29,7 +29,7 @@
 
 ### 더미 데이터/에셋
 - `Frontend/src/mocks/result-heatmap.mock.ts`에 스크린샷 URL/좌표/결함 더미 데이터 중앙화
-- `Frontend/src/assets/mocks/mock-page-screenshot-photo.svg` 더미 스크린샷 이미지 추가
+- `Frontend/src/assets/mocks/example_site.png` 더미 스크린샷 이미지 추가
 - 특정 영역(타겟 DOM) 기반 렌더링을 가정한 `targetRegion(%)` 더미 데이터 추가
 
 ## 결과

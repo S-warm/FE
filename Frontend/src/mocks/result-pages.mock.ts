@@ -1,4 +1,4 @@
-import mockScreenshot from "@/assets/mocks/mock-page-screenshot-photo.svg"
+import mockScreenshot from "@/assets/mocks/example_site.png"
 
 export interface ResultPageSummary {
   id: string

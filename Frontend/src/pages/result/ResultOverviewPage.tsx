@@ -1,8 +1,13 @@
 import { AlertCircle, Clock, Flag, Users } from "lucide-react"
+import { useParams } from "react-router-dom"
 
 import { HorizontalBarChart } from "@/components/charts"
 import { Card, CardContent } from "@/components/ui/card"
+import { cn } from "@/lib/utils"
+import { motion } from "@/lib/motion"
 import { progressData } from "@/mocks/data-visualization.mock"
+import { recentSimulations } from "@/mocks/simulation.mock"
+import { formatRelativeTime } from "@/utils/format-relative-time"
 
 function MetricCard({
   title,
@@ -16,7 +21,12 @@ function MetricCard({
   icon: React.ReactNode
 }) {
   return (
-    <Card className="rounded-2xl border border-border-strong bg-card shadow-none transition-colors hover:border-border-strong-hover">
+    <Card
+      className={cn(
+        "rounded-2xl border border-border-strong bg-card shadow-none transition-colors hover:border-border-strong-hover hover:-translate-y-0.5 hover:shadow-sm",
+        motion.card
+      )}
+    >
       <CardContent className="grid gap-3 px-5 py-4">
         <div className="flex items-center justify-between text-text-subtle">
           <div className="flex items-center gap-2">
@@ -37,8 +47,27 @@ function MetricCard({
 }
 
 function ResultOverviewPage() {
+  const { simulationId } = useParams()
+  const simulation = recentSimulations.find((item) => item.id === simulationId) ?? recentSimulations[0]
+
   return (
     <div className="grid gap-5">
+      <div
+        className={cn(
+          "flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border-strong bg-card px-6 py-4 shadow-none",
+          motion.card
+        )}
+      >
+        <div className="min-w-0">
+          <p className="truncate text-subtitle-18-semibold text-text-strong">{simulation?.title ?? "-"}</p>
+          <p className="mt-1 text-caption-12-regular text-text-muted">{simulation?.siteName ?? "-"}</p>
+        </div>
+        <div className="text-right">
+          <p className="text-caption-12-medium text-text-secondary">{formatRelativeTime(simulation?.createdAt ?? "-")}</p>
+          <p className="mt-1 text-caption-12-regular text-text-muted">{simulation?.createdAt ?? "-"}</p>
+        </div>
+      </div>
+
       <section className="grid gap-3 md:grid-cols-4">
         <MetricCard title="전환률" value="28%" description="업계 평균 이하 (45%)" icon={<Flag className="size-4" />} />
         <MetricCard title="테스트 된 AI 사용자" value="1,000" description="모든 페르소나 포함" icon={<Users className="size-4" />} />
@@ -53,6 +82,7 @@ function ResultOverviewPage() {
             <HorizontalBarChart
               data={progressData.map((item) => ({ ...item, score: Math.min(100, item.score + 15) }))}
               barColor="#9b9b9b"
+              emptyDescription="시뮬레이션을 시작하면 전환 패널 데이터가 표시됩니다."
             />
           </CardContent>
         </Card>

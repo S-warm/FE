@@ -48,7 +48,7 @@ function IssueCard({ issue }: { issue: ResultIssue }) {
                 {issue.tags.map((tag) => (
                   <span
                     key={tag}
-                    className="inline-flex h-5 items-center rounded-full border border-border-soft bg-surface-subtle px-2 text-[11px] font-medium text-text-muted"
+                    className="inline-flex h-5 items-center rounded-full border border-border-soft bg-surface-subtle px-2 text-[11px] font-medium text-text-secondary"
                   >
                     {tag}
                   </span>
@@ -177,12 +177,7 @@ function ResultIssuesPage() {
             <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
               <div className="grid gap-2">
                 <div className="flex flex-wrap items-center gap-2">
-                  <p className="text-caption-12-regular text-text-subtle">페이지</p>
-                  <p className="text-body-14-medium text-text-body">{selectedPage.name}</p>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-2">
-                  <p className="text-caption-12-medium text-text-muted">필터링</p>
+                  <p className="text-caption-12-medium text-text-secondary">필터링</p>
                   <div className="flex flex-wrap gap-2">
                     {filterCategories.map((category) => {
                       const selected = activeFilters.includes(category)
@@ -230,6 +225,7 @@ function ResultIssuesPage() {
                     value: item.value,
                     color: item.color,
                   }))}
+                  emptyDescription="시뮬레이션을 시작하면 이슈 카테고리 분류가 표시됩니다."
                 />
                 <div className="grid gap-2">
                   {donut.map((item) => (
@@ -242,7 +238,7 @@ function ResultIssuesPage() {
                         />
                         <p className="text-caption-12-regular text-text-muted">{item.name}</p>
                       </div>
-                      <p className="text-caption-12-medium text-text-muted">
+                      <p className="text-caption-12-medium text-text-secondary">
                         {item.count}건 / {item.percent}%
                       </p>
                     </div>

@@ -14,8 +14,17 @@ import {
 import { TextArea, TextField } from "@/components/atoms"
 import { AuthLayout } from "@/layouts/AuthLayout"
 import routes from "@/constants/routes"
+import { useSimulationDraftStore } from "@/store/simulation-draft.store"
+import { formatRelativeTime } from "@/utils/format-relative-time"
 
 function SimulationSetupPage() {
+  const targetUrl = useSimulationDraftStore((state) => state.targetUrl)
+  const setTargetUrl = useSimulationDraftStore((state) => state.setTargetUrl)
+  const projectTitle = useSimulationDraftStore((state) => state.projectTitle)
+  const setProjectTitle = useSimulationDraftStore((state) => state.setProjectTitle)
+  const startedAt = useSimulationDraftStore((state) => state.startedAt)
+  const setStartedAt = useSimulationDraftStore((state) => state.setStartedAt)
+
   const [personaCount, setPersonaCount] = useState(500)
   const [digitalLiteracy, setDigitalLiteracy] = useState<DigitalLiteracyLevel>("low")
   const [successCondition, setSuccessCondition] = useState("")
@@ -141,14 +150,29 @@ function SimulationSetupPage() {
     >
       <section className="grid w-full max-w-[1560px] gap-16 pb-0 pt-2 sm:grid-cols-[760px_400px]">
         <div className="grid gap-5">
-          <section className="grid w-full max-w-[760px] gap-3">
-            <SetupSectionTitle title="타겟 URL" description="시뮬레이션이 시작되는 페이지" />
-            <TextField
-              placeholder="URL 링크를 입력하세요."
-              variant="default"
-              size="lg"
-              className="h-11 rounded-xl border-border-soft-2 bg-card px-4 text-text-secondary placeholder:text-text-muted"
-            />
+          <section className="grid w-full max-w-[760px] gap-4 md:grid-cols-2">
+            <div className="grid gap-3">
+              <SetupSectionTitle title="타겟 URL" description="시뮬레이션이 시작되는 페이지" />
+              <TextField
+                placeholder="URL 링크를 입력하세요."
+                value={targetUrl}
+                onChange={(event) => setTargetUrl(event.target.value)}
+                variant="default"
+                size="lg"
+                className="h-11 rounded-xl border-border-soft-2 bg-card px-4 text-text-secondary placeholder:text-text-muted"
+              />
+            </div>
+            <div className="grid gap-3">
+              <SetupSectionTitle title="프로젝트 제목" description="결과 리포트에 표시될 이름" />
+              <TextField
+                placeholder="예: A - Mall 구매 플로우"
+                value={projectTitle}
+                onChange={(event) => setProjectTitle(event.target.value)}
+                variant="default"
+                size="lg"
+                className="h-11 rounded-xl border-border-soft-2 bg-card px-4 text-text-secondary placeholder:text-text-muted"
+              />
+            </div>
           </section>
 
           <section className="grid w-full max-w-[760px] gap-4 md:grid-cols-[minmax(0,1.50fr)_minmax(0,0.70fr)]">
@@ -178,19 +202,31 @@ function SimulationSetupPage() {
             <div className="grid gap-3">
               <div className="flex items-center justify-between gap-3">
                 <SetupSectionTitle title="연령별 투입 비율" description="페르소나 연령대 비율" />
-                <button
-                  type="button"
-                  className="rounded-xl bg-[var(--color-primary-50)] px-4 py-2 text-body-14-medium text-[var(--color-primary-main)]"
-                  onClick={() =>
-                    setAgeRatios({
-                      teen: 34,
-                      fifty: 33,
-                      eighty: 33,
-                    })
-                  }
-                >
-                  균등배치
-                </button>
+                <div className="flex items-center gap-2">
+                  <span
+                    className={[
+                      "inline-flex h-9 items-center rounded-xl border px-3 text-body-14-medium",
+                      ageRatios.teen + ageRatios.fifty + ageRatios.eighty === 100
+                        ? "border-border-soft bg-surface-subtle text-text-secondary"
+                        : "border-critical-accent/40 bg-danger-surface text-critical-text",
+                    ].join(" ")}
+                  >
+                    합계 {ageRatios.teen + ageRatios.fifty + ageRatios.eighty}%
+                  </span>
+                  <button
+                    type="button"
+                    className="rounded-xl bg-[var(--color-primary-50)] px-4 py-2 text-body-14-medium text-[var(--color-primary-main)]"
+                    onClick={() =>
+                      setAgeRatios({
+                        teen: 34,
+                        fifty: 33,
+                        eighty: 33,
+                      })
+                    }
+                  >
+                    균등배치
+                  </button>
+                </div>
               </div>
 
               <div className="grid gap-3">
@@ -296,6 +332,9 @@ function SimulationSetupPage() {
         <div className="grid min-h-[760px] self-stretch grid-rows-[auto_minmax(0,1fr)_auto] gap-5 pt-px">
           <SetupSectionTitle title="시뮬레이션 요약" />
           <SimulationSummaryCard
+            projectTitle={projectTitle}
+            targetUrl={targetUrl}
+            startedAtLabel={startedAt ? `${formatRelativeTime(startedAt)} · ${startedAt.slice(0, 10)}` : "-"}
             personaCount={personaCount}
             digitalLiteracy={digitalLiteracy}
             ageRatios={summaryAgeRatios}
@@ -305,7 +344,10 @@ function SimulationSetupPage() {
           <button
             type="button"
             className="flex h-[72px] w-full items-center justify-center self-end rounded-2xl bg-brand-subtle px-4 text-subtitle-18-semibold text-text-link transition-colors hover:bg-brand-subtle-hover"
-            onClick={() => navigate(routes.simulationProcess)}
+            onClick={() => {
+              if (!startedAt) setStartedAt(new Date().toISOString())
+              navigate(routes.simulationProcess)
+            }}
           >
             시뮬레이션 시작
           </button>

@@ -1,4 +1,4 @@
-import mockScreenshot from "@/assets/mocks/mock-page-screenshot.svg"
+import mockScreenshot from "@/assets/mocks/mock-page-screenshot-photo.svg"
 
 export interface ResultPageSummary {
   id: string
@@ -14,4 +14,3 @@ export const resultPagesMock: ResultPageSummary[] = [
 ]
 
 export const defaultResultPageId = resultPagesMock[0]?.id ?? "login"
-

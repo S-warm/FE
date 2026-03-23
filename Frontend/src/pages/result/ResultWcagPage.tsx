@@ -193,7 +193,6 @@ function ResultWcagPage() {
 
   const summary = wcagResultMock
   const distributionTotal = useMemo(() => summary.distribution.reduce((acc, item) => acc + item.count, 0), [summary])
-  const selectedPageName = resultPagesMock.find((page) => page.id === selectedPageId)?.name ?? "로그인 페이지"
   const sidePages = useMemo(
     () =>
       resultPagesMock.map((page) => ({
@@ -218,11 +217,6 @@ function ResultWcagPage() {
       />
 
       <div className="grid gap-5">
-        <div className="flex flex-wrap items-center gap-2">
-          <p className="text-caption-12-regular text-text-subtle">페이지</p>
-          <p className="text-body-14-medium text-text-body">{selectedPageName}</p>
-        </div>
-
         <section className="grid gap-3 md:grid-cols-[240px_240px_minmax(0,1fr)]">
         <MetricCard
           title="준수 점수"

@@ -24,13 +24,13 @@
   - 페이지 목록(더미 4개: 로그인/메인/회원가입/결제) + 스크린샷 프리뷰
 - 우측 컨텐츠
   - 연령대 선택(버튼 리스트 + 하단 슬라이더 동기화)
-  - 모드 선택(클릭/이동/스크롤/주의)
   - 스크린샷 + 히트맵 오버레이(더미 좌표 기반)
   - 결함(치명적 결함) 리스트 + 영향 사용자 수 표시
 
 ### 더미 데이터/에셋
 - `Frontend/src/mocks/result-heatmap.mock.ts`에 스크린샷 URL/좌표/결함 더미 데이터 중앙화
-- `Frontend/src/assets/mocks/mock-page-screenshot.svg` 더미 스크린샷 이미지 추가
+- `Frontend/src/assets/mocks/mock-page-screenshot-photo.svg` 더미 스크린샷 이미지 추가
+- 특정 영역(타겟 DOM) 기반 렌더링을 가정한 `targetRegion(%)` 더미 데이터 추가
 
 ## 결과
 - 결과 화면의 `heatmap` 탭을 실제 화면으로 확인 가능
@@ -39,3 +39,6 @@
 
 ## 참고
 - 히트맵 포인트/마커/결함은 모두 더미이며, URL 스크린샷/로그 스키마 확정 후 교체 예정
+- 스크린샷 교체 시 권장 위치
+  - `Frontend/public/...` (URL로 바로 참조하는 정적 파일)
+  - `Frontend/src/assets/...` (번들에 포함되는 에셋 import)

@@ -2,12 +2,15 @@ import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxi
 
 import type { ProgressDatum } from "@/mocks/data-visualization.mock"
 import { chartTooltipContentStyle } from "@/components/charts/chart-tooltip"
+import { EmptyState } from "@/components/sections/empty-state"
 
 interface HorizontalBarChartProps {
   data: ProgressDatum[]
   heightClassName?: string
   barColor?: string
   barSize?: number
+  emptyTitle?: string
+  emptyDescription?: string
 }
 
 function HorizontalBarChart({
@@ -15,7 +18,17 @@ function HorizontalBarChart({
   heightClassName = "h-[240px]",
   barColor = "var(--color-primary-main)",
   barSize,
+  emptyTitle,
+  emptyDescription,
 }: HorizontalBarChartProps) {
+  if (!data.length) {
+    return (
+      <div className={`${heightClassName} w-full`}>
+        <EmptyState title={emptyTitle} description={emptyDescription} className="h-full" />
+      </div>
+    )
+  }
+
   return (
     <div className={`${heightClassName} w-full`}>
       <ResponsiveContainer width="100%" height="100%">
@@ -36,7 +49,14 @@ function HorizontalBarChart({
           <Tooltip
             contentStyle={chartTooltipContentStyle}
           />
-          <Bar dataKey="score" fill={barColor} radius={[8, 8, 8, 8]} barSize={barSize} />
+          <Bar
+            dataKey="score"
+            fill={barColor}
+            radius={[8, 8, 8, 8]}
+            barSize={barSize}
+            isAnimationActive
+            animationDuration={450}
+          />
         </BarChart>
       </ResponsiveContainer>
     </div>

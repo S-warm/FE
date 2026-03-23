@@ -1,5 +1,4 @@
 import type { ReactNode } from "react"
-import { useEffect, useState } from "react"
 import { matchPath, useLocation, useNavigate } from "react-router-dom"
 
 import { Menu } from "lucide-react"
@@ -9,6 +8,8 @@ import { ProfileMenu } from "@/components/layout/profile-menu"
 import { useAuthStore } from "@/store/auth.store"
 import { buildResultOverviewPath } from "@/constants/routes"
 import { recentSimulations } from "@/mocks/simulation.mock"
+import { formatRelativeTime } from "@/utils/format-relative-time"
+import { useLayoutStore } from "@/store/layout.store"
 
 function AuthSidebar({
   open,
@@ -28,7 +29,12 @@ function AuthSidebar({
         open ? "w-72 sm:w-80" : "w-16 sm:w-[4.5rem]",
       ].join(" ")}
     >
-      <div className="flex h-16 items-center gap-2 px-3">
+      <div
+        className={cn(
+          "flex h-16 items-center",
+          open ? "justify-start px-3" : "justify-center px-0"
+        )}
+      >
         <button
           type="button"
           aria-label={open ? "사이드바 접기" : "사이드바 펼치기"}
@@ -45,7 +51,7 @@ function AuthSidebar({
           open ? "opacity-100 translate-x-0" : "pointer-events-none opacity-0 -translate-x-2",
         ].join(" ")}
       >
-        <p className="text-caption-12-regular text-muted-foreground">최근 프로젝트</p>
+        <p className="text-caption-12-regular text-text-muted">최근 프로젝트</p>
         <div className="mt-3 grid gap-3">
           {recentSimulations.map((item) => {
             const isActive = item.id === activeSimulationId
@@ -62,7 +68,9 @@ function AuthSidebar({
                 onClick={() => onSelectSimulation(item.id)}
               >
                 <p className="text-body-14-medium text-foreground">{item.siteName}</p>
-                <p className="mt-1 text-caption-12-regular text-muted-foreground">{item.createdAt}</p>
+                <p className="mt-1 text-caption-12-regular text-text-muted">
+                  {formatRelativeTime(item.createdAt)} · {item.createdAt}
+                </p>
               </button>
             )
           })}
@@ -83,30 +91,30 @@ function AuthLayout({
   mainClassName?: string
   headerLeft?: ReactNode
 }) {
-  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const sidebarOpen = useLayoutStore((state) => state.sidebarOpen)
+  const toggleSidebar = useLayoutStore((state) => state.toggleSidebar)
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
   const initials = useAuthStore((state) => state.user?.initials ?? "CN")
   const navigate = useNavigate()
   const location = useLocation()
   const resultMatch = matchPath("/result/:simulationId/*", location.pathname)
+  const overviewMatch = matchPath("/result/:simulationId/overview", location.pathname)
   const activeSimulationId = resultMatch?.params?.simulationId
-
-  useEffect(() => {
-    setSidebarOpen(false)
-  }, [isAuthenticated])
+  const disablePaddingTransition = Boolean(overviewMatch)
 
   return (
     <div className="relative min-h-screen bg-background text-foreground">
       <AuthSidebar
         open={sidebarOpen}
         activeSimulationId={activeSimulationId}
-        onToggle={() => setSidebarOpen((prev) => !prev)}
+        onToggle={toggleSidebar}
         onSelectSimulation={(simulationId) => navigate(buildResultOverviewPath(simulationId))}
       />
 
       <div
         className={cn(
-          "flex min-h-screen flex-col transition-[padding-left] duration-300",
+          "flex min-h-screen flex-col",
+          disablePaddingTransition ? "" : "transition-[padding-left] duration-300",
           sidebarOpen ? "pl-72 sm:pl-80" : "pl-16 sm:pl-[4.5rem]"
         )}
       >

@@ -1,97 +1,208 @@
-import { memo, useEffect, useMemo, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 
-import { AlertTriangle } from "lucide-react"
+import { Info } from "lucide-react"
 
-import { CommonButton, StatusBadge } from "@/components/atoms"
-import { RangeSlider } from "@/components/forms"
 import { ResultPageSidePanel } from "@/components/sections/result/page-side-panel"
 import { Card, CardContent } from "@/components/ui/card"
+import { Slider } from "@/components/ui/slider"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
 import { motion } from "@/lib/motion"
-import { defaultHeatmapPageId, heatmapAgeBands, heatmapPagesMock } from "@/mocks/result-heatmap.mock"
-import type { HeatmapAgeBand, HeatmapPageMock, HeatmapPoint, HeatmapTargetRegion } from "@/mocks/result-heatmap.mock"
-import { resultPagesMock } from "@/mocks/result-pages.mock"
 import { useResultPageParam } from "@/lib/result-page-param"
+import { heatmapAgeBands, defaultHeatmapPageId } from "@/mocks/result-heatmap.mock"
+import type { HeatmapAgeBand } from "@/mocks/result-heatmap.mock"
+import { heatmapPageLogsMock, heatmapTimelineMaxMsMock } from "@/mocks/result-heatmap-log.mock"
+import type { HeatmapAgentSession, HeatmapLogEvent, HeatmapPageLogMock } from "@/mocks/result-heatmap-log.mock"
+import { resultPagesMock } from "@/mocks/result-pages.mock"
 
-const HeatDot = memo(function HeatDot({ point }: { point: HeatmapPoint }) {
-  const alpha = Math.min(0.98, 0.35 + point.intensity * 0.65)
-  const size = 84 + point.intensity * 140
-  const hue = Math.round(55 - point.intensity * 55) // yellow -> red
-  const core = `hsla(${hue}, 96%, 58%, ${alpha})`
-  const mid = `hsla(${Math.max(26, hue)}, 96%, 55%, ${Math.min(0.7, alpha * 0.7)})`
+type HeatmapVizMode = "success" | "errors" | "path"
 
-  return (
-    <div
-      className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 rounded-full blur-lg"
-      style={{
-        left: `${point.x}%`,
-        top: `${point.y}%`,
-        width: `${size}px`,
-        height: `${size}px`,
-        background: `radial-gradient(circle, ${core} 0%, ${mid} 42%, transparent 72%)`,
-      }}
-      aria-hidden="true"
-    />
-  )
-})
+const vizTabs: Array<{ value: HeatmapVizMode; label: string }> = [
+  { value: "success", label: "전체 성공률" },
+  { value: "errors", label: "오류 집중 구간" },
+  { value: "path", label: "테스터 동선" },
+]
 
-const Marker = memo(function Marker({
-  x,
-  y,
-  label,
-  severity,
-  active,
-  onHoverChange,
-}: {
+const GRID_COLS = 64
+const GRID_ROWS = 40
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value))
+}
+
+function formatMs(ms: number) {
+  const total = Math.max(0, Math.floor(ms / 1000))
+  const minutes = Math.floor(total / 60)
+  const seconds = total % 60
+  return `${minutes}:${seconds.toString().padStart(2, "0")}`
+}
+
+function selectEventsByMode(mode: HeatmapVizMode, events: HeatmapLogEvent[]) {
+  if (mode === "success") return events.filter((event) => !event.block)
+  if (mode === "errors") return events.filter((event) => event.block || Boolean(event.errorKind))
+  return events
+}
+
+function cellKey(col: number, row: number) {
+  return row * GRID_COLS + col
+}
+
+interface CellAgg {
+  eventCount: number
+  dwellSum: number
+  retriesSum: number
+  blockCount: number
+  agentIds: Set<string>
+  blockAgents: Set<string>
+}
+
+interface HeatmapHotspot {
+  id: string
+  rank: number
   x: number
   y: number
-  label: string
-  severity: "critical" | "warning"
-  active: boolean
-  onHoverChange?: (label: string | null) => void
-}) {
-  const isCritical = severity === "critical"
-  return (
-    <div
-      className={cn(
-        "absolute -translate-x-1/2 -translate-y-1/2 rounded-full border px-2 py-1 text-[12px] font-semibold shadow-sm transition-transform",
-        isCritical
-          ? "border-critical-accent/40 bg-danger-surface text-critical-text"
-          : "border-moderate-accent/50 bg-warning-surface text-moderate-text",
-        active ? "scale-110 ring-4 ring-text-link/25 animate-pulse" : "scale-100"
-      )}
-      style={{ left: `${x}%`, top: `${y}%` }}
-      aria-label={`마커 ${label}`}
-      onMouseEnter={() => onHoverChange?.(label)}
-      onMouseLeave={() => onHoverChange?.(null)}
-    >
-      <span className="inline-flex items-center gap-1">
-        <AlertTriangle className="size-3.5" />
-        {label}
-      </span>
-    </div>
-  )
-})
+  score: number
+  impactedAgents: number
+  avgRetries: number
+  blockRate: number
+}
 
-function HeatmapCanvas({
+function analyzeSessions({
+  sessions,
+  mode,
+  timeStartMs,
+  timeEndMs,
+}: {
+  sessions: HeatmapAgentSession[]
+  mode: HeatmapVizMode
+  timeStartMs: number
+  timeEndMs: number
+}) {
+  const cellAgg = new Map<number, CellAgg>()
+  let totalEventCount = 0
+  let totalDwellSum = 0
+  const totalAgents = new Set<string>()
+
+  for (const session of sessions) {
+    totalAgents.add(session.agentId)
+    const events = selectEventsByMode(mode, session.events)
+    for (const event of events) {
+      if (event.tMs < timeStartMs || event.tMs > timeEndMs) continue
+      if (!Number.isFinite(event.x) || !Number.isFinite(event.y)) continue
+
+      const col = clamp(Math.floor(event.x * GRID_COLS), 0, GRID_COLS - 1)
+      const row = clamp(Math.floor(event.y * GRID_ROWS), 0, GRID_ROWS - 1)
+      const key = cellKey(col, row)
+
+      const agg = cellAgg.get(key) ?? {
+        eventCount: 0,
+        dwellSum: 0,
+        retriesSum: 0,
+        blockCount: 0,
+        agentIds: new Set<string>(),
+        blockAgents: new Set<string>(),
+      }
+
+      agg.eventCount += 1
+      agg.dwellSum += event.dwellMs
+      agg.retriesSum += event.retries
+      if (event.block) {
+        agg.blockCount += 1
+        agg.blockAgents.add(session.agentId)
+      }
+      agg.agentIds.add(session.agentId)
+      cellAgg.set(key, agg)
+
+      totalEventCount += 1
+      totalDwellSum += event.dwellMs
+    }
+  }
+
+  const avgDwellMs = totalEventCount > 0 ? totalDwellSum / totalEventCount : 0
+  const heat = new Float32Array(GRID_COLS * GRID_ROWS)
+
+  for (const [key, agg] of cellAgg.entries()) {
+    const perEventRetries = agg.eventCount > 0 ? agg.retriesSum / agg.eventCount : 0
+    const perEventDwell = agg.eventCount > 0 ? agg.dwellSum / agg.eventCount : 0
+    const repeatFactor = clamp(perEventRetries / 3, 0, 1)
+    const dwellFactor = avgDwellMs > 0 ? clamp(perEventDwell / avgDwellMs / 2, 0, 1) : 0
+    const blockFactor = agg.agentIds.size > 0 ? clamp(agg.blockAgents.size / agg.agentIds.size, 0, 1) : 0
+
+    const score =
+      mode === "errors"
+        ? clamp(blockFactor * 0.85 + repeatFactor * 0.15, 0, 1)
+        : clamp(blockFactor * 0.7 + repeatFactor * 0.35 + dwellFactor * 0.25, 0, 1)
+
+    heat[key] = score
+  }
+
+  const hotspots: HeatmapHotspot[] = Array.from(cellAgg.entries())
+    .map(([key, agg]) => {
+      const col = key % GRID_COLS
+      const row = Math.floor(key / GRID_COLS)
+      const impactedAgents = agg.agentIds.size
+      const blockRate = impactedAgents > 0 ? agg.blockAgents.size / impactedAgents : 0
+      const avgRetries = agg.eventCount > 0 ? agg.retriesSum / agg.eventCount : 0
+      const score = heat[key] ?? 0
+      return {
+        id: `hs-${col}-${row}`,
+        rank: 0,
+        x: (col + 0.5) / GRID_COLS,
+        y: (row + 0.5) / GRID_ROWS,
+        score,
+        impactedAgents,
+        avgRetries,
+        blockRate,
+      }
+    })
+    .filter((spot) => spot.impactedAgents >= 8 && spot.score >= 0.35)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 6)
+    .map((spot, index) => ({ ...spot, rank: index + 1 }))
+
+  return {
+    heat,
+    hotspots,
+    totals: {
+      agentCount: totalAgents.size,
+      eventCount: totalEventCount,
+    },
+  }
+}
+
+function scoreToFill(score: number) {
+  const clamped = clamp(score, 0, 1)
+  const hue = 120 - 120 * clamped
+  const alpha = 0.04 + clamped * 0.55
+  return `hsla(${hue}, 92%, 54%, ${alpha})`
+}
+
+function HeatmapLogCanvas({
   screenshotUrl,
-  points,
-  markers,
-  activeMarkerLabel,
-  targetRegion,
-  onMarkerHoverChange,
+  sessions,
+  mode,
+  timeStartMs,
+  timeEndMs,
 }: {
   screenshotUrl: string
-  points: HeatmapPoint[]
-  markers: HeatmapPageMock["markers"]
-  activeMarkerLabel?: string | null
-  targetRegion?: HeatmapTargetRegion
-  onMarkerHoverChange?: (label: string | null) => void
+  sessions: HeatmapAgentSession[]
+  mode: HeatmapVizMode
+  timeStartMs: number
+  timeEndMs: number
 }) {
   const viewportRef = useRef<HTMLDivElement | null>(null)
+  const canvasRef = useRef<HTMLCanvasElement | null>(null)
 
   const [imageAspect, setImageAspect] = useState<number>(1400 / 880)
   const [viewportSize, setViewportSize] = useState<{ width: number; height: number }>({ width: 0, height: 0 })
+  const [hoveredHotspotId, setHoveredHotspotId] = useState<string | null>(null)
+  const [openHotspotId, setOpenHotspotId] = useState<string | null>(null)
 
   useEffect(() => {
     if (!viewportRef.current) return
@@ -123,25 +234,84 @@ function HeatmapCanvas({
     return { width, height }
   }, [viewportSize.width, viewportSize.height, imageAspect])
 
-  function clamp(value: number, min: number, max: number) {
-    return Math.min(max, Math.max(min, value))
-  }
+  const analysis = useMemo(
+    () => analyzeSessions({ sessions, mode, timeStartMs, timeEndMs }),
+    [sessions, mode, timeStartMs, timeEndMs]
+  )
 
-  const clipPath = useMemo(() => {
-    if (!targetRegion) return undefined
-    const top = clamp(targetRegion.y, 0, 100)
-    const left = clamp(targetRegion.x, 0, 100)
-    const bottom = clamp(100 - (targetRegion.y + targetRegion.height), 0, 100)
-    const right = clamp(100 - (targetRegion.x + targetRegion.width), 0, 100)
-    return `inset(${top}% ${right}% ${bottom}% ${left}%)`
-  }, [targetRegion])
+  const hoveredHotspot = useMemo(
+    () => analysis.hotspots.find((spot) => spot.id === hoveredHotspotId) ?? null,
+    [analysis.hotspots, hoveredHotspotId]
+  )
+
+  const openHotspot = useMemo(
+    () => analysis.hotspots.find((spot) => spot.id === openHotspotId) ?? null,
+    [analysis.hotspots, openHotspotId]
+  )
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas || !baseSize) return
+    const context = canvas.getContext("2d")
+    if (!context) return
+
+    const dpr = window.devicePixelRatio || 1
+    const width = baseSize.width
+    const height = baseSize.height
+
+    canvas.width = Math.floor(width * dpr)
+    canvas.height = Math.floor(height * dpr)
+    canvas.style.width = `${width}px`
+    canvas.style.height = `${height}px`
+
+    context.setTransform(dpr, 0, 0, dpr, 0, 0)
+    context.clearRect(0, 0, width, height)
+
+    if (mode !== "path") {
+      const cellW = width / GRID_COLS
+      const cellH = height / GRID_ROWS
+
+      context.save()
+      context.filter = "blur(16px)"
+      for (let row = 0; row < GRID_ROWS; row += 1) {
+        for (let col = 0; col < GRID_COLS; col += 1) {
+          const score = analysis.heat[cellKey(col, row)] ?? 0
+          if (score <= 0) continue
+          context.fillStyle = scoreToFill(score)
+          context.fillRect(col * cellW, row * cellH, cellW, cellH)
+        }
+      }
+      context.restore()
+    }
+
+    if (mode === "path") {
+      context.save()
+      context.lineWidth = 2
+      context.lineCap = "round"
+      context.lineJoin = "round"
+      context.strokeStyle = "rgba(47, 90, 232, 0.22)"
+
+      for (const session of sessions) {
+        const points = session.events
+          .filter((event) => event.tMs >= timeStartMs && event.tMs <= timeEndMs)
+          .sort((a, b) => a.tMs - b.tMs)
+
+        if (points.length < 2) continue
+        context.beginPath()
+        context.moveTo(points[0]!.x * width, points[0]!.y * height)
+        for (let index = 1; index < points.length; index += 1) {
+          const event = points[index]!
+          context.lineTo(event.x * width, event.y * height)
+        }
+        context.stroke()
+      }
+      context.restore()
+    }
+  }, [analysis.heat, baseSize, mode, sessions, timeStartMs, timeEndMs])
 
   return (
-    <div className="relative w-full overflow-hidden rounded-2xl border border-border-subtle bg-card h-[clamp(520px,65vh,860px)]">
-      <div
-        ref={viewportRef}
-        className="grid h-full w-full place-items-center bg-surface-subtle p-6"
-      >
+    <div className="relative w-full overflow-hidden rounded-2xl border border-border-subtle bg-card h-[clamp(560px,72vh,920px)]">
+      <div ref={viewportRef} className="grid h-full w-full place-items-center bg-surface-subtle p-6">
         <div
           className="relative overflow-hidden rounded-2xl border border-border-soft bg-card shadow-sm"
           style={baseSize ? { width: `${baseSize.width}px`, height: `${baseSize.height}px` } : undefined}
@@ -160,92 +330,124 @@ function HeatmapCanvas({
             }}
           />
 
-          <div
-            className="pointer-events-none absolute inset-0"
-            style={{
-              clipPath,
-            }}
-          >
-            {points.map((point) => (
-              <HeatDot key={point.id} point={point} />
-            ))}
-          </div>
+          <canvas ref={canvasRef} className="pointer-events-none absolute inset-0" aria-hidden="true" />
 
           <div className="absolute inset-0">
-            {markers.map((marker) => (
-              <Marker
-                key={marker.id}
-                x={marker.x}
-                y={marker.y}
-                label={marker.label}
-                severity={marker.severity}
-                active={Boolean(activeMarkerLabel && marker.label === activeMarkerLabel)}
-                onHoverChange={onMarkerHoverChange}
-              />
+            {analysis.hotspots.map((spot) => (
+              <button
+                key={spot.id}
+                type="button"
+                className={cn(
+                  "absolute -translate-x-1/2 -translate-y-1/2 rounded-full border px-2 py-1 text-[12px] font-semibold shadow-sm transition-transform",
+                  spot.score >= 0.75
+                    ? "border-critical-accent/40 bg-danger-surface text-critical-text"
+                    : spot.score >= 0.55
+                      ? "border-moderate-accent/50 bg-warning-surface text-moderate-text"
+                      : "border-border-soft-2 bg-surface-muted text-text-secondary",
+                  hoveredHotspotId === spot.id ? "scale-110 ring-4 ring-text-link/20" : "scale-100"
+                )}
+                style={{ left: `${spot.x * 100}%`, top: `${spot.y * 100}%` }}
+                onMouseEnter={() => setHoveredHotspotId(spot.id)}
+                onMouseLeave={() => setHoveredHotspotId(null)}
+                onClick={() => setOpenHotspotId(spot.id)}
+                aria-label={`핫스팟 ${spot.rank}`}
+              >
+                {spot.rank}
+              </button>
             ))}
           </div>
 
-          {targetRegion ? (
+          {hoveredHotspot ? (
             <div
-              className="pointer-events-none absolute rounded-xl border border-border-focus/60 bg-text-link/5 ring-1 ring-border-focus/25"
+              className="pointer-events-none absolute z-10 w-[240px] -translate-x-1/2 rounded-2xl border border-border-soft bg-card/95 p-3 shadow-sm backdrop-blur-sm"
               style={{
-                left: `${targetRegion.x}%`,
-                top: `${targetRegion.y}%`,
-                width: `${targetRegion.width}%`,
-                height: `${targetRegion.height}%`,
+                left: `${hoveredHotspot.x * 100}%`,
+                top: `${hoveredHotspot.y * 100}%`,
+                marginTop: "-48px",
               }}
               aria-hidden="true"
-            />
+            >
+              <p className="text-caption-12-medium text-text-secondary">핫스팟 #{hoveredHotspot.rank}</p>
+              <div className="mt-2 grid gap-1 text-caption-12-regular text-text-muted">
+                <p>영향 받은 테스터: {hoveredHotspot.impactedAgents.toLocaleString()}명</p>
+                <p>평균 반복 횟수: {hoveredHotspot.avgRetries.toFixed(1)}회</p>
+                <p>이탈/블락율: {(hoveredHotspot.blockRate * 100).toFixed(0)}%</p>
+              </div>
+            </div>
           ) : null}
+
+          <Dialog open={Boolean(openHotspot)} onOpenChange={(open) => (!open ? setOpenHotspotId(null) : null)}>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>핫스팟 상세</DialogTitle>
+                <DialogDescription>선택한 지점에서 AI 테스터가 헤매거나 블락된 패턴을 요약합니다.</DialogDescription>
+              </DialogHeader>
+              {openHotspot ? (
+                <div className="grid gap-2 rounded-2xl border border-border-soft bg-surface-subtle p-4">
+                  <div className="flex items-center justify-between">
+                    <p className="text-body-14-medium text-text-body">핫스팟 #{openHotspot.rank}</p>
+                    <span className="text-caption-12-medium text-text-muted">Score {openHotspot.score.toFixed(2)}</span>
+                  </div>
+                  <div className="grid gap-1 text-caption-12-regular text-text-muted">
+                    <p>영향 받은 테스터: {openHotspot.impactedAgents.toLocaleString()}명</p>
+                    <p>평균 반복 횟수: {openHotspot.avgRetries.toFixed(1)}회</p>
+                    <p>이탈/블락율: {(openHotspot.blockRate * 100).toFixed(0)}%</p>
+                    <p className="pt-1 text-caption-12-regular text-text-subtle">
+                      팁: 타임라인을 줄이거나 누적 모드를 켜서 병목이 생기는 구간을 먼저 좁혀보세요.
+                    </p>
+                  </div>
+                </div>
+              ) : null}
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
     </div>
   )
 }
 
-function stripCodeToLabel(code: string) {
-  return code.replaceAll("\"", "").trim()
-}
-
 function ResultHeatmapPage() {
   const { selectedPageId, setSelectedPageId } = useResultPageParam()
   const [expandedPageId, setExpandedPageId] = useState<string>(defaultHeatmapPageId)
-  const [ageIndex, setAgeIndex] = useState<number>(2)
-  const [selectedMarkerLabel, setSelectedMarkerLabel] = useState<string | null>(null)
-  const [hoveredMarkerLabel, setHoveredMarkerLabel] = useState<string | null>(null)
-  const canvasRef = useRef<HTMLDivElement | null>(null)
+  const [mode, setMode] = useState<HeatmapVizMode>("errors")
+  const [ageFilter, setAgeFilter] = useState<HeatmapAgeBand | "all">("all")
+  const [isCumulative, setIsCumulative] = useState(true)
+  const [timeEndMs, setTimeEndMs] = useState(() => Math.round(heatmapTimelineMaxMsMock * 0.65))
+  const [timeRange, setTimeRange] = useState<[number, number]>(() => [
+    Math.round(heatmapTimelineMaxMsMock * 0.2),
+    Math.round(heatmapTimelineMaxMsMock * 0.65),
+  ])
 
-  const activeMarkerLabel = hoveredMarkerLabel ?? selectedMarkerLabel
+  const selectedLog: HeatmapPageLogMock =
+    heatmapPageLogsMock.find((page) => page.pageId === selectedPageId) ?? heatmapPageLogsMock[0]
 
-  const selectedPage = useMemo(
-    () => heatmapPagesMock.find((page) => page.id === selectedPageId) ?? heatmapPagesMock[0],
-    [selectedPageId]
-  )
-  const selectedAge: HeatmapAgeBand = heatmapAgeBands[Math.min(heatmapAgeBands.length - 1, Math.max(0, ageIndex))] ?? "30대"
-
-  const points = selectedPage.pointsByMode.click
   const sidePages = useMemo(
     () =>
       resultPagesMock.map((page) => {
-        const defectCount = heatmapPagesMock.find((item) => item.id === page.id)?.defects.length ?? 0
+        const log = heatmapPageLogsMock.find((item) => item.pageId === page.id)
+        const agentCount = log?.sessions.length ?? 0
         return {
           id: page.id,
           name: page.name,
           screenshotUrl: page.screenshotUrl,
-          metaText: `${defectCount}건 결함`,
+          metaText: `${agentCount.toLocaleString()}명 AI 로그`,
         }
       }),
     []
   )
 
   useEffect(() => {
-    setSelectedMarkerLabel(null)
-    setHoveredMarkerLabel(null)
-  }, [selectedPageId])
-
-  useEffect(() => {
     setExpandedPageId(selectedPageId)
   }, [selectedPageId])
+
+  const resolvedTimeStartMs = isCumulative ? 0 : Math.min(timeRange[0], timeRange[1])
+  const resolvedTimeEndMs = isCumulative ? timeEndMs : Math.max(timeRange[0], timeRange[1])
+
+  const filteredSessions = useMemo(() => {
+    if (!selectedLog) return []
+    if (ageFilter === "all") return selectedLog.sessions
+    return selectedLog.sessions.filter((session) => session.ageBand === ageFilter)
+  }, [ageFilter, selectedLog])
 
   return (
     <div className="grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
@@ -263,123 +465,156 @@ function ResultHeatmapPage() {
       <div className="grid gap-4">
         <Card className={cn("rounded-2xl border border-border-strong bg-card shadow-none", motion.card)}>
           <CardContent className="grid gap-4 px-6 py-5">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="flex flex-wrap items-center gap-2">
-                <p className="text-caption-12-regular text-text-subtle">연령대</p>
-                <p className="text-body-14-medium text-text-body">{selectedAge}</p>
+            <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
+              <div className="grid gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="text-body-14-medium text-text-body">AI 테스터 로그 기반 히트맵</p>
+                  <span className="inline-flex items-center gap-1 rounded-full border border-border-soft bg-surface-subtle px-2 py-1 text-caption-12-regular text-text-muted">
+                    <Info className="size-3.5" />
+                    정규화 좌표(0~1) + 타임 윈도우
+                  </span>
+                </div>
+                <p className="text-caption-12-regular text-text-subtle">
+                  클릭 수가 아니라 “헤맴/블락(Timeout·Console·Network)” 강도로 병목을 찾는 뷰입니다.
+                </p>
               </div>
 
-              <RangeSlider
-                className="w-full max-w-[520px] md:w-[380px]"
-                value={ageIndex}
-                min={0}
-                max={heatmapAgeBands.length - 1}
-                step={1}
-                ariaLabel="연령대 선택"
-                color="color-mix(in srgb, var(--color-primary-200) 70%, transparent)"
-                startLabel={heatmapAgeBands[0]}
-                endLabel={heatmapAgeBands[heatmapAgeBands.length - 1]}
-                labelClassName="text-caption-12-medium text-text-muted"
-                tooltipFormatter={(value) => heatmapAgeBands[value] ?? ""}
-                onChange={setAgeIndex}
-              />
+              <div className="flex flex-wrap items-center justify-end gap-2">
+                {vizTabs.map((tab) => {
+                  const active = tab.value === mode
+                  return (
+                    <button
+                      key={tab.value}
+                      type="button"
+                      onClick={() => setMode(tab.value)}
+                      className={cn(
+                        "h-9 rounded-xl border px-3 text-body-14-medium transition-colors",
+                        active
+                          ? "border-border-soft-2 bg-surface-muted text-text-strong hover:bg-surface-muted-hover"
+                          : "border-border-soft bg-surface-subtle text-text-muted hover:bg-surface-hover-2 hover:text-text-strong"
+                      )}
+                    >
+                      {tab.label}
+                    </button>
+                  )
+                })}
+              </div>
             </div>
 
-            <div ref={canvasRef} className="grid gap-3 rounded-2xl border border-border-subtle bg-surface-subtle p-4">
-              <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start">
-                <div className="grid gap-3">
-                  <HeatmapCanvas
-                    screenshotUrl={selectedPage.screenshotUrl}
-                    points={points}
-                    markers={selectedPage.markers}
-                    activeMarkerLabel={activeMarkerLabel}
-                    targetRegion={selectedPage.targetRegion}
-                    onMarkerHoverChange={setHoveredMarkerLabel}
-                  />
+            <div className="flex flex-wrap items-center gap-2 text-caption-12-regular text-text-muted">
+              <span className="inline-flex items-center gap-2 rounded-full border border-border-soft bg-surface-subtle px-3 py-1">
+                <span className="size-2 rounded-full bg-[hsla(120,92%,54%,0.7)]" aria-hidden="true" />
+                낮음
+              </span>
+              <span className="inline-flex items-center gap-2 rounded-full border border-border-soft bg-surface-subtle px-3 py-1">
+                <span className="size-2 rounded-full bg-[hsla(60,92%,54%,0.7)]" aria-hidden="true" />
+                보통
+              </span>
+              <span className="inline-flex items-center gap-2 rounded-full border border-border-soft bg-surface-subtle px-3 py-1">
+                <span className="size-2 rounded-full bg-[hsla(30,92%,54%,0.7)]" aria-hidden="true" />
+                높음
+              </span>
+              <span className="inline-flex items-center gap-2 rounded-full border border-border-soft bg-surface-subtle px-3 py-1">
+                <span className="size-2 rounded-full bg-[hsla(0,92%,54%,0.7)]" aria-hidden="true" />
+                치명적(블락)
+              </span>
+            </div>
+
+            <HeatmapLogCanvas
+              screenshotUrl={selectedLog.screenshotUrl}
+              sessions={filteredSessions}
+              mode={mode}
+              timeStartMs={resolvedTimeStartMs}
+              timeEndMs={resolvedTimeEndMs}
+            />
+
+            <div className="grid gap-4 rounded-2xl border border-border-subtle bg-surface-subtle p-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="grid gap-1">
+                  <p className="text-caption-12-medium text-text-secondary">연령대 필터</p>
+                  <p className="text-caption-12-regular text-text-muted">레이아웃이 달라도 상대 좌표(0~1)로 동일 기준 분석</p>
                 </div>
+                <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-border-soft bg-card px-3 py-2 text-caption-12-medium text-text-secondary">
+                  <input
+                    type="checkbox"
+                    checked={isCumulative}
+                    onChange={(event) => {
+                      const next = event.currentTarget.checked
+                      setIsCumulative(next)
+                      if (next) {
+                        setTimeEndMs(timeRange[1])
+                      } else {
+                        setTimeRange([0, timeEndMs])
+                      }
+                    }}
+                  />
+                  누적 보기
+                </label>
+              </div>
 
-                <section className="grid gap-3">
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="text-body-14-medium text-text-body">치명적 결함</p>
-                    <CommonButton
-                      size="sm"
-                      variant="secondary"
-                      className="h-8 rounded-xl border border-border-soft-2 bg-card text-text-secondary hover:bg-surface-hover"
-                      disabled
-                    >
-                      전체보기
-                    </CommonButton>
-                  </div>
-
-                  <div className="grid gap-2">
-                    {selectedPage.defects.map((defect, index) => (
-                      <Card
-                        key={defect.id}
-                        className={cn(
-                          "rounded-2xl border bg-card shadow-none transition-colors",
-                          activeMarkerLabel === stripCodeToLabel(defect.code) ? "border-border-focus/70" : "border-border-strong"
-                        )}
-                      >
-                        <CardContent className="grid gap-2 px-4 py-3">
-                          <button
-                            type="button"
-                            className="flex items-start justify-between gap-3 text-left"
-                            onMouseEnter={() => setHoveredMarkerLabel(stripCodeToLabel(defect.code))}
-                            onMouseLeave={() => setHoveredMarkerLabel(null)}
-                            onClick={() => {
-                              const label = stripCodeToLabel(defect.code)
-                              setSelectedMarkerLabel(label)
-                              canvasRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
-                            }}
-                          >
-                            <div className="min-w-0">
-                              <div className="flex items-center gap-2">
-                                <span className="grid size-7 place-items-center rounded-xl bg-danger-surface text-danger-text">
-                                  <AlertTriangle className="size-4" />
-                                </span>
-                                <p className="truncate text-body-14-medium text-text-body">
-                                  {defect.code} {defect.title}
-                                </p>
-                              </div>
-                              <p className="mt-1 text-caption-12-regular text-text-subtle">{defect.description}</p>
-                            </div>
-                            <StatusBadge variant={index === 0 ? "high" : index === 1 ? "medium" : "low"} size="sm">
-                              {index === 0 ? "높음" : index === 1 ? "중간" : "낮음"}
-                            </StatusBadge>
-                          </button>
-
-                          <p className="text-caption-12-medium text-text-link">
-                            영향받은 사용자 : {defect.impactedUsers.toLocaleString()} 명
-                          </p>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                </section>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setAgeFilter("all")}
+                  className={cn(
+                    "h-10 rounded-xl border px-4 text-body-14-medium transition-colors",
+                    ageFilter === "all"
+                      ? "border-border-soft-2 bg-surface-muted text-text-strong hover:bg-surface-muted-hover"
+                      : "border-border-soft bg-card text-text-muted hover:bg-surface-hover-2 hover:text-text-strong"
+                  )}
+                >
+                  전체
+                </button>
+                {heatmapAgeBands.map((band) => (
+                  <button
+                    key={band}
+                    type="button"
+                    onClick={() => setAgeFilter(band)}
+                    className={cn(
+                      "h-10 rounded-xl border px-4 text-body-14-medium transition-colors",
+                      ageFilter === band
+                        ? "border-border-soft-2 bg-surface-muted text-text-strong hover:bg-surface-muted-hover"
+                        : "border-border-soft bg-card text-text-muted hover:bg-surface-hover-2 hover:text-text-strong"
+                    )}
+                  >
+                    {band}
+                  </button>
+                ))}
               </div>
 
               <div className="grid gap-2">
-                <p className="text-caption-12-medium text-text-muted">연령대</p>
-                <div className="flex flex-wrap gap-2">
-                  {heatmapAgeBands.map((band, index) => {
-                    const active = index === ageIndex
-                    return (
-                      <button
-                        key={band}
-                        type="button"
-                        onClick={() => setAgeIndex(index)}
-                        className={cn(
-                          "h-10 rounded-xl border px-4 text-body-14-medium transition-colors",
-                          active
-                            ? "border-border-focus bg-card text-text-link"
-                            : "border-border-soft bg-surface-muted text-text-muted hover:bg-card"
-                        )}
-                      >
-                        {band}
-                      </button>
-                    )
-                  })}
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-caption-12-medium text-text-secondary">타임 윈도우</p>
+                  <p className="text-caption-12-regular text-text-muted">
+                    {formatMs(resolvedTimeStartMs)} ~ {formatMs(resolvedTimeEndMs)}
+                  </p>
                 </div>
+
+                {isCumulative ? (
+                  <Slider
+                    value={[resolvedTimeEndMs]}
+                    min={0}
+                    max={heatmapTimelineMaxMsMock}
+                    step={5000}
+                    onValueChange={(nextValue) => {
+                      const next = Array.isArray(nextValue) ? nextValue[0] : nextValue
+                      setTimeEndMs(clamp(next ?? resolvedTimeEndMs, 0, heatmapTimelineMaxMsMock))
+                    }}
+                  />
+                ) : (
+                  <Slider
+                    value={[resolvedTimeStartMs, resolvedTimeEndMs]}
+                    min={0}
+                    max={heatmapTimelineMaxMsMock}
+                    step={5000}
+                    onValueChange={(nextValue) => {
+                      if (!Array.isArray(nextValue) || nextValue.length < 2) return
+                      const start = clamp(nextValue[0] ?? 0, 0, heatmapTimelineMaxMsMock)
+                      const end = clamp(nextValue[1] ?? heatmapTimelineMaxMsMock, 0, heatmapTimelineMaxMsMock)
+                      setTimeRange([start, end])
+                    }}
+                  />
+                )}
               </div>
             </div>
           </CardContent>

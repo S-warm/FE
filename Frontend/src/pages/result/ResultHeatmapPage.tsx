@@ -155,7 +155,7 @@ function analyzeSessions({
 function scoreToFill(score: number) {
   const clamped = clamp(score, 0, 1)
   const hue = 46 - 46 * clamped // yellow -> red (errors-only)
-  const alpha = Math.min(0.95, 0.12 + clamped * 0.85)
+  const alpha = Math.min(0.7, 0.05 + clamped * 0.45)
   return `hsla(${hue}, 92%, 54%, ${alpha})`
 }
 
@@ -244,7 +244,7 @@ function HeatmapLogCanvas({
     const cellW = width / GRID_COLS
     const cellH = height / GRID_ROWS
 
-    const drawHeat = (blurPx: number, alphaScale: number) => {
+    const drawHeat = (blurPx: number, alphaScale: number, spreadScale: number) => {
       context.save()
       context.filter = `blur(${blurPx}px)`
       context.globalAlpha = clamp(overlayOpacity * alphaScale, 0, 1)
@@ -253,14 +253,16 @@ function HeatmapLogCanvas({
           const score = analysis.heat[cellKey(col, row)] ?? 0
           if (score <= 0) continue
           context.fillStyle = scoreToFill(score)
-          context.fillRect(col * cellW, row * cellH, cellW, cellH)
+          const spreadX = cellW * spreadScale
+          const spreadY = cellH * spreadScale
+          context.fillRect(col * cellW - spreadX / 2, row * cellH - spreadY / 2, cellW + spreadX, cellH + spreadY)
         }
       }
       context.restore()
     }
 
-    drawHeat(18, 0.8)
-    drawHeat(7, 1)
+    drawHeat(22, 0.55, 1.1)
+    drawHeat(10, 0.65, 0.7)
   }, [analysis.heat, baseSize, overlayOpacity])
 
   return (
@@ -275,7 +277,7 @@ function HeatmapLogCanvas({
             alt="페이지 스크린샷"
             loading="lazy"
             decoding="async"
-            className="block h-full w-full object-cover"
+            className="block h-full w-full object-cover opacity-80"
             onLoad={(event) => {
               const img = event.currentTarget
               if (img.naturalWidth && img.naturalHeight) {
@@ -364,7 +366,7 @@ function ResultHeatmapPage() {
   const { selectedPageId, setSelectedPageId } = useResultPageParam()
   const [expandedPageId, setExpandedPageId] = useState<string>(defaultHeatmapPageId)
   const [ageFilter, setAgeFilter] = useState<HeatmapAgeBand | "all">("all")
-  const [overlayOpacity, setOverlayOpacity] = useState(85)
+  const [overlayOpacity, setOverlayOpacity] = useState(60)
 
   const selectedLog: HeatmapPageLogMock =
     heatmapPageLogsMock.find((page) => page.pageId === selectedPageId) ?? heatmapPageLogsMock[0]

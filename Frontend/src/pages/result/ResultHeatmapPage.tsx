@@ -2,9 +2,9 @@ import { useEffect, useMemo, useRef, useState } from "react"
 
 import { Info } from "lucide-react"
 
+import { SettingSlider } from "@/components/forms/setting-slider"
 import { ResultPageSidePanel } from "@/components/sections/result/page-side-panel"
 import { Card, CardContent } from "@/components/ui/card"
-import { Slider } from "@/components/ui/slider"
 import {
   Dialog,
   DialogContent,
@@ -21,14 +21,6 @@ import { heatmapPageLogsMock, heatmapTimelineMaxMsMock } from "@/mocks/result-he
 import type { HeatmapAgentSession, HeatmapLogEvent, HeatmapPageLogMock } from "@/mocks/result-heatmap-log.mock"
 import { resultPagesMock } from "@/mocks/result-pages.mock"
 
-type HeatmapVizMode = "success" | "errors" | "path"
-
-const vizTabs: Array<{ value: HeatmapVizMode; label: string }> = [
-  { value: "success", label: "전체 성공률" },
-  { value: "errors", label: "오류 집중 구간" },
-  { value: "path", label: "테스터 동선" },
-]
-
 const GRID_COLS = 64
 const GRID_ROWS = 40
 
@@ -36,17 +28,8 @@ function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value))
 }
 
-function formatMs(ms: number) {
-  const total = Math.max(0, Math.floor(ms / 1000))
-  const minutes = Math.floor(total / 60)
-  const seconds = total % 60
-  return `${minutes}:${seconds.toString().padStart(2, "0")}`
-}
-
-function selectEventsByMode(mode: HeatmapVizMode, events: HeatmapLogEvent[]) {
-  if (mode === "success") return events.filter((event) => !event.block)
-  if (mode === "errors") return events.filter((event) => event.block || Boolean(event.errorKind))
-  return events
+function selectErrorEvents(events: HeatmapLogEvent[]) {
+  return events.filter((event) => event.block || Boolean(event.errorKind))
 }
 
 function cellKey(col: number, row: number) {
@@ -75,13 +58,9 @@ interface HeatmapHotspot {
 
 function analyzeSessions({
   sessions,
-  mode,
-  timeStartMs,
   timeEndMs,
 }: {
   sessions: HeatmapAgentSession[]
-  mode: HeatmapVizMode
-  timeStartMs: number
   timeEndMs: number
 }) {
   const cellAgg = new Map<number, CellAgg>()
@@ -91,9 +70,9 @@ function analyzeSessions({
 
   for (const session of sessions) {
     totalAgents.add(session.agentId)
-    const events = selectEventsByMode(mode, session.events)
+    const events = selectErrorEvents(session.events)
     for (const event of events) {
-      if (event.tMs < timeStartMs || event.tMs > timeEndMs) continue
+      if (event.tMs > timeEndMs) continue
       if (!Number.isFinite(event.x) || !Number.isFinite(event.y)) continue
 
       const col = clamp(Math.floor(event.x * GRID_COLS), 0, GRID_COLS - 1)
@@ -134,10 +113,7 @@ function analyzeSessions({
     const dwellFactor = avgDwellMs > 0 ? clamp(perEventDwell / avgDwellMs / 2, 0, 1) : 0
     const blockFactor = agg.agentIds.size > 0 ? clamp(agg.blockAgents.size / agg.agentIds.size, 0, 1) : 0
 
-    const score =
-      mode === "errors"
-        ? clamp(blockFactor * 0.85 + repeatFactor * 0.15, 0, 1)
-        : clamp(blockFactor * 0.7 + repeatFactor * 0.35 + dwellFactor * 0.25, 0, 1)
+    const score = clamp(blockFactor * 0.85 + repeatFactor * 0.15 + dwellFactor * 0.1, 0, 1)
 
     heat[key] = score
   }
@@ -186,15 +162,13 @@ function scoreToFill(score: number) {
 function HeatmapLogCanvas({
   screenshotUrl,
   sessions,
-  mode,
-  timeStartMs,
   timeEndMs,
+  overlayOpacity,
 }: {
   screenshotUrl: string
   sessions: HeatmapAgentSession[]
-  mode: HeatmapVizMode
-  timeStartMs: number
   timeEndMs: number
+  overlayOpacity: number
 }) {
   const viewportRef = useRef<HTMLDivElement | null>(null)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
@@ -235,8 +209,8 @@ function HeatmapLogCanvas({
   }, [viewportSize.width, viewportSize.height, imageAspect])
 
   const analysis = useMemo(
-    () => analyzeSessions({ sessions, mode, timeStartMs, timeEndMs }),
-    [sessions, mode, timeStartMs, timeEndMs]
+    () => analyzeSessions({ sessions, timeEndMs }),
+    [sessions, timeEndMs]
   )
 
   const hoveredHotspot = useMemo(
@@ -267,47 +241,22 @@ function HeatmapLogCanvas({
     context.setTransform(dpr, 0, 0, dpr, 0, 0)
     context.clearRect(0, 0, width, height)
 
-    if (mode !== "path") {
-      const cellW = width / GRID_COLS
-      const cellH = height / GRID_ROWS
+    const cellW = width / GRID_COLS
+    const cellH = height / GRID_ROWS
 
-      context.save()
-      context.filter = "blur(16px)"
-      for (let row = 0; row < GRID_ROWS; row += 1) {
-        for (let col = 0; col < GRID_COLS; col += 1) {
-          const score = analysis.heat[cellKey(col, row)] ?? 0
-          if (score <= 0) continue
-          context.fillStyle = scoreToFill(score)
-          context.fillRect(col * cellW, row * cellH, cellW, cellH)
-        }
+    context.save()
+    context.filter = "blur(16px)"
+    context.globalAlpha = clamp(overlayOpacity, 0, 1)
+    for (let row = 0; row < GRID_ROWS; row += 1) {
+      for (let col = 0; col < GRID_COLS; col += 1) {
+        const score = analysis.heat[cellKey(col, row)] ?? 0
+        if (score <= 0) continue
+        context.fillStyle = scoreToFill(score)
+        context.fillRect(col * cellW, row * cellH, cellW, cellH)
       }
-      context.restore()
     }
-
-    if (mode === "path") {
-      context.save()
-      context.lineWidth = 2
-      context.lineCap = "round"
-      context.lineJoin = "round"
-      context.strokeStyle = "rgba(47, 90, 232, 0.22)"
-
-      for (const session of sessions) {
-        const points = session.events
-          .filter((event) => event.tMs >= timeStartMs && event.tMs <= timeEndMs)
-          .sort((a, b) => a.tMs - b.tMs)
-
-        if (points.length < 2) continue
-        context.beginPath()
-        context.moveTo(points[0]!.x * width, points[0]!.y * height)
-        for (let index = 1; index < points.length; index += 1) {
-          const event = points[index]!
-          context.lineTo(event.x * width, event.y * height)
-        }
-        context.stroke()
-      }
-      context.restore()
-    }
-  }, [analysis.heat, baseSize, mode, sessions, timeStartMs, timeEndMs])
+    context.restore()
+  }, [analysis.heat, baseSize, overlayOpacity])
 
   return (
     <div className="relative w-full overflow-hidden rounded-2xl border border-border-subtle bg-card h-[clamp(560px,72vh,920px)]">
@@ -409,14 +358,8 @@ function HeatmapLogCanvas({
 function ResultHeatmapPage() {
   const { selectedPageId, setSelectedPageId } = useResultPageParam()
   const [expandedPageId, setExpandedPageId] = useState<string>(defaultHeatmapPageId)
-  const [mode, setMode] = useState<HeatmapVizMode>("errors")
   const [ageFilter, setAgeFilter] = useState<HeatmapAgeBand | "all">("all")
-  const [isCumulative, setIsCumulative] = useState(true)
-  const [timeEndMs, setTimeEndMs] = useState(() => Math.round(heatmapTimelineMaxMsMock * 0.65))
-  const [timeRange, setTimeRange] = useState<[number, number]>(() => [
-    Math.round(heatmapTimelineMaxMsMock * 0.2),
-    Math.round(heatmapTimelineMaxMsMock * 0.65),
-  ])
+  const [overlayOpacity, setOverlayOpacity] = useState(70)
 
   const selectedLog: HeatmapPageLogMock =
     heatmapPageLogsMock.find((page) => page.pageId === selectedPageId) ?? heatmapPageLogsMock[0]
@@ -440,8 +383,7 @@ function ResultHeatmapPage() {
     setExpandedPageId(selectedPageId)
   }, [selectedPageId])
 
-  const resolvedTimeStartMs = isCumulative ? 0 : Math.min(timeRange[0], timeRange[1])
-  const resolvedTimeEndMs = isCumulative ? timeEndMs : Math.max(timeRange[0], timeRange[1])
+  const resolvedTimeEndMs = heatmapTimelineMaxMsMock
 
   const filteredSessions = useMemo(() => {
     if (!selectedLog) return []
@@ -468,36 +410,15 @@ function ResultHeatmapPage() {
             <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
               <div className="grid gap-2">
                 <div className="flex flex-wrap items-center gap-2">
-                  <p className="text-body-14-medium text-text-body">AI 테스터 로그 기반 히트맵</p>
+                  <p className="text-body-14-medium text-text-body">오류 집중 구간 히트맵</p>
                   <span className="inline-flex items-center gap-1 rounded-full border border-border-soft bg-surface-subtle px-2 py-1 text-caption-12-regular text-text-muted">
                     <Info className="size-3.5" />
-                    정규화 좌표(0~1) + 타임 윈도우
+                    정규화 좌표(0~1) + Step 로그
                   </span>
                 </div>
                 <p className="text-caption-12-regular text-text-subtle">
-                  클릭 수가 아니라 “헤맴/블락(Timeout·Console·Network)” 강도로 병목을 찾는 뷰입니다.
+                  Timeout·Console·Network 기반 블락/오류 신호를 “강도”로 집계해 병목 구간을 찾습니다.
                 </p>
-              </div>
-
-              <div className="flex flex-wrap items-center justify-end gap-2">
-                {vizTabs.map((tab) => {
-                  const active = tab.value === mode
-                  return (
-                    <button
-                      key={tab.value}
-                      type="button"
-                      onClick={() => setMode(tab.value)}
-                      className={cn(
-                        "h-9 rounded-xl border px-3 text-body-14-medium transition-colors",
-                        active
-                          ? "border-border-soft-2 bg-surface-muted text-text-strong hover:bg-surface-muted-hover"
-                          : "border-border-soft bg-surface-subtle text-text-muted hover:bg-surface-hover-2 hover:text-text-strong"
-                      )}
-                    >
-                      {tab.label}
-                    </button>
-                  )
-                })}
               </div>
             </div>
 
@@ -523,9 +444,8 @@ function ResultHeatmapPage() {
             <HeatmapLogCanvas
               screenshotUrl={selectedLog.screenshotUrl}
               sessions={filteredSessions}
-              mode={mode}
-              timeStartMs={resolvedTimeStartMs}
               timeEndMs={resolvedTimeEndMs}
+              overlayOpacity={overlayOpacity / 100}
             />
 
             <div className="grid gap-4 rounded-2xl border border-border-subtle bg-surface-subtle p-4">
@@ -534,22 +454,6 @@ function ResultHeatmapPage() {
                   <p className="text-caption-12-medium text-text-secondary">연령대 필터</p>
                   <p className="text-caption-12-regular text-text-muted">레이아웃이 달라도 상대 좌표(0~1)로 동일 기준 분석</p>
                 </div>
-                <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-border-soft bg-card px-3 py-2 text-caption-12-medium text-text-secondary">
-                  <input
-                    type="checkbox"
-                    checked={isCumulative}
-                    onChange={(event) => {
-                      const next = event.currentTarget.checked
-                      setIsCumulative(next)
-                      if (next) {
-                        setTimeEndMs(timeRange[1])
-                      } else {
-                        setTimeRange([0, timeEndMs])
-                      }
-                    }}
-                  />
-                  누적 보기
-                </label>
               </div>
 
               <div className="flex flex-wrap gap-2">
@@ -582,40 +486,16 @@ function ResultHeatmapPage() {
                 ))}
               </div>
 
-              <div className="grid gap-2">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="text-caption-12-medium text-text-secondary">타임 윈도우</p>
-                  <p className="text-caption-12-regular text-text-muted">
-                    {formatMs(resolvedTimeStartMs)} ~ {formatMs(resolvedTimeEndMs)}
-                  </p>
-                </div>
-
-                {isCumulative ? (
-                  <Slider
-                    value={[resolvedTimeEndMs]}
-                    min={0}
-                    max={heatmapTimelineMaxMsMock}
-                    step={5000}
-                    onValueChange={(nextValue) => {
-                      const next = Array.isArray(nextValue) ? nextValue[0] : nextValue
-                      setTimeEndMs(clamp(next ?? resolvedTimeEndMs, 0, heatmapTimelineMaxMsMock))
-                    }}
-                  />
-                ) : (
-                  <Slider
-                    value={[resolvedTimeStartMs, resolvedTimeEndMs]}
-                    min={0}
-                    max={heatmapTimelineMaxMsMock}
-                    step={5000}
-                    onValueChange={(nextValue) => {
-                      if (!Array.isArray(nextValue) || nextValue.length < 2) return
-                      const start = clamp(nextValue[0] ?? 0, 0, heatmapTimelineMaxMsMock)
-                      const end = clamp(nextValue[1] ?? heatmapTimelineMaxMsMock, 0, heatmapTimelineMaxMsMock)
-                      setTimeRange([start, end])
-                    }}
-                  />
-                )}
-              </div>
+              <SettingSlider
+                label="오류 오버레이 강도"
+                value={overlayOpacity}
+                min={10}
+                max={100}
+                step={1}
+                unit="%"
+                size="sm"
+                onChange={setOverlayOpacity}
+              />
             </div>
           </CardContent>
         </Card>

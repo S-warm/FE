@@ -42,17 +42,12 @@ function ResultPageSidePanel({
                 <div
                   key={page.id}
                   className={cn(
-                    "relative rounded-2xl border bg-surface-subtle transition-colors",
-                    isSelected ? "border-border-focus/60 bg-brand-subtle" : "border-border-soft hover:bg-surface-hover-2"
+                    "rounded-2xl border transition-colors",
+                    isSelected
+                      ? "border-border-soft-2 bg-surface-muted hover:bg-surface-muted-hover"
+                      : "border-border-soft bg-surface-subtle hover:bg-surface-hover-2"
                   )}
                 >
-                  <span
-                    className={cn(
-                      "pointer-events-none absolute left-1.5 top-2 bottom-2 w-1 rounded-full bg-border-focus transition-opacity",
-                      isSelected ? "opacity-100" : "opacity-0"
-                    )}
-                    aria-hidden="true"
-                  />
                   <button
                     type="button"
                     className={cn(

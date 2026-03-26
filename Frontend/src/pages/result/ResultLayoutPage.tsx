@@ -13,11 +13,11 @@ import { recentSimulations } from "@/mocks/simulation.mock"
 import { formatRelativeTime } from "@/utils/format-relative-time"
 
 const tabs = [
-  { value: "overview", label: "개요", icon: LayoutDashboard, accent: "var(--color-tab-overview)" },
-  { value: "issues", label: "주요이슈", icon: AlertTriangle, accent: "var(--color-tab-issues)" },
-  { value: "heatmap", label: "히트맵", icon: Map, accent: "var(--color-tab-heatmap)" },
-  { value: "wcag", label: "WCAG 검사", icon: ShieldCheck, accent: "var(--color-tab-wcag)" },
-  { value: "ai", label: "AI 수정", icon: Sparkles, accent: "var(--color-tab-ai)" },
+  { value: "overview", label: "개요", icon: LayoutDashboard },
+  { value: "issues", label: "주요이슈", icon: AlertTriangle },
+  { value: "heatmap", label: "히트맵", icon: Map },
+  { value: "wcag", label: "WCAG 검사", icon: ShieldCheck },
+  { value: "ai", label: "AI 수정", icon: Sparkles },
 ] as const
 
 function MetaRow({ label, children }: { label: string; children: ReactNode }) {
@@ -102,16 +102,11 @@ function ResultLayoutPage() {
                     to={{ pathname: `/result/${resolvedId}/${tab.value}`, search }}
                     className={({ isActive }) =>
                       cn(
-                        "relative flex h-11 items-center justify-center gap-2 rounded-xl border border-transparent px-4 text-body-14-medium text-text-muted transition-colors after:absolute after:inset-x-4 after:bottom-1 after:h-0.5 after:rounded-full after:bg-[var(--tab-accent)] after:origin-left after:scale-x-0 after:transition-transform after:duration-200 hover:after:scale-x-100",
+                        "flex h-11 items-center justify-center gap-2 rounded-xl border px-4 text-body-14-medium transition-colors",
                         isActive
-                          ? "bg-brand-subtle text-text-strong after:scale-x-100 md:rounded-none"
-                          : "hover:bg-surface-hover-2 hover:text-text-strong"
+                          ? "border-border-soft-2 bg-surface-muted text-text-strong hover:bg-surface-muted-hover md:rounded-none"
+                          : "border-transparent text-text-muted hover:bg-surface-hover-2 hover:text-text-strong"
                       )
-                    }
-                    style={
-                      {
-                        "--tab-accent": tab.accent,
-                      } as React.CSSProperties
                     }
                   >
                     {Icon ? <Icon className="size-4" /> : null}

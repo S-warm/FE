@@ -9,6 +9,7 @@ function Slider({
   value,
   min = 0,
   max = 100,
+  style,
   ...props
 }: SliderPrimitive.Root.Props) {
   const _values = React.useMemo(
@@ -21,6 +22,13 @@ function Slider({
     [value, defaultValue, min, max]
   )
 
+  const mergedStyle = React.useMemo(() => {
+    const resolved = { ...(style as React.CSSProperties) } as React.CSSProperties
+    ;(resolved as unknown as Record<string, string>)["--slider-track"] ??= "var(--border-subtle)"
+    ;(resolved as unknown as Record<string, string>)["--slider-indicator"] ??= "var(--border-focus)"
+    return resolved
+  }, [style])
+
   return (
     <SliderPrimitive.Root
       className={cn("data-horizontal:w-full data-vertical:h-full", className)}
@@ -29,17 +37,18 @@ function Slider({
       value={value}
       min={min}
       max={max}
+      style={mergedStyle}
       thumbAlignment="edge"
       {...props}
     >
       <SliderPrimitive.Control className="relative flex w-full touch-none items-center select-none data-disabled:opacity-50 data-vertical:h-full data-vertical:min-h-40 data-vertical:w-auto data-vertical:flex-col">
         <SliderPrimitive.Track
           data-slot="slider-track"
-          className="relative grow overflow-hidden rounded-full bg-border-subtle select-none data-horizontal:h-1.5 data-horizontal:w-full data-vertical:h-full data-vertical:w-1.5"
+          className="relative grow overflow-hidden rounded-full bg-[var(--slider-track)] select-none data-horizontal:h-1.5 data-horizontal:w-full data-vertical:h-full data-vertical:w-1.5"
         >
           <SliderPrimitive.Indicator
             data-slot="slider-range"
-            className="bg-border-focus select-none data-horizontal:h-full data-vertical:w-full"
+            className="bg-[var(--slider-indicator)] select-none data-horizontal:h-full data-vertical:w-full"
           />
         </SliderPrimitive.Track>
         {Array.from({ length: _values.length }, (_, index) => (

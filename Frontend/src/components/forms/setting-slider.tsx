@@ -113,6 +113,12 @@ function SettingSlider({
           max={max}
           step={step}
           disabled={isDisabled}
+          style={
+            {
+              "--slider-track": "var(--border-soft-2)",
+              "--slider-indicator": "var(--brand-accent)",
+            } as React.CSSProperties
+          }
           onValueChange={(nextValue) => {
             const resolved = Array.isArray(nextValue) ? nextValue[0] : nextValue
             onChange(resolved ?? value)

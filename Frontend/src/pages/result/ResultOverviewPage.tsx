@@ -99,7 +99,7 @@ function ResultOverviewPage() {
               <div className="mt-3">
                 <HorizontalBarChart
                   heightClassName="h-[220px]"
-                  barColor="#4669d0"
+                  barColor="var(--color-chart-landing)"
                   data={[
                     { label: "10대", score: 95 },
                     { label: "20대", score: 72 },
@@ -119,7 +119,7 @@ function ResultOverviewPage() {
               <div className="mt-3">
                 <HorizontalBarChart
                   heightClassName="h-[220px]"
-                  barColor="#7edfe6"
+                  barColor="var(--color-chart-form-start)"
                   data={[
                     { label: "10대", score: 98 },
                     { label: "20대", score: 74 },
@@ -139,7 +139,7 @@ function ResultOverviewPage() {
               <div className="mt-3">
                 <HorizontalBarChart
                   heightClassName="h-[220px]"
-                  barColor="#6a36d9"
+                  barColor="var(--color-chart-field-input)"
                   data={[
                     { label: "10대", score: 99 },
                     { label: "20대", score: 76 },
@@ -159,7 +159,7 @@ function ResultOverviewPage() {
               <div className="mt-3">
                 <HorizontalBarChart
                   heightClassName="h-[220px]"
-                  barColor="#3182f6"
+                  barColor="var(--color-chart-validation)"
                   data={[
                     { label: "10대", score: 96 },
                     { label: "20대", score: 73 },

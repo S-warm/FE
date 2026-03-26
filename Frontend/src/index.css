@@ -107,6 +107,12 @@
   --color-persona-teen: #c8d0f6;
   --color-persona-fifty: #d5b8f3;
   --color-persona-eighty: #7edfe6;
+
+  /* Charts */
+  --color-chart-landing: var(--color-primary-main);
+  --color-chart-form-start: var(--color-persona-eighty);
+  --color-chart-field-input: #6a36d9;
+  --color-chart-validation: #3182f6;
 }
 
 /* Dark mode baseline */

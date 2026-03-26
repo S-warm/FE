@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
 
 import { Sparkles, TrendingUp } from "lucide-react"
 
@@ -45,16 +45,14 @@ function severityLabel(severity: AiFixItem["severity"]) {
   return "낮음"
 }
 
+function firstFixIdForPage(pageId: string) {
+  return aiFixPagesMock.find((item) => item.id === pageId)?.fixes[0]?.id
+}
+
 function ResultAiFixPage() {
   const { selectedPageId, setSelectedPageId } = useResultPageParam()
-  const [expandedPageId, setExpandedPageId] = useState<string>(defaultAiFixPageId)
-  const [selectedFixId, setSelectedFixId] = useState<string>(defaultAiFixId)
-
-  useEffect(() => {
-    setExpandedPageId(selectedPageId)
-    const nextFixId = aiFixPagesMock.find((item) => item.id === selectedPageId)?.fixes[0]?.id
-    if (nextFixId) setSelectedFixId(nextFixId)
-  }, [selectedPageId])
+  const [expandedPageId, setExpandedPageId] = useState<string>(() => selectedPageId ?? defaultAiFixPageId)
+  const [selectedFixId, setSelectedFixId] = useState<string>(() => firstFixIdForPage(selectedPageId) ?? defaultAiFixId)
 
   const selectedPage: AiFixPage = aiFixPagesMock.find((page) => page.id === selectedPageId) ?? aiFixPagesMock[0]
 
@@ -83,9 +81,9 @@ function ResultAiFixPage() {
         selectedPageId={selectedPageId}
         expandedPageId={expandedPageId}
         onSelectPage={(pageId) => {
-          const nextFixId = aiFixPagesMock.find((item) => item.id === pageId)?.fixes[0]?.id
+          const nextFixId = firstFixIdForPage(pageId)
           setSelectedPageId(pageId)
-          setSelectedFixId(nextFixId ?? selectedFixId)
+          setSelectedFixId((prev) => nextFixId ?? prev)
           setExpandedPageId(pageId)
         }}
         onExpandPage={setExpandedPageId}

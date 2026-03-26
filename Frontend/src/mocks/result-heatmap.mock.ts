@@ -1,4 +1,4 @@
-import mockScreenshot from "@/assets/mocks/example_site.png"
+import mockScreenshot from "@/assets/mocks/img-example-site.png"
 
 export type HeatmapMode = "click" | "move" | "scroll" | "attention"
 

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react"
+import { memo, useEffect, useMemo, useRef, useState } from "react"
 
 import { AlertTriangle } from "lucide-react"
 
@@ -13,7 +13,7 @@ import type { HeatmapAgeBand, HeatmapPageMock, HeatmapPoint, HeatmapTargetRegion
 import { resultPagesMock } from "@/mocks/result-pages.mock"
 import { useResultPageParam } from "@/lib/result-page-param"
 
-function HeatDot({ point }: { point: HeatmapPoint }) {
+const HeatDot = memo(function HeatDot({ point }: { point: HeatmapPoint }) {
   const alpha = Math.min(0.98, 0.35 + point.intensity * 0.65)
   const size = 84 + point.intensity * 140
   const hue = Math.round(55 - point.intensity * 55) // yellow -> red
@@ -28,14 +28,14 @@ function HeatDot({ point }: { point: HeatmapPoint }) {
         top: `${point.y}%`,
         width: `${size}px`,
         height: `${size}px`,
-        background: `radial-gradient(circle, ${core} 0%, ${mid} 42%, rgba(255, 204, 0, 0.0) 72%)`,
+        background: `radial-gradient(circle, ${core} 0%, ${mid} 42%, transparent 72%)`,
       }}
       aria-hidden="true"
     />
   )
-}
+})
 
-function Marker({
+const Marker = memo(function Marker({
   x,
   y,
   label,
@@ -67,7 +67,7 @@ function Marker({
       </span>
     </div>
   )
-}
+})
 
 function HeatmapCanvas({
   screenshotUrl,
@@ -86,7 +86,6 @@ function HeatmapCanvas({
 
   const [imageAspect, setImageAspect] = useState<number>(1400 / 880)
   const [viewportSize, setViewportSize] = useState<{ width: number; height: number }>({ width: 0, height: 0 })
-  const [baseSize, setBaseSize] = useState<{ width: number; height: number }>({ width: 0, height: 0 })
 
   useEffect(() => {
     if (!viewportRef.current) return
@@ -101,18 +100,21 @@ function HeatmapCanvas({
     return () => observer.disconnect()
   }, [])
 
-  useEffect(() => {
-    if (!viewportSize.width || !viewportSize.height || !Number.isFinite(imageAspect) || imageAspect <= 0) return
+  const baseSize = useMemo(() => {
+    if (!viewportSize.width || !viewportSize.height || !Number.isFinite(imageAspect) || imageAspect <= 0) return null
+
     const padding = 24
     const maxWidth = Math.max(0, viewportSize.width - padding * 2)
     const maxHeight = Math.max(0, viewportSize.height - padding * 2)
+
     let width = maxWidth
     let height = width / imageAspect
     if (height > maxHeight) {
       height = maxHeight
       width = height * imageAspect
     }
-    setBaseSize({ width, height })
+
+    return { width, height }
   }, [viewportSize.width, viewportSize.height, imageAspect])
 
   function clamp(value: number, min: number, max: number) {
@@ -136,7 +138,7 @@ function HeatmapCanvas({
       >
         <div
           className="relative overflow-hidden rounded-2xl border border-border-soft bg-card shadow-sm"
-          style={{ width: `${baseSize.width}px`, height: `${baseSize.height}px` }}
+          style={baseSize ? { width: `${baseSize.width}px`, height: `${baseSize.height}px` } : undefined}
         >
           <img
             src={screenshotUrl}
@@ -259,7 +261,8 @@ function ResultHeatmapPage() {
                 min={0}
                 max={heatmapAgeBands.length - 1}
                 step={1}
-                color="rgba(151, 166, 227, 0.7)"
+                ariaLabel="연령대 선택"
+                color="color-mix(in srgb, var(--color-primary-200) 70%, transparent)"
                 startLabel={heatmapAgeBands[0]}
                 endLabel={heatmapAgeBands[heatmapAgeBands.length - 1]}
                 labelClassName="text-caption-12-medium text-text-muted"

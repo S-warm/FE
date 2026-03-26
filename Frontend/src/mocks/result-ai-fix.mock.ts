@@ -102,8 +102,8 @@ export const aiFixPagesMock: AiFixPage[] = [
         title: "필수 입력 표시의 접근성 개선",
         severity: "high",
         impactedUsers: { count: 164 },
-        beforeCode: `.required::after {\n  content: \"*\";\n  color: #ef4444;\n}`,
-        afterCode: `.required::after {\n  content: \"*\";\n  color: #ef4444;\n}\n\n.required {\n  font-weight: 600;\n}`,
+        beforeCode: `.required::after {\n  content: "*";\n  color: #ef4444;\n}`,
+        afterCode: `.required::after {\n  content: "*";\n  color: #ef4444;\n}\n\n.required {\n  font-weight: 600;\n}`,
         impactSummary: "+ 164명의 사용자가 필수 입력을 더 명확히 인지 가능",
         changeSummaryTitle: "무엇이 변경되었나요?",
         changeSummaryBody:

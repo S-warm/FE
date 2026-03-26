@@ -49,7 +49,10 @@ function SettingSlider({
   onChange,
 }: SettingSliderProps) {
   const isDisabled = state === "disabled" || state === "loading"
-  const progress = ((value - min) / (max - min)) * 100
+  const range = max - min
+  const ratio = range > 0 ? (value - min) / range : 0
+  const clampedRatio = Math.min(1, Math.max(0, ratio))
+  const progress = clampedRatio * 100
   const [isHovered, setIsHovered] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
 
@@ -73,9 +76,9 @@ function SettingSlider({
     <div className={cn("grid", sizeClassMap[size], stateClassMap[state as keyof typeof stateClassMap], className)}>
       {showLabel || showInlineValue ? (
         <div className="flex items-center justify-between">
-          {showLabel ? <p className="text-body-14-medium text-[#283452]">{label}</p> : <span />}
+          {showLabel ? <p className="text-body-14-medium text-text-strong">{label}</p> : <span />}
           {showInlineValue ? (
-            <span className="rounded-md bg-[#eef2ff] px-2 py-1 text-caption-12-medium text-[#4f66bf]">
+            <span className="rounded-md bg-brand-subtle px-2 py-1 text-caption-12-medium text-brand-accent">
               {value}
               {unit}
             </span>
@@ -98,9 +101,9 @@ function SettingSlider({
             className="pointer-events-none absolute top-0 z-10 -translate-x-1/2"
             style={{ left: `calc(${progress}% + (1 - ${progress} / 100) * 0px)` }}
           >
-            <div className="relative rounded-[18px] bg-[var(--color-neutral-600)] px-4 py-2 text-[11px] font-medium leading-none text-white shadow-sm">
+            <div className="relative rounded-2xl bg-code-surface px-4 py-2 text-[11px] font-medium leading-none text-white shadow-sm">
               {floatingValueFormatter ? floatingValueFormatter(value) : value}
-              <span className="absolute left-1/2 top-full h-0 w-0 -translate-x-1/2 border-x-[8px] border-t-[10px] border-x-transparent border-t-[var(--color-neutral-600)]" />
+              <span className="absolute left-1/2 top-full h-0 w-0 -translate-x-1/2 border-x-[8px] border-t-[10px] border-x-transparent border-t-code-surface" />
             </div>
           </div>
         ) : null}

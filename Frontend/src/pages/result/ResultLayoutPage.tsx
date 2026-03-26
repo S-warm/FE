@@ -102,10 +102,10 @@ function ResultLayoutPage() {
                     to={{ pathname: `/result/${resolvedId}/${tab.value}`, search }}
                     className={({ isActive }) =>
                       cn(
-                        "flex h-11 items-center justify-center gap-2 rounded-xl border px-4 text-body-14-medium transition-colors",
+                        "relative flex h-11 items-center justify-center gap-2 rounded-xl border border-transparent px-4 text-body-14-medium transition-colors after:absolute after:inset-x-4 after:bottom-1 after:h-0.5 after:rounded-full after:bg-border-focus after:origin-left after:scale-x-0 after:transition-transform after:duration-200",
                         isActive
-                          ? "border-border-soft-2 bg-surface-muted text-text-strong hover:bg-surface-muted-hover md:rounded-none"
-                          : "border-transparent text-text-muted hover:bg-surface-hover-2 hover:text-text-strong"
+                          ? "bg-surface-muted text-text-strong after:scale-x-100 hover:bg-surface-muted-hover md:rounded-none"
+                          : "text-text-muted hover:bg-surface-hover-2 hover:text-text-strong hover:after:scale-x-100"
                       )
                     }
                   >

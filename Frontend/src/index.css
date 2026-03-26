@@ -113,6 +113,13 @@
   --color-chart-form-start: var(--color-persona-eighty);
   --color-chart-field-input: #6a36d9;
   --color-chart-validation: #3182f6;
+
+  /* Result tabs accent */
+  --color-tab-overview: var(--brand-accent);
+  --color-tab-issues: var(--critical-text);
+  --color-tab-heatmap: var(--moderate-text);
+  --color-tab-wcag: var(--color-persona-eighty);
+  --color-tab-ai: var(--color-persona-fifty);
 }
 
 /* Dark mode baseline */

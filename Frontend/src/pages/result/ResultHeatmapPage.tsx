@@ -41,12 +41,14 @@ const Marker = memo(function Marker({
   label,
   severity,
   active,
+  onHoverChange,
 }: {
   x: number
   y: number
   label: string
   severity: "critical" | "warning"
   active: boolean
+  onHoverChange?: (label: string | null) => void
 }) {
   const isCritical = severity === "critical"
   return (
@@ -60,6 +62,8 @@ const Marker = memo(function Marker({
       )}
       style={{ left: `${x}%`, top: `${y}%` }}
       aria-label={`마커 ${label}`}
+      onMouseEnter={() => onHoverChange?.(label)}
+      onMouseLeave={() => onHoverChange?.(null)}
     >
       <span className="inline-flex items-center gap-1">
         <AlertTriangle className="size-3.5" />
@@ -75,12 +79,14 @@ function HeatmapCanvas({
   markers,
   activeMarkerLabel,
   targetRegion,
+  onMarkerHoverChange,
 }: {
   screenshotUrl: string
   points: HeatmapPoint[]
   markers: HeatmapPageMock["markers"]
   activeMarkerLabel?: string | null
   targetRegion?: HeatmapTargetRegion
+  onMarkerHoverChange?: (label: string | null) => void
 }) {
   const viewportRef = useRef<HTMLDivElement | null>(null)
 
@@ -163,6 +169,9 @@ function HeatmapCanvas({
             {points.map((point) => (
               <HeatDot key={point.id} point={point} />
             ))}
+          </div>
+
+          <div className="absolute inset-0">
             {markers.map((marker) => (
               <Marker
                 key={marker.id}
@@ -171,6 +180,7 @@ function HeatmapCanvas({
                 label={marker.label}
                 severity={marker.severity}
                 active={Boolean(activeMarkerLabel && marker.label === activeMarkerLabel)}
+                onHoverChange={onMarkerHoverChange}
               />
             ))}
           </div>
@@ -201,8 +211,11 @@ function ResultHeatmapPage() {
   const { selectedPageId, setSelectedPageId } = useResultPageParam()
   const [expandedPageId, setExpandedPageId] = useState<string>(defaultHeatmapPageId)
   const [ageIndex, setAgeIndex] = useState<number>(2)
-  const [activeMarkerLabel, setActiveMarkerLabel] = useState<string | null>(null)
+  const [selectedMarkerLabel, setSelectedMarkerLabel] = useState<string | null>(null)
+  const [hoveredMarkerLabel, setHoveredMarkerLabel] = useState<string | null>(null)
   const canvasRef = useRef<HTMLDivElement | null>(null)
+
+  const activeMarkerLabel = hoveredMarkerLabel ?? selectedMarkerLabel
 
   const selectedPage = useMemo(
     () => heatmapPagesMock.find((page) => page.id === selectedPageId) ?? heatmapPagesMock[0],
@@ -226,7 +239,8 @@ function ResultHeatmapPage() {
   )
 
   useEffect(() => {
-    setActiveMarkerLabel(null)
+    setSelectedMarkerLabel(null)
+    setHoveredMarkerLabel(null)
   }, [selectedPageId])
 
   useEffect(() => {
@@ -280,6 +294,7 @@ function ResultHeatmapPage() {
                     markers={selectedPage.markers}
                     activeMarkerLabel={activeMarkerLabel}
                     targetRegion={selectedPage.targetRegion}
+                    onMarkerHoverChange={setHoveredMarkerLabel}
                   />
                 </div>
 
@@ -298,14 +313,22 @@ function ResultHeatmapPage() {
 
                   <div className="grid gap-2">
                     {selectedPage.defects.map((defect, index) => (
-                      <Card key={defect.id} className="rounded-2xl border border-border-strong bg-card shadow-none">
+                      <Card
+                        key={defect.id}
+                        className={cn(
+                          "rounded-2xl border bg-card shadow-none transition-colors",
+                          activeMarkerLabel === stripCodeToLabel(defect.code) ? "border-border-focus/70" : "border-border-strong"
+                        )}
+                      >
                         <CardContent className="grid gap-2 px-4 py-3">
                           <button
                             type="button"
                             className="flex items-start justify-between gap-3 text-left"
+                            onMouseEnter={() => setHoveredMarkerLabel(stripCodeToLabel(defect.code))}
+                            onMouseLeave={() => setHoveredMarkerLabel(null)}
                             onClick={() => {
                               const label = stripCodeToLabel(defect.code)
-                              setActiveMarkerLabel(label)
+                              setSelectedMarkerLabel(label)
                               canvasRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
                             }}
                           >

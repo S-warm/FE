@@ -154,8 +154,8 @@ function analyzeSessions({
 
 function scoreToFill(score: number) {
   const clamped = clamp(score, 0, 1)
-  const hue = 120 - 120 * clamped
-  const alpha = 0.04 + clamped * 0.55
+  const hue = 46 - 46 * clamped // yellow -> red (errors-only)
+  const alpha = Math.min(0.95, 0.12 + clamped * 0.85)
   return `hsla(${hue}, 92%, 54%, ${alpha})`
 }
 
@@ -244,18 +244,23 @@ function HeatmapLogCanvas({
     const cellW = width / GRID_COLS
     const cellH = height / GRID_ROWS
 
-    context.save()
-    context.filter = "blur(16px)"
-    context.globalAlpha = clamp(overlayOpacity, 0, 1)
-    for (let row = 0; row < GRID_ROWS; row += 1) {
-      for (let col = 0; col < GRID_COLS; col += 1) {
-        const score = analysis.heat[cellKey(col, row)] ?? 0
-        if (score <= 0) continue
-        context.fillStyle = scoreToFill(score)
-        context.fillRect(col * cellW, row * cellH, cellW, cellH)
+    const drawHeat = (blurPx: number, alphaScale: number) => {
+      context.save()
+      context.filter = `blur(${blurPx}px)`
+      context.globalAlpha = clamp(overlayOpacity * alphaScale, 0, 1)
+      for (let row = 0; row < GRID_ROWS; row += 1) {
+        for (let col = 0; col < GRID_COLS; col += 1) {
+          const score = analysis.heat[cellKey(col, row)] ?? 0
+          if (score <= 0) continue
+          context.fillStyle = scoreToFill(score)
+          context.fillRect(col * cellW, row * cellH, cellW, cellH)
+        }
       }
+      context.restore()
     }
-    context.restore()
+
+    drawHeat(18, 0.8)
+    drawHeat(7, 1)
   }, [analysis.heat, baseSize, overlayOpacity])
 
   return (
@@ -359,7 +364,7 @@ function ResultHeatmapPage() {
   const { selectedPageId, setSelectedPageId } = useResultPageParam()
   const [expandedPageId, setExpandedPageId] = useState<string>(defaultHeatmapPageId)
   const [ageFilter, setAgeFilter] = useState<HeatmapAgeBand | "all">("all")
-  const [overlayOpacity, setOverlayOpacity] = useState(70)
+  const [overlayOpacity, setOverlayOpacity] = useState(85)
 
   const selectedLog: HeatmapPageLogMock =
     heatmapPageLogsMock.find((page) => page.pageId === selectedPageId) ?? heatmapPageLogsMock[0]
@@ -489,7 +494,7 @@ function ResultHeatmapPage() {
               <SettingSlider
                 label="오류 오버레이 강도"
                 value={overlayOpacity}
-                min={10}
+                min={30}
                 max={100}
                 step={1}
                 unit="%"

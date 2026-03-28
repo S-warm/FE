@@ -217,22 +217,21 @@ function ResultWcagPage() {
       />
 
       <div className="grid gap-5">
-        <section className="grid gap-3 md:grid-cols-[240px_240px_minmax(0,1fr)]">
-        <MetricCard
-          title="준수 점수"
-          value={`${summary.complianceScore}%`}
-          subtitle={summary.wcagLabel}
-          icon={<ShieldCheck className="size-4" />}
-        />
-        <MetricCard
-          title="통과된 테스트"
-          value={`${summary.passedTests}`}
-          subtitle={`${summary.totalTests}개 테스트 중`}
-          icon={<ClipboardCheck className="size-4" />}
-        />
-        <Card className={cn("rounded-2xl border border-border-strong bg-card shadow-none", motion.card)}>
-          <CardContent className="grid gap-4 px-5 py-4">
-            <div className="grid gap-3">
+        <section className="grid gap-3 md:grid-cols-3">
+          <MetricCard
+            title="준수 점수"
+            value={`${summary.complianceScore}%`}
+            subtitle={summary.wcagLabel}
+            icon={<ShieldCheck className="size-4" />}
+          />
+          <MetricCard
+            title="통과된 테스트"
+            value={`${summary.passedTests}`}
+            subtitle={`${summary.totalTests}개 테스트 중`}
+            icon={<ClipboardCheck className="size-4" />}
+          />
+          <Card className={cn("rounded-2xl border border-border-strong bg-card shadow-none", motion.card)}>
+            <CardContent className="grid gap-3 px-5 py-4">
               <div className="flex items-start justify-between gap-3 text-text-subtle">
                 <div className="flex items-center gap-2">
                   <span className="grid size-7 place-items-center rounded-xl bg-surface-muted text-text-muted">
@@ -252,14 +251,13 @@ function ResultWcagPage() {
                 <p className="text-title-24-bold text-text-strong">{summary.foundIssues}</p>
                 <p className="text-caption-12-regular text-text-subtle">{summary.foundIssues}건 발견됨</p>
               </div>
-            </div>
-          </CardContent>
-        </Card>
-      </section>
+            </CardContent>
+          </Card>
+        </section>
 
-      <Card className={cn("rounded-2xl border border-border-strong bg-card shadow-none", motion.card)}>
-        <CardContent className="grid gap-4 px-6 py-5">
-          <div className="flex flex-wrap items-center gap-2">
+        <Card className={cn("rounded-2xl border border-border-strong bg-card shadow-none", motion.card)}>
+          <CardContent className="grid gap-4 px-6 py-5">
+            <div className="flex flex-wrap items-center gap-2">
             <p className="text-body-14-medium text-text-body">검출 이슈 분석</p>
             <Badge variant="secondary" className="h-7 rounded-full bg-brand-subtle px-3 text-sm text-text-link">
               전체 {distributionTotal}건

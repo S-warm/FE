@@ -9,25 +9,18 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
+	DialogTrigger,
 } from "@/components/ui/dialog"
 
-type DeviceOption = "mac" | "windows" | "iphone" | "android" | "ipad" | "android_tablet"
-
-const deviceOptions = [
-  { label: "Mac", value: "mac" },
-  { label: "Windows", value: "windows" },
-  { label: "iPhone", value: "iphone" },
-  { label: "Android", value: "android" },
-  { label: "iPad", value: "ipad" },
-  { label: "Android Tablet", value: "android_tablet" },
-] as const
+import { personaDeviceOptions, type PersonaDevice } from "@/constants/persona-device"
+import { useSimulationDraftStore } from "@/store/simulation-draft.store"
 
 function DigitalLiteracyDetailModal({ triggerClassName }: { triggerClassName?: string }) {
   const [open, setOpen] = useState(false)
   const [visionLoss, setVisionLoss] = useState(0)
   const [attentionLevel, setAttentionLevel] = useState(50)
-  const [device, setDevice] = useState<DeviceOption>("mac")
+  const device = useSimulationDraftStore((state) => state.personaDevice)
+  const setDevice = useSimulationDraftStore((state) => state.setPersonaDevice)
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -80,8 +73,8 @@ function DigitalLiteracyDetailModal({ triggerClassName }: { triggerClassName?: s
             <SelectionSelect
               label="디바이스"
               value={device}
-              options={[...deviceOptions]}
-              onChange={(nextDevice) => setDevice(nextDevice as DeviceOption)}
+              options={[...personaDeviceOptions]}
+              onChange={(nextDevice) => setDevice(nextDevice as PersonaDevice)}
             />
           </div>
         </div>

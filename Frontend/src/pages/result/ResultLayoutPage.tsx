@@ -1,4 +1,4 @@
-import type { ReactNode } from "react"
+import type { CSSProperties, ReactNode } from "react"
 import { NavLink, Outlet, useLocation, useParams } from "react-router-dom"
 
 import { AlertTriangle, Download, LayoutDashboard, Map, Pencil, Share2, ShieldCheck, Sparkles } from "lucide-react"
@@ -12,12 +12,39 @@ import { motion } from "@/lib/motion"
 import { recentSimulations } from "@/mocks/simulation.mock"
 import { formatRelativeTime } from "@/utils/format-relative-time"
 
+const RESULT_TAB_HOVER_BG = "color-mix(in srgb, var(--brand-accent) 28%, transparent)"
+
 const tabs = [
-  { value: "overview", label: "개요", icon: LayoutDashboard },
-  { value: "issues", label: "주요이슈", icon: AlertTriangle },
-  { value: "heatmap", label: "히트맵", icon: Map },
-  { value: "wcag", label: "WCAG 검사", icon: ShieldCheck },
-  { value: "ai", label: "AI 수정", icon: Sparkles },
+  {
+    value: "overview",
+    label: "개요",
+    icon: LayoutDashboard,
+    hoverBg: RESULT_TAB_HOVER_BG,
+  },
+  {
+    value: "issues",
+    label: "주요이슈",
+    icon: AlertTriangle,
+    hoverBg: RESULT_TAB_HOVER_BG,
+  },
+  {
+    value: "heatmap",
+    label: "히트맵",
+    icon: Map,
+    hoverBg: RESULT_TAB_HOVER_BG,
+  },
+  {
+    value: "wcag",
+    label: "WCAG 검사",
+    icon: ShieldCheck,
+    hoverBg: RESULT_TAB_HOVER_BG,
+  },
+  {
+    value: "ai",
+    label: "AI 수정",
+    icon: Sparkles,
+    hoverBg: RESULT_TAB_HOVER_BG,
+  },
 ] as const
 
 function MetaRow({ label, children }: { label: string; children: ReactNode }) {
@@ -41,8 +68,8 @@ function ResultLayoutPage() {
       mainClassName="items-start justify-start pb-0"
       headerLeft={<BrandingHeader compact showTagline={false} align="left" className="origin-left scale-150" />}
     >
-      <section className="grid w-full gap-4 pt-2 animate-in fade-in-0 duration-300 ease-out">
-        <Card className="rounded-2xl border border-border-strong bg-card shadow-none">
+      <section className={cn("grid w-full gap-4 pt-2", motion.page)}>
+        <Card className={cn("rounded-2xl border border-border-strong bg-card shadow-none", motion.card)}>
           <CardContent className="grid gap-4 px-6 py-5">
             <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
               <div className="grid gap-2">
@@ -91,7 +118,7 @@ function ResultLayoutPage() {
           </CardContent>
         </Card>
 
-        <Card className="rounded-2xl border border-border-strong bg-card shadow-none">
+        <Card className={cn("rounded-2xl border border-border-strong bg-card shadow-none", motion.card)}>
           <CardContent className="px-6 py-2">
             <nav className="grid grid-cols-2 gap-2 md:grid-cols-5 md:gap-3">
               {tabs.map((tab) => {
@@ -100,12 +127,17 @@ function ResultLayoutPage() {
                   <NavLink
                     key={tab.value}
                     to={{ pathname: `/result/${resolvedId}/${tab.value}`, search }}
+                    style={
+                      {
+                        "--result-tab-hover-bg": tab.hoverBg,
+                      } as CSSProperties
+                    }
                     className={({ isActive }) =>
                       cn(
                         "relative flex h-11 items-center justify-center gap-2 rounded-xl border border-transparent px-4 text-body-14-medium transition-colors after:absolute after:inset-x-4 after:bottom-1 after:h-0.5 after:rounded-full after:bg-border-focus after:origin-left after:scale-x-0 after:transition-transform after:duration-200",
                         isActive
-                          ? "bg-surface-muted text-text-strong after:scale-x-100 hover:bg-surface-muted-hover md:rounded-none"
-                          : "text-text-muted hover:bg-surface-hover-2 hover:text-text-strong hover:after:scale-x-100"
+                          ? "text-text-strong after:scale-x-100 hover:bg-[var(--result-tab-hover-bg)]"
+                          : "text-text-muted hover:bg-[var(--result-tab-hover-bg)] hover:text-text-strong hover:after:scale-x-100"
                       )
                     }
                   >

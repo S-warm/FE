@@ -1,7 +1,9 @@
 import { Card, CardContent } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
+import { motion } from "@/lib/motion"
 
 import type { DigitalLiteracyLevel } from "@/components/sections/simulation-setup/digital-literacy-selector"
+import { personaDeviceLabelMap, type PersonaDevice } from "@/constants/persona-device"
 
 const literacyLabelMap: Record<DigitalLiteracyLevel, string> = {
   high: "시력 저하 70% 적용 (최소 폰트 16px 인식)",
@@ -23,8 +25,8 @@ function SummaryRow({
       <p className="text-body-14-medium font-semibold text-text-body">{title}</p>
       <p
         className={cn(
-          "rounded-xl bg-surface-muted px-3 py-2 text-caption-12-regular leading-5 text-text-secondary",
-          scrollable && "h-[56px] overflow-y-auto overscroll-contain"
+          "rounded-xl bg-surface-muted px-3 py-1.5 text-caption-12-regular leading-5 text-text-secondary",
+          scrollable && "h-[44px] overflow-y-auto overscroll-contain"
         )}
       >
         {value}
@@ -38,8 +40,8 @@ function SimulationSummaryCard({
   targetUrl,
   startedAtLabel,
   personaCount,
+  personaDevice,
   digitalLiteracy,
-  ageRatios,
   successCondition,
   className,
 }: {
@@ -47,15 +49,21 @@ function SimulationSummaryCard({
   targetUrl: string
   startedAtLabel: string
   personaCount: number
+  personaDevice: PersonaDevice
   digitalLiteracy: DigitalLiteracyLevel
-  ageRatios: Array<{ label: string; value: number }>
   successCondition: string
   className?: string
 }) {
   return (
-    <Card className={cn("rounded-2xl border border-border-strong bg-surface-subtle shadow-none", className)}>
-      <CardContent className="flex flex-col gap-3 px-4 py-3 text-left">
-        <div className="grid gap-2 rounded-xl border border-border-subtle bg-card/70 px-3 py-2">
+    <Card
+      className={cn(
+        "rounded-2xl border border-border-strong bg-surface-subtle py-3 shadow-none",
+        motion.card,
+        className
+      )}
+    >
+      <CardContent className="flex flex-col gap-2.5 py-0 text-left">
+        <div className="grid gap-1.5 rounded-xl border border-border-subtle bg-card/70 px-3 py-1.5">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="text-body-14-medium font-semibold text-text-body">
               {projectTitle.trim() || "프로젝트 제목을 입력하세요"}
@@ -67,12 +75,9 @@ function SimulationSummaryCard({
 
         <SummaryRow title="페르소나 횟수" value={`총 ${personaCount.toLocaleString()}회 시뮬레이션`} />
         <div className="h-px bg-border-subtle" />
-        <SummaryRow title="디지털 리터러시" value={literacyLabelMap[digitalLiteracy]} />
+        <SummaryRow title="디바이스" value={personaDeviceLabelMap[personaDevice]} />
         <div className="h-px bg-border-subtle" />
-        <SummaryRow
-          title="연령별 투입 비율"
-          value={ageRatios.map((item) => `${item.label} ${item.value}%`).join("  ")}
-        />
+        <SummaryRow title="디지털 리터러시" value={literacyLabelMap[digitalLiteracy]} />
         <div className="h-px bg-border-subtle" />
         <SummaryRow
           title="성공조건"

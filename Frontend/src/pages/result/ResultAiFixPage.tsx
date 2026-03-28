@@ -110,6 +110,7 @@ function ResultAiFixPage() {
                       onClick={() => setSelectedFixId(fix.id)}
                       className={cn(
                         "rounded-2xl border p-4 text-left transition-colors",
+                        motion.item,
                         active
                           ? "border-border-focus bg-card"
                           : "border-border-soft bg-surface-subtle hover:bg-card"

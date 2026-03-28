@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 
-import { Info } from "lucide-react"
+import { Info, TriangleAlert } from "lucide-react"
 
+import { IssueBadge } from "@/components/atoms"
 import { SettingSlider } from "@/components/forms/setting-slider"
 import { ResultPageSidePanel } from "@/components/sections/result/page-side-panel"
 import { Card, CardContent } from "@/components/ui/card"
@@ -18,7 +19,7 @@ import { useResultPageParam } from "@/lib/result-page-param"
 import { heatmapAgeBands, defaultHeatmapPageId } from "@/mocks/result-heatmap.mock"
 import type { HeatmapAgeBand } from "@/mocks/result-heatmap.mock"
 import { heatmapPageLogsMock, heatmapTimelineMaxMsMock } from "@/mocks/result-heatmap-log.mock"
-import type { HeatmapAgentSession, HeatmapLogEvent, HeatmapPageLogMock } from "@/mocks/result-heatmap-log.mock"
+import type { HeatmapAgentSession, HeatmapErrorKind, HeatmapLogEvent, HeatmapPageLogMock } from "@/mocks/result-heatmap-log.mock"
 import { resultPagesMock } from "@/mocks/result-pages.mock"
 
 const GRID_COLS = 64
@@ -43,6 +44,24 @@ interface CellAgg {
   blockCount: number
   agentIds: Set<string>
   blockAgents: Set<string>
+  errorKindCount: Record<HeatmapErrorKind, number>
+  httpStatusCount: Record<number, number>
+}
+
+interface HeatmapCellSummary {
+  key: number
+  x: number
+  y: number
+  score: number
+  impactedAgents: number
+  avgRetries: number
+  blockRate: number
+  errors: {
+    timeout: number
+    console: number
+    network: number
+    topHttpStatuses: Array<{ status: number; count: number }>
+  }
 }
 
 interface HeatmapHotspot {
@@ -54,6 +73,56 @@ interface HeatmapHotspot {
   impactedAgents: number
   avgRetries: number
   blockRate: number
+  errors: {
+    timeout: number
+    console: number
+    network: number
+    topHttpStatuses: Array<{ status: number; count: number }>
+  }
+}
+
+function buildFallbackHotspots(cells: Map<number, HeatmapCellSummary>, limit: number) {
+  const sorted = Array.from(cells.values()).sort((a, b) => {
+      const scoreDelta = b.score - a.score
+      if (Math.abs(scoreDelta) > 0.0001) return scoreDelta
+      return b.impactedAgents - a.impactedAgents
+    })
+
+  const preferred = sorted.filter((cell) => cell.score >= 0.18)
+  const pool = preferred.length ? preferred : sorted
+
+  const picked: Array<{ col: number; row: number; cell: HeatmapCellSummary }> = []
+  const minDistance = 9
+
+  for (const cell of pool) {
+    if (picked.length >= limit) break
+
+    const col = cell.key % GRID_COLS
+    const row = Math.floor(cell.key / GRID_COLS)
+    const tooClose = picked.some((item) => Math.hypot(item.col - col, item.row - row) < minDistance)
+    if (tooClose) continue
+
+    picked.push({ col, row, cell })
+  }
+
+  if (picked.length === 0 && sorted.length) {
+    const first = sorted[0]
+    const col = first.key % GRID_COLS
+    const row = Math.floor(first.key / GRID_COLS)
+    picked.push({ col, row, cell: first })
+  }
+
+  return picked.map(({ col, row, cell }, index) => ({
+    id: `fb-${col}-${row}`,
+    rank: index + 1,
+    x: cell.x,
+    y: cell.y,
+    score: cell.score,
+    impactedAgents: cell.impactedAgents,
+    avgRetries: cell.avgRetries,
+    blockRate: cell.blockRate,
+    errors: cell.errors,
+  }))
 }
 
 function analyzeSessions({
@@ -86,6 +155,8 @@ function analyzeSessions({
         blockCount: 0,
         agentIds: new Set<string>(),
         blockAgents: new Set<string>(),
+        errorKindCount: { timeout: 0, console: 0, network: 0 },
+        httpStatusCount: {},
       }
 
       agg.eventCount += 1
@@ -94,6 +165,12 @@ function analyzeSessions({
       if (event.block) {
         agg.blockCount += 1
         agg.blockAgents.add(session.agentId)
+      }
+      if (event.errorKind) {
+        agg.errorKindCount[event.errorKind] = (agg.errorKindCount[event.errorKind] ?? 0) + 1
+      }
+      if (typeof event.httpStatus === "number") {
+        agg.httpStatusCount[event.httpStatus] = (agg.httpStatusCount[event.httpStatus] ?? 0) + 1
       }
       agg.agentIds.add(session.agentId)
       cellAgg.set(key, agg)
@@ -118,6 +195,39 @@ function analyzeSessions({
     heat[key] = score
   }
 
+  const cells = new Map<number, HeatmapCellSummary>()
+  for (const [key, agg] of cellAgg.entries()) {
+    const col = key % GRID_COLS
+    const row = Math.floor(key / GRID_COLS)
+    const impactedAgents = agg.agentIds.size
+    const blockRate = impactedAgents > 0 ? agg.blockAgents.size / impactedAgents : 0
+    const avgRetries = agg.eventCount > 0 ? agg.retriesSum / agg.eventCount : 0
+    const score = heat[key] ?? 0
+    if (score <= 0) continue
+
+    const topHttpStatuses = Object.entries(agg.httpStatusCount)
+      .map(([status, count]) => ({ status: Number(status), count }))
+      .filter((item) => Number.isFinite(item.status) && item.count > 0)
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 2)
+
+    cells.set(key, {
+      key,
+      x: (col + 0.5) / GRID_COLS,
+      y: (row + 0.5) / GRID_ROWS,
+      score,
+      impactedAgents,
+      avgRetries,
+      blockRate,
+      errors: {
+        timeout: agg.errorKindCount.timeout ?? 0,
+        console: agg.errorKindCount.console ?? 0,
+        network: agg.errorKindCount.network ?? 0,
+        topHttpStatuses,
+      },
+    })
+  }
+
   const hotspots: HeatmapHotspot[] = Array.from(cellAgg.entries())
     .map(([key, agg]) => {
       const col = key % GRID_COLS
@@ -126,6 +236,7 @@ function analyzeSessions({
       const blockRate = impactedAgents > 0 ? agg.blockAgents.size / impactedAgents : 0
       const avgRetries = agg.eventCount > 0 ? agg.retriesSum / agg.eventCount : 0
       const score = heat[key] ?? 0
+      const summary = cells.get(key)
       return {
         id: `hs-${col}-${row}`,
         rank: 0,
@@ -135,6 +246,12 @@ function analyzeSessions({
         impactedAgents,
         avgRetries,
         blockRate,
+        errors: {
+          timeout: summary?.errors.timeout ?? 0,
+          console: summary?.errors.console ?? 0,
+          network: summary?.errors.network ?? 0,
+          topHttpStatuses: summary?.errors.topHttpStatuses ?? [],
+        },
       }
     })
     .filter((spot) => spot.impactedAgents >= 8 && spot.score >= 0.35)
@@ -142,9 +259,14 @@ function analyzeSessions({
     .slice(0, 6)
     .map((spot, index) => ({ ...spot, rank: index + 1 }))
 
+  const fallbackHotspots = buildFallbackHotspots(cells, 6)
+  const markers = hotspots.length ? hotspots : fallbackHotspots
+
   return {
     heat,
+    cells,
     hotspots,
+    markers,
     totals: {
       agentCount: totalAgents.size,
       eventCount: totalEventCount,
@@ -157,6 +279,54 @@ function scoreToFill(score: number) {
   const hue = 46 - 46 * clamped // yellow -> red (errors-only)
   const alpha = Math.min(0.7, 0.05 + clamped * 0.45)
   return `hsla(${hue}, 92%, 54%, ${alpha})`
+}
+
+function spotlightGradient({
+  xPercent,
+  yPercent,
+  radiusPx,
+}: {
+  xPercent: number
+  yPercent: number
+  radiusPx: number
+}) {
+  const inner = Math.max(12, Math.round(radiusPx * 0.55))
+  const outer = Math.max(inner + 12, Math.round(radiusPx))
+  const color = "rgba(15, 23, 42, 0.3)"
+  return `radial-gradient(circle at ${xPercent}% ${yPercent}%, rgba(15, 23, 42, 0) 0px, rgba(15, 23, 42, 0) ${inner}px, ${color} ${outer}px, ${color} 100%)`
+}
+
+function hotspotSeverity(score: number) {
+  if (score >= 0.72) return { badgeVariant: "error" as const, label: "치명적" }
+  if (score >= 0.52) return { badgeVariant: "warning" as const, label: "높음" }
+  return { badgeVariant: "info" as const, label: "보통" }
+}
+
+function hotspotMarkerStyle(score: number) {
+  if (score >= 0.72) {
+    return "border-critical-accent/40 bg-danger-surface/90 text-danger-text shadow-[0_10px_30px_rgba(245,121,104,0.18)]"
+  }
+  if (score >= 0.52) {
+    return "border-moderate-accent/50 bg-warning-surface/90 text-warning-text shadow-[0_10px_30px_rgba(246,196,139,0.18)]"
+  }
+  return "border-border-soft-2 bg-brand-subtle/90 text-text-link shadow-[0_10px_30px_rgba(68,99,208,0.14)]"
+}
+
+function primaryErrorKind(errors: { timeout: number; network: number; console: number }) {
+  const entries = [
+    ["timeout", errors.timeout],
+    ["network", errors.network],
+    ["console", errors.console],
+  ] as const
+
+  const sorted = [...entries].sort((a, b) => b[1] - a[1])
+  return sorted[0]?.[0] ?? "timeout"
+}
+
+function errorKindLabel(kind: "timeout" | "network" | "console") {
+  if (kind === "timeout") return "Timeout"
+  if (kind === "network") return "Network"
+  return "Console"
 }
 
 function HeatmapLogCanvas({
@@ -177,6 +347,8 @@ function HeatmapLogCanvas({
   const [viewportSize, setViewportSize] = useState<{ width: number; height: number }>({ width: 0, height: 0 })
   const [hoveredHotspotId, setHoveredHotspotId] = useState<string | null>(null)
   const [openHotspotId, setOpenHotspotId] = useState<string | null>(null)
+  const [spotlightCenter, setSpotlightCenter] = useState<{ xPercent: number; yPercent: number } | null>(null)
+  const [spotlightVisible, setSpotlightVisible] = useState(false)
 
   useEffect(() => {
     if (!viewportRef.current) return
@@ -213,15 +385,27 @@ function HeatmapLogCanvas({
     [sessions, timeEndMs]
   )
 
+  const markerSpots = useMemo(() => analysis.markers, [analysis.markers])
+
   const hoveredHotspot = useMemo(
-    () => analysis.hotspots.find((spot) => spot.id === hoveredHotspotId) ?? null,
-    [analysis.hotspots, hoveredHotspotId]
+    () => markerSpots.find((spot) => spot.id === hoveredHotspotId) ?? null,
+    [markerSpots, hoveredHotspotId]
   )
 
   const openHotspot = useMemo(
-    () => analysis.hotspots.find((spot) => spot.id === openHotspotId) ?? null,
-    [analysis.hotspots, openHotspotId]
+    () => markerSpots.find((spot) => spot.id === openHotspotId) ?? null,
+    [markerSpots, openHotspotId]
   )
+
+  const spotlightBg = useMemo(() => {
+    if (!spotlightCenter || !baseSize) return null
+    const radius = Math.max(140, Math.min(baseSize.width, baseSize.height) * 0.22)
+    return spotlightGradient({
+      xPercent: spotlightCenter.xPercent,
+      yPercent: spotlightCenter.yPercent,
+      radiusPx: radius,
+    })
+  }, [baseSize, spotlightCenter])
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -271,6 +455,10 @@ function HeatmapLogCanvas({
         <div
           className="relative overflow-hidden rounded-2xl border border-border-soft bg-card shadow-sm"
           style={baseSize ? { width: `${baseSize.width}px`, height: `${baseSize.height}px` } : undefined}
+          onMouseLeave={() => {
+            setHoveredHotspotId(null)
+            setSpotlightVisible(false)
+          }}
         >
           <img
             src={screenshotUrl}
@@ -286,36 +474,55 @@ function HeatmapLogCanvas({
             }}
           />
 
-          <canvas ref={canvasRef} className="pointer-events-none absolute inset-0" aria-hidden="true" />
+          <canvas ref={canvasRef} className="pointer-events-none absolute inset-0 z-0" aria-hidden="true" />
 
-          <div className="absolute inset-0">
-            {analysis.hotspots.map((spot) => (
+          {spotlightBg ? (
+            <div
+              className="pointer-events-none absolute inset-0 z-[1] will-change-[opacity] transition-opacity duration-450 ease-out"
+              style={{ background: spotlightBg, opacity: spotlightVisible ? 1 : 0 }}
+              aria-hidden="true"
+            />
+          ) : null}
+
+          <div className="absolute inset-0 z-[2] pointer-events-none">
+            {markerSpots.map((spot) => (
               <button
                 key={spot.id}
                 type="button"
                 className={cn(
-                  "absolute -translate-x-1/2 -translate-y-1/2 rounded-full border px-2 py-1 text-[12px] font-semibold shadow-sm transition-transform",
-                  spot.score >= 0.75
-                    ? "border-critical-accent/40 bg-danger-surface text-critical-text"
-                    : spot.score >= 0.55
-                      ? "border-moderate-accent/50 bg-warning-surface text-moderate-text"
-                      : "border-border-soft-2 bg-surface-muted text-text-secondary",
-                  hoveredHotspotId === spot.id ? "scale-110 ring-4 ring-text-link/20" : "scale-100"
+                  "group pointer-events-auto absolute -translate-x-1/2 -translate-y-1/2 transition-transform",
+                  "after:absolute after:-inset-3 after:content-['']",
+                  hoveredHotspotId === spot.id ? "scale-110" : "scale-100"
                 )}
                 style={{ left: `${spot.x * 100}%`, top: `${spot.y * 100}%` }}
-                onMouseEnter={() => setHoveredHotspotId(spot.id)}
-                onMouseLeave={() => setHoveredHotspotId(null)}
+                onMouseEnter={() => {
+                  setHoveredHotspotId(spot.id)
+                  setSpotlightCenter({ xPercent: spot.x * 100, yPercent: spot.y * 100 })
+                  setSpotlightVisible(true)
+                }}
+                onMouseLeave={() => {
+                  setHoveredHotspotId(null)
+                  setSpotlightVisible(false)
+                }}
                 onClick={() => setOpenHotspotId(spot.id)}
                 aria-label={`핫스팟 ${spot.rank}`}
               >
-                {spot.rank}
+                <span
+                  className={cn(
+                    "grid size-11 place-items-center rounded-full border backdrop-blur-sm transition-shadow",
+                    hotspotMarkerStyle(spot.score),
+                    "group-hover:ring-4 group-hover:ring-text-link/10"
+                  )}
+                >
+                  <TriangleAlert className="size-5" aria-hidden="true" />
+                </span>
               </button>
             ))}
           </div>
 
           {hoveredHotspot ? (
             <div
-              className="pointer-events-none absolute z-10 w-[240px] -translate-x-1/2 rounded-2xl border border-border-soft bg-card/95 p-3 shadow-sm backdrop-blur-sm"
+              className="pointer-events-none absolute z-10 w-[320px] -translate-x-1/2 rounded-2xl border border-border-soft bg-card/95 p-4 shadow-sm backdrop-blur-sm"
               style={{
                 left: `${hoveredHotspot.x * 100}%`,
                 top: `${hoveredHotspot.y * 100}%`,
@@ -323,11 +530,40 @@ function HeatmapLogCanvas({
               }}
               aria-hidden="true"
             >
-              <p className="text-caption-12-medium text-text-secondary">핫스팟 #{hoveredHotspot.rank}</p>
-              <div className="mt-2 grid gap-1 text-caption-12-regular text-text-muted">
-                <p>영향 받은 테스터: {hoveredHotspot.impactedAgents.toLocaleString()}명</p>
-                <p>평균 반복 횟수: {hoveredHotspot.avgRetries.toFixed(1)}회</p>
-                <p>이탈/블락율: {(hoveredHotspot.blockRate * 100).toFixed(0)}%</p>
+              <div className="flex items-start gap-2">
+                <span className="mt-0.5 grid size-7 shrink-0 place-items-center rounded-xl bg-danger-surface text-danger-text">
+                  <TriangleAlert className="size-4" aria-hidden="true" />
+                </span>
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="text-body-14-medium text-text-body">오류 집중 지점</p>
+                    <IssueBadge variant={hotspotSeverity(hoveredHotspot.score).badgeVariant} size="sm">
+                      {hotspotSeverity(hoveredHotspot.score).label}
+                    </IssueBadge>
+                    <span className="inline-flex h-5 items-center rounded-full border border-border-soft bg-surface-subtle px-2 text-[11px] font-medium text-text-secondary">
+                      {errorKindLabel(primaryErrorKind(hoveredHotspot.errors))}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-caption-12-regular text-text-subtle">
+                    {hoveredHotspot.impactedAgents.toLocaleString()}명 영향 · 블락 {(hoveredHotspot.blockRate * 100).toFixed(0)}% · 반복{" "}
+                    {hoveredHotspot.avgRetries.toFixed(1)}회
+                  </p>
+                </div>
+              </div>
+
+              <p className="mt-3 text-caption-12-regular text-text-muted">
+                클릭/스텝 로그에서 Timeout·Network·Console 오류가 집중된 구간입니다. 주변 UI에서 반복 시도/지연이 발생합니다.
+              </p>
+
+              <div className="mt-3 grid gap-1">
+                <p className="text-caption-12-medium text-text-subtle">오류 상세</p>
+                <code className="w-fit rounded-xl bg-surface-muted px-3 py-2 text-[12px] text-text-body">
+                  timeout {hoveredHotspot.errors.timeout} · network {hoveredHotspot.errors.network} · console{" "}
+                  {hoveredHotspot.errors.console}
+                  {hoveredHotspot.errors.topHttpStatuses.length
+                    ? ` · HTTP ${hoveredHotspot.errors.topHttpStatuses.map((item) => `${item.status}(${item.count})`).join("·")}`
+                    : ""}
+                </code>
               </div>
             </div>
           ) : null}

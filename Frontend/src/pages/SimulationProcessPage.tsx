@@ -9,6 +9,7 @@ import { AuthLayout } from "@/layouts/AuthLayout"
 import { cn } from "@/lib/utils"
 import { defaultSimulationId } from "@/mocks/simulation.mock"
 import { buildResultOverviewPath } from "@/constants/routes"
+import { motion } from "@/lib/motion"
 
 const DUMMY_PROJECT = { title: "A - Mall 로그인 플로우", date: "2026-01-01" }
 
@@ -43,8 +44,8 @@ function SimulationProcessPage() {
       mainClassName="items-start justify-start overflow-hidden"
       headerLeft={<BrandingHeader compact showTagline={false} align="left" className="origin-left scale-150" />}
     >
-      <section className="grid w-full gap-5 pt-2">
-        <Card className="rounded-2xl border border-border-strong bg-card shadow-none">
+      <section className={cn("grid w-full gap-5 pt-2", motion.page)}>
+        <Card className={cn("rounded-2xl border border-border-strong bg-card shadow-none", motion.card)}>
           <CardContent className="grid gap-4 px-6 py-5">
             <div className="grid gap-2 md:grid-cols-[auto_1fr_auto] md:items-center">
               <div className="grid gap-1">
@@ -87,6 +88,7 @@ function SimulationProcessPage() {
                       key={step}
                       className={cn(
                         "flex items-center justify-between rounded-2xl border border-border-soft bg-surface-hover-2 px-4 py-3",
+                        motion.item,
                         isActive && "border-border-strong-hover bg-card"
                       )}
                     >

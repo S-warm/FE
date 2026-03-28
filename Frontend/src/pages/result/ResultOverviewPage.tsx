@@ -1,13 +1,10 @@
 import { AlertCircle, Clock, Flag, Users } from "lucide-react"
-import { useParams } from "react-router-dom"
 
 import { HorizontalBarChart } from "@/components/charts"
 import { Card, CardContent } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 import { motion } from "@/lib/motion"
 import { progressData } from "@/mocks/data-visualization.mock"
-import { recentSimulations } from "@/mocks/simulation.mock"
-import { formatRelativeTime } from "@/utils/format-relative-time"
 
 function MetricCard({
   title,
@@ -23,7 +20,7 @@ function MetricCard({
   return (
     <Card
       className={cn(
-        "rounded-2xl border border-border-strong bg-card shadow-none transition-colors hover:border-border-strong-hover hover:-translate-y-0.5 hover:shadow-sm",
+        "rounded-2xl border border-border-strong bg-card shadow-none",
         motion.card
       )}
     >
@@ -33,7 +30,7 @@ function MetricCard({
             <span className="grid size-6 place-items-center rounded-lg bg-surface-muted">{icon}</span>
             <p className="text-caption-12-medium">{title}</p>
           </div>
-          <button type="button" className="grid size-6 place-items-center rounded-lg hover:bg-surface-hover" aria-label="도움말">
+          <button type="button" className="grid size-6 place-items-center rounded-lg" aria-label="도움말">
             <AlertCircle className="size-4" />
           </button>
         </div>
@@ -47,27 +44,8 @@ function MetricCard({
 }
 
 function ResultOverviewPage() {
-  const { simulationId } = useParams()
-  const simulation = recentSimulations.find((item) => item.id === simulationId) ?? recentSimulations[0]
-
   return (
     <div className="grid gap-5">
-      <div
-        className={cn(
-          "flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border-strong bg-card px-6 py-4 shadow-none",
-          motion.card
-        )}
-      >
-        <div className="min-w-0">
-          <p className="truncate text-subtitle-18-semibold text-text-strong">{simulation?.title ?? "-"}</p>
-          <p className="mt-1 text-caption-12-regular text-text-muted">{simulation?.siteName ?? "-"}</p>
-        </div>
-        <div className="text-right">
-          <p className="text-caption-12-medium text-text-secondary">{formatRelativeTime(simulation?.createdAt ?? "-")}</p>
-          <p className="mt-1 text-caption-12-regular text-text-muted">{simulation?.createdAt ?? "-"}</p>
-        </div>
-      </div>
-
       <section className="grid gap-3 md:grid-cols-4">
         <MetricCard title="전환률" value="28%" description="업계 평균 이하 (45%)" icon={<Flag className="size-4" />} />
         <MetricCard title="테스트 된 AI 사용자" value="1,000" description="모든 페르소나 포함" icon={<Users className="size-4" />} />
@@ -77,7 +55,7 @@ function ResultOverviewPage() {
 
       <section className="grid gap-3">
         <p className="text-body-14-medium text-text-body">전환 패널 성공률</p>
-        <Card className="rounded-2xl border border-border-strong bg-card shadow-none">
+        <Card className={cn("rounded-2xl border border-border-strong bg-card shadow-none", motion.card)}>
           <CardContent className="px-6 py-5">
             <HorizontalBarChart
               data={progressData.map((item) => ({ ...item, score: Math.min(100, item.score + 15) }))}
@@ -91,7 +69,7 @@ function ResultOverviewPage() {
       <section className="grid gap-3">
         <p className="text-body-14-medium text-text-body">연령대</p>
         <div className="grid gap-3 md:grid-cols-2">
-          <Card className="group rounded-2xl border border-border-strong bg-card shadow-none">
+          <Card className={cn("group rounded-2xl border border-border-strong bg-card shadow-none", motion.card)}>
             <CardContent className="px-6 py-5">
               <p className="text-body-14-medium text-text-body transition-colors group-hover:text-text-strong">
                 랜딩 페이지
@@ -111,7 +89,7 @@ function ResultOverviewPage() {
             </CardContent>
           </Card>
 
-          <Card className="group rounded-2xl border border-border-strong bg-card shadow-none">
+          <Card className={cn("group rounded-2xl border border-border-strong bg-card shadow-none", motion.card)}>
             <CardContent className="px-6 py-5">
               <p className="text-body-14-medium text-text-body transition-colors group-hover:text-text-strong">
                 폼 시작
@@ -131,7 +109,7 @@ function ResultOverviewPage() {
             </CardContent>
           </Card>
 
-          <Card className="group rounded-2xl border border-border-strong bg-card shadow-none">
+          <Card className={cn("group rounded-2xl border border-border-strong bg-card shadow-none", motion.card)}>
             <CardContent className="px-6 py-5">
               <p className="text-body-14-medium text-text-body transition-colors group-hover:text-text-strong">
                 필드 입력
@@ -151,7 +129,7 @@ function ResultOverviewPage() {
             </CardContent>
           </Card>
 
-          <Card className="group rounded-2xl border border-border-strong bg-card shadow-none">
+          <Card className={cn("group rounded-2xl border border-border-strong bg-card shadow-none", motion.card)}>
             <CardContent className="px-6 py-5">
               <p className="text-body-14-medium text-text-body transition-colors group-hover:text-text-strong">
                 유효성 검사

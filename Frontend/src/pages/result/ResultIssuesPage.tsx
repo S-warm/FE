@@ -32,7 +32,7 @@ function IssueCard({ issue }: { issue: ResultIssue }) {
   const search = location.search
 
   return (
-    <Card className="rounded-2xl border border-border-strong bg-card shadow-none">
+    <Card className={cn("rounded-2xl border border-border-strong bg-card shadow-none", motion.card)}>
       <CardContent className="grid gap-4 px-5 py-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-start">
         <div className="grid gap-2">
           <div className="flex items-start gap-2">

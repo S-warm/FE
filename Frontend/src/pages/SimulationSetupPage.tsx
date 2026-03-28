@@ -15,6 +15,8 @@ import { TextArea, TextField } from "@/components/atoms"
 import { AuthLayout } from "@/layouts/AuthLayout"
 import routes from "@/constants/routes"
 import { useSimulationDraftStore } from "@/store/simulation-draft.store"
+import { cn } from "@/lib/utils"
+import { motion } from "@/lib/motion"
 import { formatRelativeTime } from "@/utils/format-relative-time"
 
 function SimulationSetupPage() {
@@ -24,6 +26,7 @@ function SimulationSetupPage() {
   const setProjectTitle = useSimulationDraftStore((state) => state.setProjectTitle)
   const startedAt = useSimulationDraftStore((state) => state.startedAt)
   const setStartedAt = useSimulationDraftStore((state) => state.setStartedAt)
+  const personaDevice = useSimulationDraftStore((state) => state.personaDevice)
 
   const [personaCount, setPersonaCount] = useState(500)
   const [digitalLiteracy, setDigitalLiteracy] = useState<DigitalLiteracyLevel>("low")
@@ -48,7 +51,6 @@ function SimulationSetupPage() {
       (key) => key !== changedKey
     )
     const remaining = 100 - clamped
-    const otherTotal = otherKeys.reduce((sum, key) => sum + ageRatios[key], 0)
 
     const nextState = { ...ageRatios, [changedKey]: clamped }
 
@@ -60,32 +62,37 @@ function SimulationSetupPage() {
       return
     }
 
-    if (otherTotal <= 0) {
+    const weights = otherKeys.map((key) => ageRatios[key])
+    const weightTotal = weights.reduce((sum, value) => sum + value, 0)
+
+    if (weightTotal <= 0) {
       const split = Math.floor(remaining / otherKeys.length)
-      let rest = remaining
+      const rest = remaining - split * otherKeys.length
       otherKeys.forEach((key, index) => {
-        const value = index === otherKeys.length - 1 ? rest : split
-        nextState[key] = value
-        rest -= value
+        nextState[key] = split + (index < rest ? 1 : 0)
       })
       setAgeRatios(nextState)
       return
     }
 
-    let allocated = 0
-    otherKeys.forEach((key, index) => {
-      const value =
-        index === otherKeys.length - 1
-          ? remaining - allocated
-          : Math.round((ageRatios[key] / otherTotal) * remaining)
-      nextState[key] = value
-      allocated += value
-    })
+    const raw = weights.map((weight) => (weight / weightTotal) * remaining)
+    const floors = raw.map((value) => Math.floor(value))
+    const allocated = floors.reduce((sum, value) => sum + value, 0)
+    const leftover = remaining - allocated
 
-    const correction =
-      100 -
-      ((Object.keys(nextState) as Array<keyof typeof nextState>).reduce((sum, key) => sum + nextState[key], 0))
-    nextState[otherKeys[otherKeys.length - 1]] += correction
+    const order = raw
+      .map((value, index) => ({ index, frac: value - floors[index] }))
+      .sort((a, b) => b.frac - a.frac)
+
+    for (let i = 0; i < leftover; i += 1) {
+      const target = order[i % order.length]?.index
+      if (target === undefined) break
+      floors[target] += 1
+    }
+
+    otherKeys.forEach((key, index) => {
+      nextState[key] = floors[index]
+    })
     setAgeRatios(nextState)
   }
 
@@ -134,21 +141,17 @@ function SimulationSetupPage() {
     [displayAgeRatios]
   )
 
-  const summaryAgeRatios = useMemo(
-    () => [
-      { label: "10대", value: Math.round(displayAgeRatios.teen) },
-      { label: "50대", value: Math.round(displayAgeRatios.fifty) },
-      { label: "80대", value: Math.round(displayAgeRatios.eighty) },
-    ],
-    [displayAgeRatios]
-  )
-
   return (
     <AuthLayout
       mainClassName="items-start justify-start overflow-hidden pb-0"
       headerLeft={<BrandingHeader compact showTagline={false} align="left" className="origin-left scale-150" />}
     >
-      <section className="grid w-full max-w-[1560px] gap-16 pb-0 pt-2 sm:grid-cols-[760px_400px]">
+      <section
+        className={cn(
+          "grid w-full max-w-[1560px] gap-16 pb-0 pt-2 sm:grid-cols-[760px_400px]",
+          motion.page
+        )}
+      >
         <div className="grid gap-5">
           <section className="grid w-full max-w-[760px] gap-4 md:grid-cols-2">
             <div className="grid gap-3">
@@ -181,7 +184,7 @@ function SimulationSetupPage() {
                 title="페르소나 횟수"
                 description="테스트에 사용할 시뮬레이션별 페르소나 양"
               />
-              <Card className="h-[68px] rounded-2xl border border-border-strong bg-card py-2 shadow-none">
+              <Card className={cn("h-[68px] rounded-2xl border border-border-strong bg-card py-2 shadow-none", motion.card)}>
                 <CardContent className="pt-0.5">
                   <PersonaRangeSlider value={personaCount} onChange={setPersonaCount} />
                 </CardContent>
@@ -230,10 +233,10 @@ function SimulationSetupPage() {
               </div>
 
               <div className="grid gap-3">
-                <Card className="rounded-2xl border border-border-strong bg-card py-2 shadow-none">
+                <Card className={cn("rounded-2xl border border-border-strong bg-card py-2 shadow-none", motion.card)}>
                   <CardContent className="grid gap-2 md:grid-cols-[148px_minmax(0,1fr)] md:items-center">
                     <div className="rounded-xl bg-surface-muted px-3 py-2.5">
-                      <p className="text-subtitle-20-medium text-[var(--color-primary-600)]">10대</p>
+                      <p className="text-subtitle-20-medium text-[var(--color-primary-600)]">10대~30대</p>
                       <p className="mt-1 text-body-14-regular text-text-subtle">
                         트렌드에 민감한
                         <br />
@@ -253,10 +256,10 @@ function SimulationSetupPage() {
                   </CardContent>
                 </Card>
 
-                <Card className="rounded-2xl border border-border-strong bg-card py-2 shadow-none">
+                <Card className={cn("rounded-2xl border border-border-strong bg-card py-2 shadow-none", motion.card)}>
                   <CardContent className="grid gap-2 md:grid-cols-[148px_minmax(0,1fr)] md:items-center">
                     <div className="rounded-xl bg-surface-muted px-3 py-2.5">
-                      <p className="text-subtitle-20-medium text-[var(--color-primary-600)]">50대</p>
+                      <p className="text-subtitle-20-medium text-[var(--color-primary-600)]">40대~50대</p>
                       <p className="mt-1 text-body-14-regular text-text-subtle">안정성과 신뢰를 중시하는 중장년층</p>
                     </div>
                     <PersonaRangeSlider
@@ -272,11 +275,15 @@ function SimulationSetupPage() {
                   </CardContent>
                 </Card>
 
-                <Card className="rounded-2xl border border-border-strong bg-card py-2 shadow-none">
+                <Card className={cn("rounded-2xl border border-border-strong bg-card py-2 shadow-none", motion.card)}>
                   <CardContent className="grid gap-2 md:grid-cols-[148px_minmax(0,1fr)] md:items-center">
                     <div className="rounded-xl bg-surface-muted px-3 py-2.5">
-                      <p className="text-subtitle-20-medium text-[var(--color-primary-600)]">80대</p>
-                      <p className="mt-1 text-body-14-regular text-text-subtle">접근성 개선이 필요한 디지털 소외계층</p>
+                      <p className="text-subtitle-20-medium text-[var(--color-primary-600)]">60대~80대</p>
+                      <p className="mt-1 text-body-14-regular text-text-subtle">
+                        접근성 개선이 필요한
+                        <br />
+                        디지털 소외계층
+                      </p>
                     </div>
                     <PersonaRangeSlider
                       value={ageRatios.eighty}
@@ -293,7 +300,7 @@ function SimulationSetupPage() {
               </div>
             </div>
 
-            <Card className="mt-[16px] self-end rounded-2xl border border-border-strong bg-card py-3 shadow-none">
+            <Card className={cn("mt-[16px] self-end rounded-2xl border border-border-strong bg-card py-3 shadow-none", motion.card)}>
               <CardContent className="grid min-h-[330px] gap-4">
                 <p className="text-body-14-medium text-text-secondary-2">연령층 비율</p>
                 <div className="grid gap-3">
@@ -329,28 +336,32 @@ function SimulationSetupPage() {
 
         </div>
 
-        <div className="grid min-h-[760px] self-stretch grid-rows-[auto_minmax(0,1fr)_auto] gap-5 pt-px">
+        <div className="flex min-h-[760px] self-stretch flex-col gap-5 pt-px">
           <SetupSectionTitle title="시뮬레이션 요약" />
-          <SimulationSummaryCard
+          <div className="grid gap-0">
+            <SimulationSummaryCard
             projectTitle={projectTitle}
             targetUrl={targetUrl}
             startedAtLabel={startedAt ? `${formatRelativeTime(startedAt)} · ${startedAt.slice(0, 10)}` : "-"}
-            personaCount={personaCount}
-            digitalLiteracy={digitalLiteracy}
-            ageRatios={summaryAgeRatios}
-            successCondition={successCondition}
-            className="min-h-[440px]"
-          />
-          <button
-            type="button"
-            className="flex h-[72px] w-full items-center justify-center self-end rounded-2xl bg-brand-subtle px-4 text-subtitle-18-semibold text-text-link transition-colors hover:bg-brand-subtle-hover"
-            onClick={() => {
-              if (!startedAt) setStartedAt(new Date().toISOString())
-              navigate(routes.simulationProcess)
-            }}
-          >
-            시뮬레이션 시작
-          </button>
+              personaCount={personaCount}
+              personaDevice={personaDevice}
+              digitalLiteracy={digitalLiteracy}
+              successCondition={successCondition}
+              className="rounded-2xl rounded-b-none border-b-0"
+            />
+            <Card className="rounded-2xl rounded-t-none border border-border-strong bg-surface-subtle py-0 shadow-none ring-0">
+              <button
+                type="button"
+                className="flex h-[72px] w-full items-center justify-center rounded-b-2xl bg-brand-subtle px-4 text-subtitle-18-semibold text-text-link transition-colors hover:bg-brand-subtle-hover"
+                onClick={() => {
+                  if (!startedAt) setStartedAt(new Date().toISOString())
+                  navigate(routes.simulationProcess)
+                }}
+              >
+                시뮬레이션 시작
+              </button>
+            </Card>
+          </div>
         </div>
       </section>
     </AuthLayout>

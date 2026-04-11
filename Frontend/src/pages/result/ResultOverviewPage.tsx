@@ -30,7 +30,7 @@ function MetricCard({
             <span className="grid size-6 place-items-center rounded-lg bg-surface-muted">{icon}</span>
             <p className="text-caption-12-medium">{title}</p>
           </div>
-          <button type="button" className="grid size-6 place-items-center rounded-lg" aria-label="도움말">
+          <button type="button" className="grid size-6 place-items-center rounded-lg" aria-label="도움말" title={description}>
             <AlertCircle className="size-4" />
           </button>
         </div>
@@ -47,10 +47,10 @@ function ResultOverviewPage() {
   return (
     <div className="grid gap-5">
       <section className="grid gap-3 md:grid-cols-4">
-        <MetricCard title="전환률" value="28%" description="업계 평균 이하 (45%)" icon={<Flag className="size-4" />} />
-        <MetricCard title="테스트 된 AI 사용자" value="1,000" description="모든 페르소나 포함" icon={<Users className="size-4" />} />
-        <MetricCard title="평균 완료 시간" value="4.2분" description="목표: 2~3분" icon={<Clock className="size-4" />} />
-        <MetricCard title="성공 이벤트" value="280" description="목표 도달 이벤트" icon={<Flag className="size-4" />} />
+        <MetricCard title="태스크 성공률" value="28%" description="successCount / totalAgents" icon={<Flag className="size-4" />} />
+        <MetricCard title="테스트 AI 사용자" value="1,000명" description="총 에이전트 수" icon={<Users className="size-4" />} />
+        <MetricCard title="평균 완료 시간" value="4.2분" description="성공한 에이전트 기준" icon={<Clock className="size-4" />} />
+        <MetricCard title="이탈 에이전트" value="720명" description="totalAgents - successCount" icon={<AlertCircle className="size-4" />} />
       </section>
 
       <section className="grid gap-3">

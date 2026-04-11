@@ -47,10 +47,10 @@ function ResultOverviewPage() {
   return (
     <div className="grid gap-5">
       <section className="grid gap-3 md:grid-cols-4">
-        <MetricCard title="태스크 성공률" value="28%" description="successCount / totalAgents" icon={<Flag className="size-4" />} />
+        <MetricCard title="태스크 성공률" value="28%" description="성공한 에이전트 수 / 총 에이전트 수" icon={<Flag className="size-4" />} />
         <MetricCard title="테스트 AI 사용자" value="1,000명" description="총 에이전트 수" icon={<Users className="size-4" />} />
         <MetricCard title="평균 완료 시간" value="4.2분" description="성공한 에이전트 기준" icon={<Clock className="size-4" />} />
-        <MetricCard title="이탈 에이전트" value="720명" description="totalAgents - successCount" icon={<AlertCircle className="size-4" />} />
+        <MetricCard title="이탈 에이전트" value="720명" description="총 에이전트 수 - 성공한 에이전트 수" icon={<AlertCircle className="size-4" />} />
       </section>
 
       <section className="grid gap-3">

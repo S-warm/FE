@@ -1,7 +1,7 @@
 import type { CSSProperties, ReactNode } from "react"
 import { NavLink, Outlet, useLocation, useParams } from "react-router-dom"
 
-import { AlertTriangle, Download, LayoutDashboard, Map, Pencil, Share2, ShieldCheck, Sparkles } from "lucide-react"
+import { AlertTriangle, Download, LayoutDashboard, Map, Share2, ShieldCheck, Sparkles } from "lucide-react"
 
 import { CommonButton } from "@/components/atoms"
 import { Card, CardContent } from "@/components/ui/card"
@@ -76,13 +76,6 @@ function ResultLayoutPage() {
                 <MetaRow label="시뮬레이션">
                   <div className="flex min-w-0 items-center gap-2 rounded-xl bg-surface-subtle px-4 py-2">
                     <p className="truncate text-body-16-medium text-foreground">{simulation?.title ?? "-"}</p>
-                    <button
-                      type="button"
-                      className="grid size-7 shrink-0 place-items-center rounded-lg text-text-muted hover:bg-surface-hover hover:text-text-secondary"
-                      aria-label="시뮬레이션 이름 수정"
-                    >
-                      <Pencil className="size-4" />
-                    </button>
                   </div>
                 </MetaRow>
                 <MetaRow label="생성일">

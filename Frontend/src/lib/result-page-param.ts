@@ -1,14 +1,8 @@
 import { useSearchParams } from "react-router-dom"
 
-import { defaultResultPageId, resultPagesMock } from "@/mocks/result-pages.mock"
+import { resolveResultPageId } from "@/features/result/shared/result-data"
 
 const PAGE_PARAM_KEY = "page"
-
-function resolveResultPageId(value: string | null) {
-  if (!value) return defaultResultPageId
-  const exists = resultPagesMock.some((page) => page.id === value)
-  return exists ? value : defaultResultPageId
-}
 
 function useResultPageParam() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -24,4 +18,3 @@ function useResultPageParam() {
 }
 
 export { useResultPageParam }
-

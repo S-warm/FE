@@ -113,6 +113,15 @@
   --color-chart-form-start: var(--color-persona-eighty);
   --color-chart-field-input: #6a36d9;
   --color-chart-validation: #3182f6;
+  --color-category-a11y: #b79cff;
+  --color-category-visual: #8bc5ff;
+  --color-category-usability: #79e2e6;
+  --color-category-etc: #b7c2d9;
+  --color-success-heat-low: hsla(120, 92%, 54%, 0.7);
+  --color-success-heat-mid: hsla(60, 92%, 54%, 0.7);
+  --color-warning-heat-high: hsla(30, 92%, 54%, 0.7);
+  --color-danger-heat-critical: hsla(0, 92%, 54%, 0.7);
+  --shadow-control-sm: 0 2px 4px rgb(0 0 0 / 0.08);
 
 }
 
@@ -184,6 +193,15 @@
   --color-persona-teen: #c8d0f6;
   --color-persona-fifty: #d5b8f3;
   --color-persona-eighty: #7edfe6;
+  --color-category-a11y: #b79cff;
+  --color-category-visual: #8bc5ff;
+  --color-category-usability: #79e2e6;
+  --color-category-etc: #b7c2d9;
+  --color-success-heat-low: hsla(120, 92%, 54%, 0.7);
+  --color-success-heat-mid: hsla(60, 92%, 54%, 0.7);
+  --color-warning-heat-high: hsla(30, 92%, 54%, 0.7);
+  --color-danger-heat-critical: hsla(0, 92%, 54%, 0.7);
+  --shadow-control-sm: 0 2px 4px rgb(0 0 0 / 0.28);
 }
 
 /* 2) Tailwind v4 mapping layer:
@@ -362,7 +380,7 @@
   border-radius: 999px;
   border: 2px solid var(--color-neutral-00);
   background: var(--color-primary-100);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--shadow-control-sm);
   margin-top: -0.1875rem;
 }
 
@@ -378,5 +396,5 @@
   border-radius: 999px;
   border: 2px solid var(--color-neutral-00);
   background: var(--color-primary-100);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--shadow-control-sm);
 }

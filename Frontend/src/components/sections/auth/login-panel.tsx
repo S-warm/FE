@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 
 import { CommonButton, PasswordField, TextField } from "@/components/atoms"
 import routes from "@/constants/routes"
@@ -14,9 +14,18 @@ function LoginPanel({ onGoToSignUp }: { onGoToSignUp: () => void }) {
   const [password, setPassword] = useState("")
   const [errorMessage, setErrorMessage] = useState("")
   const [isTransitioning, setIsTransitioning] = useState(false)
+  const transitionTimeoutRef = useRef<number | null>(null)
   const canLogin = useAuthStore((state) => state.canLogin)
   const login = useAuthStore((state) => state.login)
   const navigate = useNavigate()
+
+  useEffect(() => {
+    return () => {
+      if (transitionTimeoutRef.current) {
+        window.clearTimeout(transitionTimeoutRef.current)
+      }
+    }
+  }, [])
 
   return (
     <form
@@ -33,7 +42,7 @@ function LoginPanel({ onGoToSignUp }: { onGoToSignUp: () => void }) {
         }
 
         setIsTransitioning(true)
-        window.setTimeout(() => {
+        transitionTimeoutRef.current = window.setTimeout(() => {
           login(email)
           navigate(routes.generate)
         }, LOGIN_TRANSITION_MS)

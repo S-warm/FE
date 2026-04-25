@@ -39,6 +39,7 @@ function ResultPageSidePanel({
             {pages.map((page) => {
               const expanded = expandedPageId === page.id
               const isSelected = selectedPageId === page.id
+              const contentId = `result-side-panel-${page.id}`
               return (
                 <div
                   key={page.id}
@@ -51,6 +52,8 @@ function ResultPageSidePanel({
                 >
                   <button
                     type="button"
+                    aria-expanded={expanded}
+                    aria-controls={contentId}
                     className={cn(
                       "flex w-full items-center justify-between gap-2 rounded-2xl px-3 py-2 text-body-14-medium transition-colors",
                       isSelected ? "text-text-strong" : "text-text-secondary hover:text-text-strong"
@@ -65,7 +68,7 @@ function ResultPageSidePanel({
                   </button>
 
                   {expanded ? (
-                    <div className="grid gap-2 px-3 pb-3">
+                    <div id={contentId} className="grid gap-2 px-3 pb-3">
                       <div className="overflow-hidden rounded-xl border border-border-strong bg-card">
                         <img
                           src={page.screenshotUrl}

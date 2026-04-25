@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 
 import { DonutChart } from "@/components/charts"
@@ -17,6 +17,7 @@ import routes from "@/constants/routes"
 import { useSimulationDraftStore } from "@/store/simulation-draft.store"
 import { cn } from "@/lib/utils"
 import { motion } from "@/lib/motion"
+import { useAgeRatioController } from "@/features/simulation-setup/model/use-age-ratio-controller"
 import { formatRelativeTime } from "@/utils/format-relative-time"
 
 function SimulationSetupPage() {
@@ -31,115 +32,20 @@ function SimulationSetupPage() {
   const [personaCount, setPersonaCount] = useState(500)
   const [digitalLiteracy, setDigitalLiteracy] = useState<DigitalLiteracyLevel>("low")
   const [successCondition, setSuccessCondition] = useState("")
-  const [ageRatios, setAgeRatios] = useState({
-    teen: 25,
-    fifty: 25,
-    eighty: 50,
-  })
-  const [displayAgeRatios, setDisplayAgeRatios] = useState(ageRatios)
-  const animationFrameRef = useRef<number | null>(null)
-  const displayAgeRatiosRef = useRef(displayAgeRatios)
   const navigate = useNavigate()
+  const {
+    ageRatios,
+    displayAgeRatios,
+    ageRatioTotal,
+    redistributeAgeRatio,
+    resetEqualDistribution,
+  } = useAgeRatioController()
 
-  useEffect(() => {
-    displayAgeRatiosRef.current = displayAgeRatios
-  }, [displayAgeRatios])
-
-  const redistributeAgeRatio = (changedKey: keyof typeof ageRatios, nextValue: number) => {
-    const clamped = Math.min(100, Math.max(0, Math.round(nextValue)))
-    const otherKeys = (Object.keys(ageRatios) as Array<keyof typeof ageRatios>).filter(
-      (key) => key !== changedKey
-    )
-    const remaining = 100 - clamped
-
-    const nextState = { ...ageRatios, [changedKey]: clamped }
-
-    if (remaining <= 0) {
-      otherKeys.forEach((key) => {
-        nextState[key] = 0
-      })
-      setAgeRatios(nextState)
-      return
-    }
-
-    const weights = otherKeys.map((key) => ageRatios[key])
-    const weightTotal = weights.reduce((sum, value) => sum + value, 0)
-
-    if (weightTotal <= 0) {
-      const split = Math.floor(remaining / otherKeys.length)
-      const rest = remaining - split * otherKeys.length
-      otherKeys.forEach((key, index) => {
-        nextState[key] = split + (index < rest ? 1 : 0)
-      })
-      setAgeRatios(nextState)
-      return
-    }
-
-    const raw = weights.map((weight) => (weight / weightTotal) * remaining)
-    const floors = raw.map((value) => Math.floor(value))
-    const allocated = floors.reduce((sum, value) => sum + value, 0)
-    const leftover = remaining - allocated
-
-    const order = raw
-      .map((value, index) => ({ index, frac: value - floors[index] }))
-      .sort((a, b) => b.frac - a.frac)
-
-    for (let i = 0; i < leftover; i += 1) {
-      const target = order[i % order.length]?.index
-      if (target === undefined) break
-      floors[target] += 1
-    }
-
-    otherKeys.forEach((key, index) => {
-      nextState[key] = floors[index]
-    })
-    setAgeRatios(nextState)
-  }
-
-  useEffect(() => {
-    if (animationFrameRef.current) {
-      window.cancelAnimationFrame(animationFrameRef.current)
-    }
-
-    const start = performance.now()
-    const from = displayAgeRatiosRef.current
-    const to = ageRatios
-    const duration = 300
-
-    const easeOutCubic = (t: number) => 1 - (1 - t) ** 3
-
-    const tick = (now: number) => {
-      const progress = Math.min((now - start) / duration, 1)
-      const eased = easeOutCubic(progress)
-
-      setDisplayAgeRatios({
-        teen: from.teen + (to.teen - from.teen) * eased,
-        fifty: from.fifty + (to.fifty - from.fifty) * eased,
-        eighty: from.eighty + (to.eighty - from.eighty) * eased,
-      })
-
-      if (progress < 1) {
-        animationFrameRef.current = window.requestAnimationFrame(tick)
-      }
-    }
-
-    animationFrameRef.current = window.requestAnimationFrame(tick)
-
-    return () => {
-      if (animationFrameRef.current) {
-        window.cancelAnimationFrame(animationFrameRef.current)
-      }
-    }
-  }, [ageRatios])
-
-  const ageDonutData = useMemo(
-    () => [
-      { name: "10대", value: displayAgeRatios.teen, color: "var(--color-persona-teen)" },
-      { name: "50대", value: displayAgeRatios.fifty, color: "var(--color-persona-fifty)" },
-      { name: "80대", value: displayAgeRatios.eighty, color: "var(--color-persona-eighty)" },
-    ],
-    [displayAgeRatios]
-  )
+  const ageDonutData = [
+    { name: "10대", value: displayAgeRatios.teen, color: "var(--color-persona-teen)" },
+    { name: "50대", value: displayAgeRatios.fifty, color: "var(--color-persona-fifty)" },
+    { name: "80대", value: displayAgeRatios.eighty, color: "var(--color-persona-eighty)" },
+  ]
 
   return (
     <AuthLayout
@@ -148,7 +54,7 @@ function SimulationSetupPage() {
     >
       <section
         className={cn(
-          "grid w-full max-w-[1560px] gap-16 pb-0 pt-2 sm:grid-cols-[760px_400px]",
+          "grid w-full gap-16 pb-0 pt-2 xl:grid-cols-[minmax(0,1fr)_400px]",
           motion.page
         )}
       >
@@ -201,7 +107,7 @@ function SimulationSetupPage() {
             </div>
           </section>
 
-          <section className="grid w-full max-w-[760px] gap-4 md:grid-cols-[518px_minmax(0,1fr)]">
+          <section className="grid w-full max-w-[760px] gap-4 md:grid-cols-[minmax(18rem,1.35fr)_minmax(0,1fr)]">
             <div className="grid gap-3">
               <div className="flex items-center justify-between gap-3">
                 <SetupSectionTitle title="연령별 투입 비율" description="페르소나 연령대 비율" />
@@ -209,23 +115,17 @@ function SimulationSetupPage() {
                   <span
                     className={[
                       "inline-flex h-9 items-center rounded-xl border px-3 text-body-14-medium",
-                      ageRatios.teen + ageRatios.fifty + ageRatios.eighty === 100
+                      ageRatioTotal === 100
                         ? "border-border-soft bg-surface-subtle text-text-secondary"
                         : "border-critical-accent/40 bg-danger-surface text-critical-text",
                     ].join(" ")}
                   >
-                    합계 {ageRatios.teen + ageRatios.fifty + ageRatios.eighty}%
+                    합계 {ageRatioTotal}%
                   </span>
                   <button
                     type="button"
-                    className="rounded-xl bg-[var(--color-primary-50)] px-4 py-2 text-body-14-medium text-[var(--color-primary-main)]"
-                    onClick={() =>
-                      setAgeRatios({
-                        teen: 34,
-                        fifty: 33,
-                        eighty: 33,
-                      })
-                    }
+                    className="rounded-xl bg-brand-subtle px-4 py-2 text-body-14-medium text-brand-accent hover:bg-brand-subtle-hover"
+                    onClick={resetEqualDistribution}
                   >
                     균등배치
                   </button>
@@ -236,7 +136,7 @@ function SimulationSetupPage() {
                 <Card className={cn("rounded-2xl border border-border-strong bg-card py-2 shadow-none", motion.card)}>
                   <CardContent className="grid gap-2 md:grid-cols-[148px_minmax(0,1fr)] md:items-center">
                     <div className="rounded-xl bg-surface-muted px-3 py-2.5">
-                      <p className="text-subtitle-20-medium text-[var(--color-primary-600)]">10대~30대</p>
+                      <p className="text-subtitle-20-medium text-primary">10대~30대</p>
                       <p className="mt-1 text-body-14-regular text-text-subtle">
                         트렌드에 민감한
                         <br />
@@ -259,7 +159,7 @@ function SimulationSetupPage() {
                 <Card className={cn("rounded-2xl border border-border-strong bg-card py-2 shadow-none", motion.card)}>
                   <CardContent className="grid gap-2 md:grid-cols-[148px_minmax(0,1fr)] md:items-center">
                     <div className="rounded-xl bg-surface-muted px-3 py-2.5">
-                      <p className="text-subtitle-20-medium text-[var(--color-primary-600)]">40대~50대</p>
+                      <p className="text-subtitle-20-medium text-primary">40대~50대</p>
                       <p className="mt-1 text-body-14-regular text-text-subtle">안정성과 신뢰를 중시하는 중장년층</p>
                     </div>
                     <PersonaRangeSlider
@@ -278,7 +178,7 @@ function SimulationSetupPage() {
                 <Card className={cn("rounded-2xl border border-border-strong bg-card py-2 shadow-none", motion.card)}>
                   <CardContent className="grid gap-2 md:grid-cols-[148px_minmax(0,1fr)] md:items-center">
                     <div className="rounded-xl bg-surface-muted px-3 py-2.5">
-                      <p className="text-subtitle-20-medium text-[var(--color-primary-600)]">60대~80대</p>
+                      <p className="text-subtitle-20-medium text-primary">60대~80대</p>
                       <p className="mt-1 text-body-14-regular text-text-subtle">
                         접근성 개선이 필요한
                         <br />
@@ -300,7 +200,7 @@ function SimulationSetupPage() {
               </div>
             </div>
 
-            <Card className={cn("mt-[16px] self-end rounded-2xl border border-border-strong bg-card py-3 shadow-none", motion.card)}>
+            <Card className={cn("mt-4 self-end rounded-2xl border border-border-strong bg-card py-3 shadow-none", motion.card)}>
               <CardContent className="grid min-h-[330px] gap-4">
                 <p className="text-body-14-medium text-text-secondary-2">연령층 비율</p>
                 <div className="grid gap-3">
@@ -333,16 +233,15 @@ function SimulationSetupPage() {
               className="h-[104px] resize-none overflow-y-auto overscroll-contain rounded-2xl border-border-soft-2 bg-card px-4 py-3 text-text-secondary placeholder:text-text-muted"
             />
           </section>
-
         </div>
 
         <div className="flex min-h-[760px] self-stretch flex-col gap-5 pt-px">
           <SetupSectionTitle title="시뮬레이션 요약" />
           <div className="grid gap-0">
             <SimulationSummaryCard
-            projectTitle={projectTitle}
-            targetUrl={targetUrl}
-            startedAtLabel={startedAt ? `${formatRelativeTime(startedAt)} · ${startedAt.slice(0, 10)}` : "-"}
+              projectTitle={projectTitle}
+              targetUrl={targetUrl}
+              startedAtLabel={startedAt ? `${formatRelativeTime(startedAt)} · ${startedAt.slice(0, 10)}` : "-"}
               personaCount={personaCount}
               personaDevice={personaDevice}
               digitalLiteracy={digitalLiteracy}

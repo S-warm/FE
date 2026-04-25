@@ -11,6 +11,8 @@ import { recentSimulations } from "@/mocks/simulation.mock"
 import { formatRelativeTime } from "@/utils/format-relative-time"
 import { useLayoutStore } from "@/store/layout.store"
 
+const APP_CONTENT_MAX_WIDTH_CLASS = "max-w-[1560px] 2xl:max-w-[1760px]"
+
 function AuthSidebar({
   open,
   activeSimulationId,
@@ -135,7 +137,7 @@ function AuthLayout({
         </header>
 
         <main className={cn("flex flex-1 justify-center px-4 pb-12 sm:px-6", mainClassName ?? "items-center")}>
-          <div className="w-full max-w-[1560px] 2xl:max-w-[1760px]">
+          <div className={cn("w-full", APP_CONTENT_MAX_WIDTH_CLASS)}>
             {children}
           </div>
         </main>

@@ -13,265 +13,22 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import {
+  HEATMAP_GRID_COLS,
+  HEATMAP_GRID_ROWS,
+  analyzeSessions,
+} from "@/features/result/heatmap/model/analyze-heatmap"
+import { getResultPages } from "@/features/result/shared/result-data"
 import { cn } from "@/lib/utils"
 import { motion } from "@/lib/motion"
 import { useResultPageParam } from "@/lib/result-page-param"
 import { heatmapAgeBands, defaultHeatmapPageId } from "@/mocks/result-heatmap.mock"
 import type { HeatmapAgeBand } from "@/mocks/result-heatmap.mock"
 import { heatmapPageLogsMock, heatmapTimelineMaxMsMock } from "@/mocks/result-heatmap-log.mock"
-import type { HeatmapAgentSession, HeatmapErrorKind, HeatmapLogEvent, HeatmapPageLogMock } from "@/mocks/result-heatmap-log.mock"
-import { resultPagesMock } from "@/mocks/result-pages.mock"
-
-const GRID_COLS = 64
-const GRID_ROWS = 40
+import type { HeatmapAgentSession, HeatmapPageLogMock } from "@/mocks/result-heatmap-log.mock"
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value))
-}
-
-function selectErrorEvents(events: HeatmapLogEvent[]) {
-  return events.filter((event) => event.block || Boolean(event.errorKind))
-}
-
-function cellKey(col: number, row: number) {
-  return row * GRID_COLS + col
-}
-
-interface CellAgg {
-  eventCount: number
-  dwellSum: number
-  retriesSum: number
-  blockCount: number
-  agentIds: Set<string>
-  blockAgents: Set<string>
-  errorKindCount: Record<HeatmapErrorKind, number>
-  httpStatusCount: Record<number, number>
-}
-
-interface HeatmapCellSummary {
-  key: number
-  x: number
-  y: number
-  score: number
-  impactedAgents: number
-  avgRetries: number
-  blockRate: number
-  errors: {
-    timeout: number
-    console: number
-    network: number
-    topHttpStatuses: Array<{ status: number; count: number }>
-  }
-}
-
-interface HeatmapHotspot {
-  id: string
-  rank: number
-  x: number
-  y: number
-  score: number
-  impactedAgents: number
-  avgRetries: number
-  blockRate: number
-  errors: {
-    timeout: number
-    console: number
-    network: number
-    topHttpStatuses: Array<{ status: number; count: number }>
-  }
-}
-
-function buildFallbackHotspots(cells: Map<number, HeatmapCellSummary>, limit: number) {
-  const sorted = Array.from(cells.values()).sort((a, b) => {
-      const scoreDelta = b.score - a.score
-      if (Math.abs(scoreDelta) > 0.0001) return scoreDelta
-      return b.impactedAgents - a.impactedAgents
-    })
-
-  const preferred = sorted.filter((cell) => cell.score >= 0.18)
-  const pool = preferred.length ? preferred : sorted
-
-  const picked: Array<{ col: number; row: number; cell: HeatmapCellSummary }> = []
-  const minDistance = 9
-
-  for (const cell of pool) {
-    if (picked.length >= limit) break
-
-    const col = cell.key % GRID_COLS
-    const row = Math.floor(cell.key / GRID_COLS)
-    const tooClose = picked.some((item) => Math.hypot(item.col - col, item.row - row) < minDistance)
-    if (tooClose) continue
-
-    picked.push({ col, row, cell })
-  }
-
-  if (picked.length === 0 && sorted.length) {
-    const first = sorted[0]
-    const col = first.key % GRID_COLS
-    const row = Math.floor(first.key / GRID_COLS)
-    picked.push({ col, row, cell: first })
-  }
-
-  return picked.map(({ col, row, cell }, index) => ({
-    id: `fb-${col}-${row}`,
-    rank: index + 1,
-    x: cell.x,
-    y: cell.y,
-    score: cell.score,
-    impactedAgents: cell.impactedAgents,
-    avgRetries: cell.avgRetries,
-    blockRate: cell.blockRate,
-    errors: cell.errors,
-  }))
-}
-
-function analyzeSessions({
-  sessions,
-  timeEndMs,
-}: {
-  sessions: HeatmapAgentSession[]
-  timeEndMs: number
-}) {
-  const cellAgg = new Map<number, CellAgg>()
-  let totalEventCount = 0
-  let totalDwellSum = 0
-  const totalAgents = new Set<string>()
-
-  for (const session of sessions) {
-    totalAgents.add(session.agentId)
-    const events = selectErrorEvents(session.events)
-    for (const event of events) {
-      if (event.tMs > timeEndMs) continue
-      if (!Number.isFinite(event.x) || !Number.isFinite(event.y)) continue
-
-      const col = clamp(Math.floor(event.x * GRID_COLS), 0, GRID_COLS - 1)
-      const row = clamp(Math.floor(event.y * GRID_ROWS), 0, GRID_ROWS - 1)
-      const key = cellKey(col, row)
-
-      const agg = cellAgg.get(key) ?? {
-        eventCount: 0,
-        dwellSum: 0,
-        retriesSum: 0,
-        blockCount: 0,
-        agentIds: new Set<string>(),
-        blockAgents: new Set<string>(),
-        errorKindCount: { timeout: 0, console: 0, network: 0 },
-        httpStatusCount: {},
-      }
-
-      agg.eventCount += 1
-      agg.dwellSum += event.dwellMs
-      agg.retriesSum += event.retries
-      if (event.block) {
-        agg.blockCount += 1
-        agg.blockAgents.add(session.agentId)
-      }
-      if (event.errorKind) {
-        agg.errorKindCount[event.errorKind] = (agg.errorKindCount[event.errorKind] ?? 0) + 1
-      }
-      if (typeof event.httpStatus === "number") {
-        agg.httpStatusCount[event.httpStatus] = (agg.httpStatusCount[event.httpStatus] ?? 0) + 1
-      }
-      agg.agentIds.add(session.agentId)
-      cellAgg.set(key, agg)
-
-      totalEventCount += 1
-      totalDwellSum += event.dwellMs
-    }
-  }
-
-  const avgDwellMs = totalEventCount > 0 ? totalDwellSum / totalEventCount : 0
-  const heat = new Float32Array(GRID_COLS * GRID_ROWS)
-
-  for (const [key, agg] of cellAgg.entries()) {
-    const perEventRetries = agg.eventCount > 0 ? agg.retriesSum / agg.eventCount : 0
-    const perEventDwell = agg.eventCount > 0 ? agg.dwellSum / agg.eventCount : 0
-    const repeatFactor = clamp(perEventRetries / 3, 0, 1)
-    const dwellFactor = avgDwellMs > 0 ? clamp(perEventDwell / avgDwellMs / 2, 0, 1) : 0
-    const blockFactor = agg.agentIds.size > 0 ? clamp(agg.blockAgents.size / agg.agentIds.size, 0, 1) : 0
-
-    const score = clamp(blockFactor * 0.85 + repeatFactor * 0.15 + dwellFactor * 0.1, 0, 1)
-
-    heat[key] = score
-  }
-
-  const cells = new Map<number, HeatmapCellSummary>()
-  for (const [key, agg] of cellAgg.entries()) {
-    const col = key % GRID_COLS
-    const row = Math.floor(key / GRID_COLS)
-    const impactedAgents = agg.agentIds.size
-    const blockRate = impactedAgents > 0 ? agg.blockAgents.size / impactedAgents : 0
-    const avgRetries = agg.eventCount > 0 ? agg.retriesSum / agg.eventCount : 0
-    const score = heat[key] ?? 0
-    if (score <= 0) continue
-
-    const topHttpStatuses = Object.entries(agg.httpStatusCount)
-      .map(([status, count]) => ({ status: Number(status), count }))
-      .filter((item) => Number.isFinite(item.status) && item.count > 0)
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 2)
-
-    cells.set(key, {
-      key,
-      x: (col + 0.5) / GRID_COLS,
-      y: (row + 0.5) / GRID_ROWS,
-      score,
-      impactedAgents,
-      avgRetries,
-      blockRate,
-      errors: {
-        timeout: agg.errorKindCount.timeout ?? 0,
-        console: agg.errorKindCount.console ?? 0,
-        network: agg.errorKindCount.network ?? 0,
-        topHttpStatuses,
-      },
-    })
-  }
-
-  const hotspots: HeatmapHotspot[] = Array.from(cellAgg.entries())
-    .map(([key, agg]) => {
-      const col = key % GRID_COLS
-      const row = Math.floor(key / GRID_COLS)
-      const impactedAgents = agg.agentIds.size
-      const blockRate = impactedAgents > 0 ? agg.blockAgents.size / impactedAgents : 0
-      const avgRetries = agg.eventCount > 0 ? agg.retriesSum / agg.eventCount : 0
-      const score = heat[key] ?? 0
-      const summary = cells.get(key)
-      return {
-        id: `hs-${col}-${row}`,
-        rank: 0,
-        x: (col + 0.5) / GRID_COLS,
-        y: (row + 0.5) / GRID_ROWS,
-        score,
-        impactedAgents,
-        avgRetries,
-        blockRate,
-        errors: {
-          timeout: summary?.errors.timeout ?? 0,
-          console: summary?.errors.console ?? 0,
-          network: summary?.errors.network ?? 0,
-          topHttpStatuses: summary?.errors.topHttpStatuses ?? [],
-        },
-      }
-    })
-    .filter((spot) => spot.impactedAgents >= 8 && spot.score >= 0.35)
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 6)
-    .map((spot, index) => ({ ...spot, rank: index + 1 }))
-
-  const fallbackHotspots = buildFallbackHotspots(cells, 6)
-  const markers = hotspots.length ? hotspots : fallbackHotspots
-
-  return {
-    heat,
-    cells,
-    hotspots,
-    markers,
-    totals: {
-      agentCount: totalAgents.size,
-      eventCount: totalEventCount,
-    },
-  }
 }
 
 function scoreToFill(score: number) {
@@ -292,7 +49,7 @@ function spotlightGradient({
 }) {
   const inner = Math.max(12, Math.round(radiusPx * 0.55))
   const outer = Math.max(inner + 12, Math.round(radiusPx))
-  const color = "rgba(15, 23, 42, 0.3)"
+  const color = "rgb(15 23 42 / 0.3)"
   return `radial-gradient(circle at ${xPercent}% ${yPercent}%, rgba(15, 23, 42, 0) 0px, rgba(15, 23, 42, 0) ${inner}px, ${color} ${outer}px, ${color} 100%)`
 }
 
@@ -304,12 +61,12 @@ function hotspotSeverity(score: number) {
 
 function hotspotMarkerStyle(score: number) {
   if (score >= 0.72) {
-    return "border-critical-accent/40 bg-danger-surface/90 text-danger-text shadow-[0_10px_30px_rgba(245,121,104,0.18)]"
+    return "border-critical-accent/40 bg-danger-surface/90 text-danger-text shadow-[0_10px_30px_rgb(245_121_104_/_0.18)]"
   }
   if (score >= 0.52) {
-    return "border-moderate-accent/50 bg-warning-surface/90 text-warning-text shadow-[0_10px_30px_rgba(246,196,139,0.18)]"
+    return "border-moderate-accent/50 bg-warning-surface/90 text-warning-text shadow-[0_10px_30px_rgb(246_196_139_/_0.18)]"
   }
-  return "border-border-soft-2 bg-brand-subtle/90 text-text-link shadow-[0_10px_30px_rgba(68,99,208,0.14)]"
+  return "border-border-soft-2 bg-brand-subtle/90 text-text-link shadow-[0_10px_30px_rgb(68_99_208_/_0.14)]"
 }
 
 function primaryErrorKind(errors: { timeout: number; network: number; console: number }) {
@@ -425,16 +182,16 @@ function HeatmapLogCanvas({
     context.setTransform(dpr, 0, 0, dpr, 0, 0)
     context.clearRect(0, 0, width, height)
 
-    const cellW = width / GRID_COLS
-    const cellH = height / GRID_ROWS
+    const cellW = width / HEATMAP_GRID_COLS
+    const cellH = height / HEATMAP_GRID_ROWS
 
     const drawHeat = (blurPx: number, alphaScale: number, spreadScale: number) => {
       context.save()
       context.filter = `blur(${blurPx}px)`
       context.globalAlpha = clamp(overlayOpacity * alphaScale, 0, 1)
-      for (let row = 0; row < GRID_ROWS; row += 1) {
-        for (let col = 0; col < GRID_COLS; col += 1) {
-          const score = analysis.heat[cellKey(col, row)] ?? 0
+      for (let row = 0; row < HEATMAP_GRID_ROWS; row += 1) {
+        for (let col = 0; col < HEATMAP_GRID_COLS; col += 1) {
+          const score = analysis.heat[row * HEATMAP_GRID_COLS + col] ?? 0
           if (score <= 0) continue
           context.fillStyle = scoreToFill(score)
           const spreadX = cellW * spreadScale
@@ -609,7 +366,7 @@ function ResultHeatmapPage() {
 
   const sidePages = useMemo(
     () =>
-      resultPagesMock.map((page) => {
+      getResultPages().map((page) => {
         const log = heatmapPageLogsMock.find((item) => item.pageId === page.id)
         const agentCount = log?.sessions.length ?? 0
         return {
@@ -667,19 +424,19 @@ function ResultHeatmapPage() {
 
             <div className="flex flex-wrap items-center gap-2 text-caption-12-regular text-text-muted">
               <span className="inline-flex items-center gap-2 rounded-full border border-border-soft bg-surface-subtle px-3 py-1">
-                <span className="size-2 rounded-full bg-[hsla(120,92%,54%,0.7)]" aria-hidden="true" />
+                <span className="size-2 rounded-full" style={{ backgroundColor: "var(--color-success-heat-low)" }} aria-hidden="true" />
                 낮음
               </span>
               <span className="inline-flex items-center gap-2 rounded-full border border-border-soft bg-surface-subtle px-3 py-1">
-                <span className="size-2 rounded-full bg-[hsla(60,92%,54%,0.7)]" aria-hidden="true" />
+                <span className="size-2 rounded-full" style={{ backgroundColor: "var(--color-success-heat-mid)" }} aria-hidden="true" />
                 보통
               </span>
               <span className="inline-flex items-center gap-2 rounded-full border border-border-soft bg-surface-subtle px-3 py-1">
-                <span className="size-2 rounded-full bg-[hsla(30,92%,54%,0.7)]" aria-hidden="true" />
+                <span className="size-2 rounded-full" style={{ backgroundColor: "var(--color-warning-heat-high)" }} aria-hidden="true" />
                 높음
               </span>
               <span className="inline-flex items-center gap-2 rounded-full border border-border-soft bg-surface-subtle px-3 py-1">
-                <span className="size-2 rounded-full bg-[hsla(0,92%,54%,0.7)]" aria-hidden="true" />
+                <span className="size-2 rounded-full" style={{ backgroundColor: "var(--color-danger-heat-critical)" }} aria-hidden="true" />
                 치명적(블락)
               </span>
             </div>

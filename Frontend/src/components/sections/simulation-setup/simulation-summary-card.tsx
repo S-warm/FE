@@ -1,8 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card"
+import type { DigitalLiteracyLevel } from "@/features/simulation-setup/model/types"
 import { cn } from "@/lib/utils"
 import { motion } from "@/lib/motion"
-
-import type { DigitalLiteracyLevel } from "@/components/sections/simulation-setup/digital-literacy-selector"
 import { personaDeviceLabelMap, type PersonaDevice } from "@/constants/persona-device"
 
 const literacyLabelMap: Record<DigitalLiteracyLevel, string> = {

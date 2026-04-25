@@ -8,21 +8,13 @@ import { DonutChart } from "@/components/charts"
 import { ChipTag } from "@/components/forms"
 import { ResultPageSidePanel } from "@/components/sections/result/page-side-panel"
 import { Card, CardContent } from "@/components/ui/card"
+import { categoryColorMap, filterCategories } from "@/features/result/issues/model/category-style"
+import { getIssueCountByPageId, getResultPages } from "@/features/result/shared/result-data"
 import { cn } from "@/lib/utils"
 import type { IssueCategory, ResultIssue, ResultIssuePage } from "@/mocks/result-issues.mock"
 import { resultIssuePages } from "@/mocks/result-issues.mock"
-import { resultPagesMock } from "@/mocks/result-pages.mock"
 import { useResultPageParam } from "@/lib/result-page-param"
 import { motion } from "@/lib/motion"
-
-const filterCategories: IssueCategory[] = ["접근성", "사용성", "시각요소", "기타"]
-
-const categoryColorMap: Record<IssueCategory, string> = {
-  접근성: "#B79CFF",
-  시각요소: "#8BC5FF",
-  사용성: "#79E2E6",
-  기타: "#B7C2D9",
-}
 
 function IssueCard({ issue }: { issue: ResultIssue }) {
   const { simulationId } = useParams()
@@ -142,8 +134,8 @@ function ResultIssuesPage() {
 
   const sidePages = useMemo(
     () =>
-      resultPagesMock.map((page) => {
-        const issueCount = resultIssuePages.find((item) => item.id === page.id)?.issues.length ?? 0
+      getResultPages().map((page) => {
+        const issueCount = getIssueCountByPageId(page.id)
         return {
           id: page.id,
           name: page.name,

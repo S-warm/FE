@@ -21,7 +21,6 @@ function MenuItem({
   return (
     <button
       type="button"
-      role="menuitem"
       className={cn(
         "flex w-full items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
         tone === "primary"

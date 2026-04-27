@@ -6,10 +6,10 @@
       "request": "launch",
       "name": "Frontend (Vite) 디버그",
       "url": "http://localhost:5173",
-      "webRoot": "${workspaceFolder}/Fronted",
+      "webRoot": "${workspaceFolder}/Frontend",
       "skipFiles": [
         "<node_internals>/**",
-        "${workspaceFolder}/Fronted/node_modules/**"
+        "${workspaceFolder}/Frontend/node_modules/**"
       ]
     }
   ]

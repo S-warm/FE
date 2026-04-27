@@ -67,24 +67,16 @@ export function useSimulationCreate({ onSuccess }: UseSimulationCreateOptions) {
         return
       }
 
+      // ========== 상세 에러 분석 ==========
+      console.error("❌ [Simulation Create Error]", error)
+
       if (error instanceof HttpError) {
         const apiError = error.body as ApiErrorResponse | undefined
-        setSubmitError(apiError?.message || "시뮬레이션 생성에 실패했습니다.")
-        return
-      }
+        const errorMessage = apiError?.message || `HTTP ${error.status}: ${error.statusText}`
 
-      setSubmitError("시뮬레이션 생성 중 오류가 발생했습니다.")
-    } finally {
-      if (abortControllerRef.current === abortController) {
-        abortControllerRef.current = null
-      }
-      setIsSubmitting(false)
-    }
-  }
-
-  return {
-    isSubmitting,
-    submitError,
-    submitSimulation,
-  }
-}
+        // 에러 타입별 상세 분류
+        if (error.status === 403) {
+          console.error("🔒 [403 Forbidden] JWT/Auth 토큰 문제 or 권한 없음")
+          setSubmitError(`[403] 권한 없음: ${apiError?.message || error.statusText}`)
+        } else if (error.status === 401) {
+          console.error("🔐 [401 Unauthorized] 인증 정보 누락 or 토

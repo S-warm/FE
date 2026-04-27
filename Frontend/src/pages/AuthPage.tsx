@@ -16,16 +16,23 @@ function AuthPage({
 }) {
   const [mode, setMode] = useState<AuthMode>(initialMode)
   const [visible, setVisible] = useState(false)
+  const animationFrameRef = useRef<number | null>(null)
   const transitionTimeoutRef = useRef<number | null>(null)
 
   useEffect(() => {
-    window.requestAnimationFrame(() => {
+    animationFrameRef.current = window.requestAnimationFrame(() => {
       setVisible(true)
+      animationFrameRef.current = null
     })
 
     return () => {
+      if (animationFrameRef.current) {
+        window.cancelAnimationFrame(animationFrameRef.current)
+        animationFrameRef.current = null
+      }
       if (transitionTimeoutRef.current) {
         window.clearTimeout(transitionTimeoutRef.current)
+        transitionTimeoutRef.current = null
       }
     }
   }, [])
@@ -39,17 +46,27 @@ function AuthPage({
 
     if (transitionTimeoutRef.current) {
       window.clearTimeout(transitionTimeoutRef.current)
+      transitionTimeoutRef.current = null
+    }
+
+    if (animationFrameRef.current) {
+      window.cancelAnimationFrame(animationFrameRef.current)
+      animationFrameRef.current = null
     }
 
     setVisible(false)
     transitionTimeoutRef.current = window.setTimeout(() => {
+      transitionTimeoutRef.current = null
       if (onModeChange) {
         onModeChange(nextMode)
         return
       }
 
       setMode(nextMode)
-      window.requestAnimationFrame(() => setVisible(true))
+      animationFrameRef.current = window.requestAnimationFrame(() => {
+        setVisible(true)
+        animationFrameRef.current = null
+      })
     }, LOGIN_TRANSITION_MS)
   }
 

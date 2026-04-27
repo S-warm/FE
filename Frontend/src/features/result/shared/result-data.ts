@@ -9,8 +9,9 @@ export function isKnownResultPageId(value: string | null) {
   return resultPagesMock.some((page) => page.id === value)
 }
 
-export function resolveResultPageId(value: string | null) {
-  return isKnownResultPageId(value) ? value : defaultResultPageId
+export function resolveResultPageId(value: string | null): string {
+  if (!value) return defaultResultPageId
+  return value
 }
 
 export function getResultPages(): ResultPageSummary[] {

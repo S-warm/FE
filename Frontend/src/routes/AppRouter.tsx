@@ -2,17 +2,17 @@ import type { ReactNode } from "react"
 import { Suspense, lazy } from "react"
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom"
 
-import HomePage from "@/pages/HomePage"
-import GeneratePage from "@/pages/GeneratePage"
-import LoginPage from "@/pages/LoginPage"
-import SimulationProcessPage from "@/pages/SimulationProcessPage"
-import SimulationSetupPage from "@/pages/SimulationSetupPage"
-import SignUpPage from "@/pages/SignUpPage"
-import ResultLayoutPage from "@/pages/result/ResultLayoutPage"
-import ResultOverviewPage from "@/pages/result/ResultOverviewPage"
 import routes from "@/constants/routes"
 import { useAuthStore } from "@/store/auth.store"
 
+const HomePage = lazy(() => import("@/pages/HomePage"))
+const GeneratePage = lazy(() => import("@/pages/GeneratePage"))
+const LoginPage = lazy(() => import("@/pages/LoginPage"))
+const SimulationProcessPage = lazy(() => import("@/pages/SimulationProcessPage"))
+const SimulationSetupPage = lazy(() => import("@/pages/SimulationSetupPage"))
+const SignUpPage = lazy(() => import("@/pages/SignUpPage"))
+const ResultLayoutPage = lazy(() => import("@/pages/result/ResultLayoutPage"))
+const ResultOverviewPage = lazy(() => import("@/pages/result/ResultOverviewPage"))
 const ResultIssuesPage = lazy(() => import("@/pages/result/ResultIssuesPage"))
 const ResultWcagPage = lazy(() => import("@/pages/result/ResultWcagPage"))
 const ResultAiFixPage = lazy(() => import("@/pages/result/ResultAiFixPage"))
@@ -24,6 +24,10 @@ function RouteFallback() {
       로딩 중...
     </div>
   )
+}
+
+function RouteScreen({ children }: { children: ReactNode }) {
+  return <Suspense fallback={<RouteFallback />}>{children}</Suspense>
 }
 
 function RequireAuth({ children }: { children: ReactNode }) {
@@ -48,12 +52,21 @@ export default function AppRouter() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path={routes.home} element={<HomePage />} />
+        <Route
+          path={routes.home}
+          element={
+            <RouteScreen>
+              <HomePage />
+            </RouteScreen>
+          }
+        />
         <Route
           path={routes.login}
           element={
             <PublicOnly>
-              <LoginPage />
+              <RouteScreen>
+                <LoginPage />
+              </RouteScreen>
             </PublicOnly>
           }
         />
@@ -61,7 +74,9 @@ export default function AppRouter() {
           path={routes.signup}
           element={
             <PublicOnly>
-              <SignUpPage />
+              <RouteScreen>
+                <SignUpPage />
+              </RouteScreen>
             </PublicOnly>
           }
         />
@@ -69,7 +84,9 @@ export default function AppRouter() {
           path={routes.generate}
           element={
             <RequireAuth>
-              <GeneratePage />
+              <RouteScreen>
+                <GeneratePage />
+              </RouteScreen>
             </RequireAuth>
           }
         />
@@ -77,7 +94,9 @@ export default function AppRouter() {
           path={routes.simulationSetup}
           element={
             <RequireAuth>
-              <SimulationSetupPage />
+              <RouteScreen>
+                <SimulationSetupPage />
+              </RouteScreen>
             </RequireAuth>
           }
         />
@@ -85,7 +104,9 @@ export default function AppRouter() {
           path={routes.simulationProcess}
           element={
             <RequireAuth>
-              <SimulationProcessPage />
+              <RouteScreen>
+                <SimulationProcessPage />
+              </RouteScreen>
             </RequireAuth>
           }
         />
@@ -93,49 +114,55 @@ export default function AppRouter() {
           path={routes.result}
           element={
             <RequireAuth>
-              <ResultLayoutPage />
+              <RouteScreen>
+                <ResultLayoutPage />
+              </RouteScreen>
             </RequireAuth>
           }
         >
           <Route index element={<Navigate to="overview" replace />} />
-          <Route path="overview" element={<ResultOverviewPage />} />
+          <Route
+            path="overview"
+            element={
+              <RouteScreen>
+                <ResultOverviewPage />
+              </RouteScreen>
+            }
+          />
           <Route
             path="issues"
             element={
-              <Suspense fallback={<RouteFallback />}>
+              <RouteScreen>
                 <ResultIssuesPage />
-              </Suspense>
+              </RouteScreen>
             }
           />
           <Route
             path="heatmap"
             element={
-              <Suspense fallback={<RouteFallback />}>
+              <RouteScreen>
                 <ResultHeatmapPage />
-              </Suspense>
+              </RouteScreen>
             }
           />
           <Route
             path="wcag"
             element={
-              <Suspense fallback={<RouteFallback />}>
+              <RouteScreen>
                 <ResultWcagPage />
-              </Suspense>
+              </RouteScreen>
             }
           />
           <Route
             path="ai"
             element={
-              <Suspense fallback={<RouteFallback />}>
+              <RouteScreen>
                 <ResultAiFixPage />
-              </Suspense>
+              </RouteScreen>
             }
           />
         </Route>
-        <Route
-          path={routes.error}
-          element={<Navigate to={routes.login} replace />}
-        />
+        <Route path={routes.error} element={<Navigate to={routes.login} replace />} />
       </Routes>
     </BrowserRouter>
   )

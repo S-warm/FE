@@ -3,15 +3,15 @@ import { useMemo, useState } from "react"
 
 import { AlertCircle, ChevronDown, ClipboardCheck, ShieldCheck, TriangleAlert } from "lucide-react"
 
-import { Badge } from "@/components/ui/badge"
 import { ResultPageSidePanel } from "@/components/sections/result/page-side-panel"
+import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
-import { cn } from "@/lib/utils"
+import { useResultPageState } from "@/features/result/shared/use-result-page-state"
 import { motion } from "@/lib/motion"
+import { cn } from "@/lib/utils"
 import type { WcagDetailIssue, WcagIssueDistribution, WcagSeverity } from "@/mocks/result-wcag.mock"
 import { wcagResultMock } from "@/mocks/result-wcag.mock"
 import { resultPagesMock } from "@/mocks/result-pages.mock"
-import { useResultPageParam } from "@/lib/result-page-param"
 
 const severityStyleMap: Record<
   WcagSeverity,
@@ -51,13 +51,11 @@ function MetricCard({
   value,
   subtitle,
   icon,
-  rightSlot,
 }: {
   title: string
   value: string
   subtitle: string
   icon: React.ReactNode
-  rightSlot?: React.ReactNode
 }) {
   return (
     <Card className={cn("rounded-2xl border border-border-strong bg-card shadow-none", motion.card)}>
@@ -70,7 +68,7 @@ function MetricCard({
           <button
             type="button"
             className="grid size-6 place-items-center rounded-lg hover:bg-surface-hover"
-            aria-label="도움말"
+            aria-label="Metric info"
           >
             <AlertCircle className="size-4" />
           </button>
@@ -79,7 +77,6 @@ function MetricCard({
           <p className="text-title-24-bold text-text-strong">{value}</p>
           <p className="text-caption-12-regular text-text-subtle">{subtitle}</p>
         </div>
-        {rightSlot ? <div className="pt-1">{rightSlot}</div> : null}
       </CardContent>
     </Card>
   )
@@ -164,7 +161,7 @@ function DetailIssueRow({
           </div>
 
           <span className="inline-flex items-center gap-1 rounded-lg bg-surface-muted px-3 py-2 text-caption-12-medium text-text-muted">
-            자세히 보기
+            Details
             <ChevronDown className={cn("size-4 transition-transform", expanded ? "rotate-180" : "")} />
           </span>
         </button>
@@ -188,8 +185,7 @@ function DetailIssueRow({
 
 function ResultWcagPage() {
   const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set())
-  const { selectedPageId, setSelectedPageId } = useResultPageParam()
-  const [expandedPageId, setExpandedPageId] = useState<string>(selectedPageId)
+  const { selectedPageId, setSelectedPageId, expandedPageId, setExpandedPageId } = useResultPageState()
 
   const summary = wcagResultMock
   const distributionTotal = useMemo(() => summary.distribution.reduce((acc, item) => acc + item.count, 0), [summary])
@@ -219,15 +215,15 @@ function ResultWcagPage() {
       <div className="grid gap-5">
         <section className="grid gap-3 md:grid-cols-3">
           <MetricCard
-            title="준수 점수"
+            title="Compliance score"
             value={`${summary.complianceScore}%`}
             subtitle={summary.wcagLabel}
             icon={<ShieldCheck className="size-4" />}
           />
           <MetricCard
-            title="통과된 테스트"
+            title="Passed tests"
             value={`${summary.passedTests}`}
-            subtitle={`${summary.totalTests}개 테스트 중`}
+            subtitle={`${summary.totalTests} tests`}
             icon={<ClipboardCheck className="size-4" />}
           />
           <Card className={cn("rounded-2xl border border-border-strong bg-card shadow-none", motion.card)}>
@@ -237,19 +233,19 @@ function ResultWcagPage() {
                   <span className="grid size-7 place-items-center rounded-xl bg-surface-muted text-text-muted">
                     <TriangleAlert className="size-4" />
                   </span>
-                  <p className="text-caption-12-medium">발견된 이슈</p>
+                  <p className="text-caption-12-medium">Found issues</p>
                 </div>
                 <button
                   type="button"
                   className="grid size-6 place-items-center rounded-lg hover:bg-surface-hover"
-                  aria-label="도움말"
+                  aria-label="Issue info"
                 >
                   <AlertCircle className="size-4" />
                 </button>
               </div>
               <div className="grid gap-1">
                 <p className="text-title-24-bold text-text-strong">{summary.foundIssues}</p>
-                <p className="text-caption-12-regular text-text-subtle">{summary.foundIssues}건 발견됨</p>
+                <p className="text-caption-12-regular text-text-subtle">{summary.foundIssues} issues found</p>
               </div>
             </CardContent>
           </Card>
@@ -258,40 +254,40 @@ function ResultWcagPage() {
         <Card className={cn("rounded-2xl border border-border-strong bg-card shadow-none", motion.card)}>
           <CardContent className="grid gap-4 px-6 py-5">
             <div className="flex flex-wrap items-center gap-2">
-            <p className="text-body-14-medium text-text-body">검출 이슈 분석</p>
-            <Badge variant="secondary" className="h-7 rounded-full bg-brand-subtle px-3 text-sm text-text-link">
-              전체 {distributionTotal}건
-            </Badge>
+              <p className="text-body-14-medium text-text-body">Detected issue summary</p>
+              <Badge variant="secondary" className="h-7 rounded-full bg-brand-subtle px-3 text-sm text-text-link">
+                Total {distributionTotal}
+              </Badge>
+            </div>
+
+            <DistributionBar distribution={summary.distribution} />
+            <DistributionSummary distribution={summary.distribution} />
+          </CardContent>
+        </Card>
+
+        <section className="grid gap-3">
+          <p className="text-body-14-medium text-text-body">Detailed results</p>
+          <div className="grid gap-3">
+            {summary.details.map((issue) => {
+              const expanded = expandedIds.has(issue.id)
+              return (
+                <DetailIssueRow
+                  key={issue.id}
+                  issue={issue}
+                  expanded={expanded}
+                  onToggle={() =>
+                    setExpandedIds((prev) => {
+                      const next = new Set(prev)
+                      if (next.has(issue.id)) next.delete(issue.id)
+                      else next.add(issue.id)
+                      return next
+                    })
+                  }
+                />
+              )
+            })}
           </div>
-
-          <DistributionBar distribution={summary.distribution} />
-          <DistributionSummary distribution={summary.distribution} />
-        </CardContent>
-      </Card>
-
-      <section className="grid gap-3">
-        <p className="text-body-14-medium text-text-body">상세 검사 결과</p>
-        <div className="grid gap-3">
-          {summary.details.map((issue) => {
-            const expanded = expandedIds.has(issue.id)
-            return (
-              <DetailIssueRow
-                key={issue.id}
-                issue={issue}
-                expanded={expanded}
-                onToggle={() =>
-                  setExpandedIds((prev) => {
-                    const next = new Set(prev)
-                    if (next.has(issue.id)) next.delete(issue.id)
-                    else next.add(issue.id)
-                    return next
-                  })
-                }
-              />
-            )
-          })}
-        </div>
-      </section>
+        </section>
       </div>
     </div>
   )

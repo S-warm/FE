@@ -1,4 +1,5 @@
 import { env } from "@/shared/config/env"
+import type { ApiErrorResponse } from "@/shared/api/error-response"
 
 export interface HttpClientOptions extends RequestInit {
   query?: Record<string, string | number | boolean | null | undefined>
@@ -7,9 +8,9 @@ export interface HttpClientOptions extends RequestInit {
 export class HttpError extends Error {
   status: number
   statusText: string
-  body: unknown
+  body: ApiErrorResponse | unknown
 
-  constructor(status: number, statusText: string, body: unknown) {
+  constructor(status: number, statusText: string, body: ApiErrorResponse | unknown) {
     super(`HTTP ${status} ${statusText}`)
     this.name = "HttpError"
     this.status = status

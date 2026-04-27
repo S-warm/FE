@@ -23,6 +23,7 @@ function LoginPanel({ onGoToSignUp }: { onGoToSignUp: () => void }) {
     return () => {
       if (transitionTimeoutRef.current) {
         window.clearTimeout(transitionTimeoutRef.current)
+        transitionTimeoutRef.current = null
       }
     }
   }, [])
@@ -43,6 +44,7 @@ function LoginPanel({ onGoToSignUp }: { onGoToSignUp: () => void }) {
 
         setIsTransitioning(true)
         transitionTimeoutRef.current = window.setTimeout(() => {
+          transitionTimeoutRef.current = null
           login(email)
           navigate(routes.generate)
         }, LOGIN_TRANSITION_MS)

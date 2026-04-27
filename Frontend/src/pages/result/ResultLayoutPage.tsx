@@ -4,12 +4,13 @@ import { NavLink, Outlet, useLocation, useParams } from "react-router-dom"
 import { AlertTriangle, Download, LayoutDashboard, Map, Share2, ShieldCheck, Sparkles } from "lucide-react"
 
 import { CommonButton } from "@/components/atoms"
-import { Card, CardContent } from "@/components/ui/card"
 import { BrandingHeader } from "@/components/sections/auth/branding-header"
+import { Card, CardContent } from "@/components/ui/card"
+import { useSimulationList } from "@/features/result/shared/use-simulation-list"
 import { AuthLayout } from "@/layouts/AuthLayout"
-import { cn } from "@/lib/utils"
 import { motion } from "@/lib/motion"
-import { recentSimulations } from "@/mocks/simulation.mock"
+import { cn } from "@/lib/utils"
+import type { BackendSimulationStatus } from "@/shared/types/backend-api"
 import { formatRelativeTime } from "@/utils/format-relative-time"
 
 const RESULT_TAB_HOVER_BG = "color-mix(in srgb, var(--brand-accent) 28%, transparent)"
@@ -17,35 +18,63 @@ const RESULT_TAB_HOVER_BG = "color-mix(in srgb, var(--brand-accent) 28%, transpa
 const tabs = [
   {
     value: "overview",
-    label: "개요",
+    label: "Overview",
     icon: LayoutDashboard,
     hoverBg: RESULT_TAB_HOVER_BG,
   },
   {
     value: "issues",
-    label: "주요이슈",
+    label: "Issues",
     icon: AlertTriangle,
     hoverBg: RESULT_TAB_HOVER_BG,
   },
   {
     value: "heatmap",
-    label: "히트맵",
+    label: "Heatmap",
     icon: Map,
     hoverBg: RESULT_TAB_HOVER_BG,
   },
   {
     value: "wcag",
-    label: "WCAG 검사",
+    label: "WCAG",
     icon: ShieldCheck,
     hoverBg: RESULT_TAB_HOVER_BG,
   },
   {
     value: "ai",
-    label: "AI 수정",
+    label: "AI Fix",
     icon: Sparkles,
     hoverBg: RESULT_TAB_HOVER_BG,
   },
 ] as const
+
+function formatSimulationStatus(status: BackendSimulationStatus | undefined) {
+  if (status === "completed") {
+    return {
+      label: "Completed",
+      className: "border-emerald-200 bg-emerald-50 text-emerald-700",
+    }
+  }
+
+  if (status === "running") {
+    return {
+      label: "Running",
+      className: "border-sky-200 bg-sky-50 text-sky-700",
+    }
+  }
+
+  if (status === "failed") {
+    return {
+      label: "Failed",
+      className: "border-critical-accent/40 bg-danger-surface text-critical-text",
+    }
+  }
+
+  return {
+    label: "Pending",
+    className: "border-border-soft bg-surface-muted text-text-secondary",
+  }
+}
 
 function MetaRow({ label, children }: { label: string; children: ReactNode }) {
   return (
@@ -58,8 +87,10 @@ function MetaRow({ label, children }: { label: string; children: ReactNode }) {
 
 function ResultLayoutPage() {
   const { simulationId } = useParams()
-  const simulation = recentSimulations.find((item) => item.id === simulationId) ?? recentSimulations[0]
-  const resolvedId = simulation?.id ?? "unknown"
+  const { simulations, isLoading } = useSimulationList()
+  const simulation = simulations.find((item) => item.id === simulationId) ?? simulations[0] ?? null
+  const resolvedId = simulation?.id ?? simulationId ?? "unknown"
+  const status = formatSimulationStatus(simulation?.status)
   const location = useLocation()
   const search = location.search
 
@@ -73,18 +104,32 @@ function ResultLayoutPage() {
           <CardContent className="grid gap-4 px-6 py-5">
             <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
               <div className="grid gap-2">
-                <MetaRow label="시뮬레이션">
+                <MetaRow label="Simulation">
                   <div className="flex min-w-0 items-center gap-2 rounded-xl bg-surface-subtle px-4 py-2">
-                    <p className="truncate text-body-16-medium text-foreground">{simulation?.title ?? "-"}</p>
+                    <p className="truncate text-body-16-medium text-foreground">
+                      {isLoading ? "Loading simulation..." : simulation?.title ?? "Simulation not found"}
+                    </p>
                   </div>
                 </MetaRow>
-                <MetaRow label="생성일">
+                <MetaRow label="Created">
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="text-body-16-medium text-text-secondary">
-                      {formatRelativeTime(simulation?.createdAt ?? "-")}
+                      {simulation?.createdAt ? formatRelativeTime(simulation.createdAt) : "-"}
                     </p>
                     <span className="h-4 w-px bg-border-soft" aria-hidden="true" />
                     <p className="text-body-16-regular text-text-muted">{simulation?.createdAt ?? "-"}</p>
+                  </div>
+                </MetaRow>
+                <MetaRow label="Status">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <span
+                      className={cn(
+                        "inline-flex h-6 items-center rounded-full border px-2.5 text-caption-12-medium",
+                        status.className
+                      )}
+                    >
+                      {isLoading ? "Loading" : status.label}
+                    </span>
                   </div>
                 </MetaRow>
               </div>
@@ -96,7 +141,7 @@ function ResultLayoutPage() {
                   className="group rounded-xl border border-border-soft-2 bg-surface-muted transition-colors hover:bg-surface-muted-hover"
                 >
                   <Download className="size-4 transition-transform group-hover:translate-x-0.5" />
-                  PDF 다운로드
+                  Export PDF
                 </CommonButton>
                 <CommonButton
                   size="sm"
@@ -104,7 +149,7 @@ function ResultLayoutPage() {
                   className="group rounded-xl border border-border-soft-2 bg-surface-muted transition-colors hover:bg-surface-muted-hover"
                 >
                   <Share2 className="size-4 transition-transform group-hover:translate-x-0.5" />
-                  공유하기
+                  Share
                 </CommonButton>
               </div>
             </div>

@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils"
 import { defaultSimulationId } from "@/mocks/simulation.mock"
 import { buildResultOverviewPath } from "@/constants/routes"
 import { motion } from "@/lib/motion"
+import { useActiveSimulationStore } from "@/store/active-simulation.store"
 
 const DUMMY_PROJECT = { title: "A - Mall 로그인 플로우", date: "2026-01-01" }
 
@@ -19,6 +20,7 @@ function SimulationProcessPage() {
   const [tick, setTick] = useState(0)
   const maxTick = steps.length * 3 - 1
   const navigate = useNavigate()
+  const activeSimulation = useActiveSimulationStore((state) => state.current)
 
   const activeStepIndex = useMemo(() => Math.min(steps.length - 1, Math.floor(tick / 3)), [tick])
   const progress = useMemo(() => Math.min(100, Math.round(((tick + 1) / (steps.length * 3)) * 100)), [tick])
@@ -34,10 +36,13 @@ function SimulationProcessPage() {
 
   useEffect(() => {
     const handle = window.setTimeout(() => {
-      navigate(buildResultOverviewPath(defaultSimulationId))
+      navigate(buildResultOverviewPath(activeSimulation?.id ?? defaultSimulationId))
     }, 3000)
     return () => window.clearTimeout(handle)
-  }, [navigate])
+  }, [activeSimulation?.id, navigate])
+
+  const projectTitle = activeSimulation?.title ?? DUMMY_PROJECT.title
+  const createdAt = activeSimulation?.createdAt ?? DUMMY_PROJECT.date
 
   return (
     <AuthLayout
@@ -50,11 +55,11 @@ function SimulationProcessPage() {
             <div className="grid gap-2 md:grid-cols-[auto_1fr_auto] md:items-center">
               <div className="grid gap-1">
                 <p className="text-caption-12-regular text-muted-foreground">시뮬레이션</p>
-                <p className="text-body-16-medium text-foreground">{DUMMY_PROJECT.title}</p>
+                <p className="text-body-16-medium text-foreground">{projectTitle}</p>
               </div>
               <div className="grid gap-1">
                 <p className="text-caption-12-regular text-muted-foreground">생성일</p>
-                <p className="text-body-16-regular text-foreground">{DUMMY_PROJECT.date}</p>
+                <p className="text-body-16-regular text-foreground">{createdAt}</p>
               </div>
               <div className="flex items-center justify-end gap-2 rounded-xl border border-border-soft-2 bg-surface-hover-2 px-4 py-2">
                 <Loader2 className="size-4 animate-spin text-[var(--color-primary-main)]" />

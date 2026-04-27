@@ -27,7 +27,7 @@ function ResultPageSidePanel({
   onSelectPage: (pageId: string) => void
   onExpandPage: (pageId: string) => void
   topSlot?: React.ReactNode
-  }) {
+}) {
   return (
     <Card className={cn("h-fit rounded-2xl border border-border-strong bg-card shadow-none", motion.card)}>
       <CardContent className="grid gap-4 px-4 py-5">

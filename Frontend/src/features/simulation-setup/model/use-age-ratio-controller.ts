@@ -98,6 +98,8 @@ export function useAgeRatioController(initialState: AgeRatios = DEFAULT_AGE_RATI
 
       if (progress < 1) {
         animationFrameRef.current = window.requestAnimationFrame(tick)
+      } else {
+        animationFrameRef.current = null
       }
     }
 
@@ -106,6 +108,7 @@ export function useAgeRatioController(initialState: AgeRatios = DEFAULT_AGE_RATI
     return () => {
       if (animationFrameRef.current) {
         window.cancelAnimationFrame(animationFrameRef.current)
+        animationFrameRef.current = null
       }
     }
   }, [ageRatios])

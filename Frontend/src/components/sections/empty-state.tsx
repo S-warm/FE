@@ -32,4 +32,3 @@ function EmptyState({
 }
 
 export { EmptyState }
-

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 
 import { SimulationButton } from "@/components/atoms"
 import { AuthBrandingShell } from "@/components/sections/auth"
@@ -10,12 +10,21 @@ import routes from "@/constants/routes"
 
 function GeneratePage() {
   const [visible, setVisible] = useState(false)
+  const animationFrameRef = useRef<number | null>(null)
   const navigate = useNavigate()
 
   useEffect(() => {
-    window.requestAnimationFrame(() => {
+    animationFrameRef.current = window.requestAnimationFrame(() => {
       setVisible(true)
+      animationFrameRef.current = null
     })
+
+    return () => {
+      if (animationFrameRef.current) {
+        window.cancelAnimationFrame(animationFrameRef.current)
+        animationFrameRef.current = null
+      }
+    }
   }, [])
 
   return (

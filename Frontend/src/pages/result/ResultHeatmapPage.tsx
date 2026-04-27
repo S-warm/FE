@@ -19,10 +19,10 @@ import {
   analyzeSessions,
 } from "@/features/result/heatmap/model/analyze-heatmap"
 import { getResultPages } from "@/features/result/shared/result-data"
-import { cn } from "@/lib/utils"
+import { useResultPageState } from "@/features/result/shared/use-result-page-state"
 import { motion } from "@/lib/motion"
-import { useResultPageParam } from "@/lib/result-page-param"
-import { heatmapAgeBands, defaultHeatmapPageId } from "@/mocks/result-heatmap.mock"
+import { cn } from "@/lib/utils"
+import { defaultHeatmapPageId, heatmapAgeBands } from "@/mocks/result-heatmap.mock"
 import type { HeatmapAgeBand } from "@/mocks/result-heatmap.mock"
 import { heatmapPageLogsMock, heatmapTimelineMaxMsMock } from "@/mocks/result-heatmap-log.mock"
 import type { HeatmapAgentSession, HeatmapPageLogMock } from "@/mocks/result-heatmap-log.mock"
@@ -33,7 +33,7 @@ function clamp(value: number, min: number, max: number) {
 
 function scoreToFill(score: number) {
   const clamped = clamp(score, 0, 1)
-  const hue = 46 - 46 * clamped // yellow -> red (errors-only)
+  const hue = 46 - 46 * clamped
   const alpha = Math.min(0.7, 0.05 + clamped * 0.45)
   return `hsla(${hue}, 92%, 54%, ${alpha})`
 }
@@ -54,9 +54,9 @@ function spotlightGradient({
 }
 
 function hotspotSeverity(score: number) {
-  if (score >= 0.72) return { badgeVariant: "error" as const, label: "치명적" }
-  if (score >= 0.52) return { badgeVariant: "warning" as const, label: "높음" }
-  return { badgeVariant: "info" as const, label: "보통" }
+  if (score >= 0.72) return { badgeVariant: "error" as const, label: "Critical" }
+  if (score >= 0.52) return { badgeVariant: "warning" as const, label: "High" }
+  return { badgeVariant: "info" as const, label: "Normal" }
 }
 
 function hotspotMarkerStyle(score: number) {
@@ -109,6 +109,7 @@ function HeatmapLogCanvas({
 
   useEffect(() => {
     if (!viewportRef.current) return
+
     const element = viewportRef.current
     const observer = new ResizeObserver((entries) => {
       const entry = entries[0]
@@ -116,6 +117,7 @@ function HeatmapLogCanvas({
       const { width, height } = entry.contentRect
       setViewportSize({ width, height })
     })
+
     observer.observe(element)
     return () => observer.disconnect()
   }, [])
@@ -137,11 +139,7 @@ function HeatmapLogCanvas({
     return { width, height }
   }, [viewportSize.width, viewportSize.height, imageAspect])
 
-  const analysis = useMemo(
-    () => analyzeSessions({ sessions, timeEndMs }),
-    [sessions, timeEndMs]
-  )
-
+  const analysis = useMemo(() => analyzeSessions({ sessions, timeEndMs }), [sessions, timeEndMs])
   const markerSpots = useMemo(() => analysis.markers, [analysis.markers])
 
   const hoveredHotspot = useMemo(
@@ -207,7 +205,7 @@ function HeatmapLogCanvas({
   }, [analysis.heat, baseSize, overlayOpacity])
 
   return (
-    <div className="relative w-full overflow-hidden rounded-2xl border border-border-subtle bg-card h-[clamp(560px,72vh,920px)]">
+    <div className="relative h-[clamp(560px,72vh,920px)] w-full overflow-hidden rounded-2xl border border-border-subtle bg-card">
       <div ref={viewportRef} className="grid h-full w-full place-items-center bg-surface-subtle p-6">
         <div
           className="relative overflow-hidden rounded-2xl border border-border-soft bg-card shadow-sm"
@@ -219,7 +217,7 @@ function HeatmapLogCanvas({
         >
           <img
             src={screenshotUrl}
-            alt="페이지 스크린샷"
+            alt="Page screenshot"
             loading="lazy"
             decoding="async"
             className="block h-full w-full object-cover opacity-80"
@@ -241,7 +239,7 @@ function HeatmapLogCanvas({
             />
           ) : null}
 
-          <div className="absolute inset-0 z-[2] pointer-events-none">
+          <div className="pointer-events-none absolute inset-0 z-[2]">
             {markerSpots.map((spot) => (
               <button
                 key={spot.id}
@@ -262,7 +260,7 @@ function HeatmapLogCanvas({
                   setSpotlightVisible(false)
                 }}
                 onClick={() => setOpenHotspotId(spot.id)}
-                aria-label={`핫스팟 ${spot.rank}`}
+                aria-label={`Hotspot ${spot.rank}`}
               >
                 <span
                   className={cn(
@@ -293,7 +291,7 @@ function HeatmapLogCanvas({
                 </span>
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <p className="text-body-14-medium text-text-body">오류 집중 지점</p>
+                    <p className="text-body-14-medium text-text-body">Error hotspot</p>
                     <IssueBadge variant={hotspotSeverity(hoveredHotspot.score).badgeVariant} size="sm">
                       {hotspotSeverity(hoveredHotspot.score).label}
                     </IssueBadge>
@@ -302,23 +300,24 @@ function HeatmapLogCanvas({
                     </span>
                   </div>
                   <p className="mt-1 text-caption-12-regular text-text-subtle">
-                    {hoveredHotspot.impactedAgents.toLocaleString()}명 영향 · 블락 {(hoveredHotspot.blockRate * 100).toFixed(0)}% · 반복{" "}
-                    {hoveredHotspot.avgRetries.toFixed(1)}회
+                    {hoveredHotspot.impactedAgents.toLocaleString()} impacted, block rate{" "}
+                    {(hoveredHotspot.blockRate * 100).toFixed(0)}%, retries {hoveredHotspot.avgRetries.toFixed(1)}
                   </p>
                 </div>
               </div>
 
               <p className="mt-3 text-caption-12-regular text-text-muted">
-                클릭/스텝 로그에서 Timeout·Network·Console 오류가 집중된 구간입니다. 주변 UI에서 반복 시도/지연이 발생합니다.
+                Timeout, network, and console failures are concentrated in this area, where repeated retries or blocks
+                are happening.
               </p>
 
               <div className="mt-3 grid gap-1">
-                <p className="text-caption-12-medium text-text-subtle">오류 상세</p>
+                <p className="text-caption-12-medium text-text-subtle">Error details</p>
                 <code className="w-fit rounded-xl bg-surface-muted px-3 py-2 text-[12px] text-text-body">
-                  timeout {hoveredHotspot.errors.timeout} · network {hoveredHotspot.errors.network} · console{" "}
+                  timeout {hoveredHotspot.errors.timeout}, network {hoveredHotspot.errors.network}, console{" "}
                   {hoveredHotspot.errors.console}
                   {hoveredHotspot.errors.topHttpStatuses.length
-                    ? ` · HTTP ${hoveredHotspot.errors.topHttpStatuses.map((item) => `${item.status}(${item.count})`).join("·")}`
+                    ? `, HTTP ${hoveredHotspot.errors.topHttpStatuses.map((item) => `${item.status}(${item.count})`).join(", ")}`
                     : ""}
                 </code>
               </div>
@@ -328,21 +327,23 @@ function HeatmapLogCanvas({
           <Dialog open={Boolean(openHotspot)} onOpenChange={(open) => (!open ? setOpenHotspotId(null) : null)}>
             <DialogContent className="max-w-md">
               <DialogHeader>
-                <DialogTitle>핫스팟 상세</DialogTitle>
-                <DialogDescription>선택한 지점에서 AI 테스터가 헤매거나 블락된 패턴을 요약합니다.</DialogDescription>
+                <DialogTitle>Hotspot details</DialogTitle>
+                <DialogDescription>
+                  This area summarizes where agent sessions were delayed, blocked, or repeatedly retried.
+                </DialogDescription>
               </DialogHeader>
               {openHotspot ? (
                 <div className="grid gap-2 rounded-2xl border border-border-soft bg-surface-subtle p-4">
                   <div className="flex items-center justify-between">
-                    <p className="text-body-14-medium text-text-body">핫스팟 #{openHotspot.rank}</p>
+                    <p className="text-body-14-medium text-text-body">Hotspot #{openHotspot.rank}</p>
                     <span className="text-caption-12-medium text-text-muted">Score {openHotspot.score.toFixed(2)}</span>
                   </div>
                   <div className="grid gap-1 text-caption-12-regular text-text-muted">
-                    <p>영향 받은 테스터: {openHotspot.impactedAgents.toLocaleString()}명</p>
-                    <p>평균 반복 횟수: {openHotspot.avgRetries.toFixed(1)}회</p>
-                    <p>이탈/블락율: {(openHotspot.blockRate * 100).toFixed(0)}%</p>
+                    <p>Impacted sessions: {openHotspot.impactedAgents.toLocaleString()}</p>
+                    <p>Average retries: {openHotspot.avgRetries.toFixed(1)}</p>
+                    <p>Block rate: {(openHotspot.blockRate * 100).toFixed(0)}%</p>
                     <p className="pt-1 text-caption-12-regular text-text-subtle">
-                      팁: 타임라인을 줄이거나 누적 모드를 켜서 병목이 생기는 구간을 먼저 좁혀보세요.
+                      Consider reducing retries or reviewing the UI flow around this point first.
                     </p>
                   </div>
                 </div>
@@ -356,8 +357,8 @@ function HeatmapLogCanvas({
 }
 
 function ResultHeatmapPage() {
-  const { selectedPageId, setSelectedPageId } = useResultPageParam()
-  const [expandedPageId, setExpandedPageId] = useState<string>(defaultHeatmapPageId)
+  const { selectedPageId, setSelectedPageId, expandedPageId, setExpandedPageId } =
+    useResultPageState(defaultHeatmapPageId)
   const [ageFilter, setAgeFilter] = useState<HeatmapAgeBand | "all">("all")
   const [overlayOpacity, setOverlayOpacity] = useState(60)
 
@@ -373,20 +374,13 @@ function ResultHeatmapPage() {
           id: page.id,
           name: page.name,
           screenshotUrl: page.screenshotUrl,
-          metaText: `${agentCount.toLocaleString()}명 AI 로그`,
+          metaText: `${agentCount.toLocaleString()} AI logs`,
         }
       }),
     []
   )
 
-  useEffect(() => {
-    setExpandedPageId(selectedPageId)
-  }, [selectedPageId])
-
-  const resolvedTimeEndMs = heatmapTimelineMaxMsMock
-
   const filteredSessions = useMemo(() => {
-    if (!selectedLog) return []
     if (ageFilter === "all") return selectedLog.sessions
     return selectedLog.sessions.filter((session) => session.ageBand === ageFilter)
   }, [ageFilter, selectedLog])
@@ -410,14 +404,14 @@ function ResultHeatmapPage() {
             <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
               <div className="grid gap-2">
                 <div className="flex flex-wrap items-center gap-2">
-                  <p className="text-body-14-medium text-text-body">오류 집중 구간 히트맵</p>
+                  <p className="text-body-14-medium text-text-body">Error concentration heatmap</p>
                   <span className="inline-flex items-center gap-1 rounded-full border border-border-soft bg-surface-subtle px-2 py-1 text-caption-12-regular text-text-muted">
                     <Info className="size-3.5" />
-                    정규화 좌표(0~1) + Step 로그
+                    Score (0-1) + step logs
                   </span>
                 </div>
                 <p className="text-caption-12-regular text-text-subtle">
-                  Timeout·Console·Network 기반 블락/오류 신호를 “강도”로 집계해 병목 구간을 찾습니다.
+                  Visualizes where timeout, console, and network failures cluster during session playback.
                 </p>
               </div>
             </div>
@@ -425,34 +419,36 @@ function ResultHeatmapPage() {
             <div className="flex flex-wrap items-center gap-2 text-caption-12-regular text-text-muted">
               <span className="inline-flex items-center gap-2 rounded-full border border-border-soft bg-surface-subtle px-3 py-1">
                 <span className="size-2 rounded-full" style={{ backgroundColor: "var(--color-success-heat-low)" }} aria-hidden="true" />
-                낮음
+                Low
               </span>
               <span className="inline-flex items-center gap-2 rounded-full border border-border-soft bg-surface-subtle px-3 py-1">
                 <span className="size-2 rounded-full" style={{ backgroundColor: "var(--color-success-heat-mid)" }} aria-hidden="true" />
-                보통
+                Medium
               </span>
               <span className="inline-flex items-center gap-2 rounded-full border border-border-soft bg-surface-subtle px-3 py-1">
                 <span className="size-2 rounded-full" style={{ backgroundColor: "var(--color-warning-heat-high)" }} aria-hidden="true" />
-                높음
+                High
               </span>
               <span className="inline-flex items-center gap-2 rounded-full border border-border-soft bg-surface-subtle px-3 py-1">
                 <span className="size-2 rounded-full" style={{ backgroundColor: "var(--color-danger-heat-critical)" }} aria-hidden="true" />
-                치명적(블락)
+                Critical
               </span>
             </div>
 
             <HeatmapLogCanvas
               screenshotUrl={selectedLog.screenshotUrl}
               sessions={filteredSessions}
-              timeEndMs={resolvedTimeEndMs}
+              timeEndMs={heatmapTimelineMaxMsMock}
               overlayOpacity={overlayOpacity / 100}
             />
 
             <div className="grid gap-4 rounded-2xl border border-border-subtle bg-surface-subtle p-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="grid gap-1">
-                  <p className="text-caption-12-medium text-text-secondary">연령대 필터</p>
-                  <p className="text-caption-12-regular text-text-muted">레이아웃이 달라도 상대 좌표(0~1)로 동일 기준 분석</p>
+                  <p className="text-caption-12-medium text-text-secondary">Age filter</p>
+                  <p className="text-caption-12-regular text-text-muted">
+                    Analyze the same page by age band with the same score scale.
+                  </p>
                 </div>
               </div>
 
@@ -467,7 +463,7 @@ function ResultHeatmapPage() {
                       : "border-border-soft bg-card text-text-muted hover:bg-surface-hover-2 hover:text-text-strong"
                   )}
                 >
-                  전체
+                  All
                 </button>
                 {heatmapAgeBands.map((band) => (
                   <button
@@ -487,7 +483,7 @@ function ResultHeatmapPage() {
               </div>
 
               <SettingSlider
-                label="오류 오버레이 강도"
+                label="Overlay intensity"
                 value={overlayOpacity}
                 min={30}
                 max={100}

@@ -3,24 +3,28 @@ import { matchPath, useLocation, useNavigate } from "react-router-dom"
 
 import { Menu } from "lucide-react"
 
-import { cn } from "@/lib/utils"
 import { ProfileMenu } from "@/components/layout/profile-menu"
-import { useAuthStore } from "@/store/auth.store"
 import { buildResultOverviewPath } from "@/constants/routes"
-import { recentSimulations } from "@/mocks/simulation.mock"
-import { formatRelativeTime } from "@/utils/format-relative-time"
+import { useSimulationList } from "@/features/result/shared/use-simulation-list"
+import { cn } from "@/lib/utils"
+import { useAuthStore } from "@/store/auth.store"
 import { useLayoutStore } from "@/store/layout.store"
+import { formatRelativeTime } from "@/utils/format-relative-time"
 
 const APP_CONTENT_MAX_WIDTH_CLASS = "max-w-[1560px] 2xl:max-w-[1760px]"
 
 function AuthSidebar({
   open,
   activeSimulationId,
+  simulations,
+  isLoading,
   onToggle,
   onSelectSimulation,
 }: {
   open: boolean
   activeSimulationId?: string
+  simulations: Array<{ id: string; title: string; createdAt: string }>
+  isLoading: boolean
   onToggle: () => void
   onSelectSimulation: (simulationId: string) => void
 }) {
@@ -39,7 +43,7 @@ function AuthSidebar({
       >
         <button
           type="button"
-          aria-label={open ? "사이드바 접기" : "사이드바 펼치기"}
+          aria-label={open ? "Close sidebar" : "Open sidebar"}
           className="grid size-8 place-items-center rounded-full bg-surface-control text-text-secondary-2 transition-colors hover:bg-surface-control-hover hover:text-text-secondary-3"
           onClick={onToggle}
         >
@@ -50,12 +54,24 @@ function AuthSidebar({
       <div
         className={[
           "px-4 pb-6 transition-[opacity,transform] duration-200",
-          open ? "opacity-100 translate-x-0" : "pointer-events-none opacity-0 -translate-x-2",
+          open ? "translate-x-0 opacity-100" : "pointer-events-none -translate-x-2 opacity-0",
         ].join(" ")}
       >
-        <p className="text-caption-12-regular text-text-muted">최근 프로젝트</p>
+        <p className="text-caption-12-regular text-text-muted">Recent simulations</p>
         <div className="mt-3 grid gap-3">
-          {recentSimulations.map((item) => {
+          {isLoading ? (
+            <div className="rounded-xl border border-border-soft-3 bg-card px-4 py-3">
+              <p className="text-caption-12-regular text-text-muted">Loading simulations...</p>
+            </div>
+          ) : null}
+
+          {!isLoading && !simulations.length ? (
+            <div className="rounded-xl border border-border-soft-3 bg-card px-4 py-3">
+              <p className="text-caption-12-regular text-text-muted">No simulations yet.</p>
+            </div>
+          ) : null}
+
+          {simulations.map((item) => {
             const isActive = item.id === activeSimulationId
             return (
               <button
@@ -63,15 +79,13 @@ function AuthSidebar({
                 type="button"
                 className={cn(
                   "rounded-xl border bg-card px-4 py-3 text-left transition-colors hover:bg-surface-hover-2",
-                  isActive
-                    ? "border-border-focus ring-2 ring-border-focus/40"
-                    : "border-border-soft-3"
+                  isActive ? "border-border-focus ring-2 ring-border-focus/40" : "border-border-soft-3"
                 )}
                 onClick={() => onSelectSimulation(item.id)}
               >
-                <p className="text-body-14-medium text-foreground">{item.siteName}</p>
+                <p className="truncate text-body-14-medium text-foreground">{item.title}</p>
                 <p className="mt-1 text-caption-12-regular text-text-muted">
-                  {formatRelativeTime(item.createdAt)} · {item.createdAt}
+                  {formatRelativeTime(item.createdAt)} 쨌 {item.createdAt}
                 </p>
               </button>
             )
@@ -99,6 +113,7 @@ function AuthLayout({
   const initials = useAuthStore((state) => state.user?.initials ?? "CN")
   const navigate = useNavigate()
   const location = useLocation()
+  const { simulations, isLoading } = useSimulationList()
   const resultMatch = matchPath("/result/:simulationId/*", location.pathname)
   const overviewMatch = matchPath("/result/:simulationId/overview", location.pathname)
   const activeSimulationId = resultMatch?.params?.simulationId
@@ -109,6 +124,8 @@ function AuthLayout({
       <AuthSidebar
         open={sidebarOpen}
         activeSimulationId={activeSimulationId}
+        simulations={simulations}
+        isLoading={isLoading}
         onToggle={toggleSidebar}
         onSelectSimulation={(simulationId) => navigate(buildResultOverviewPath(simulationId))}
       />
@@ -137,9 +154,7 @@ function AuthLayout({
         </header>
 
         <main className={cn("flex flex-1 justify-center px-4 pb-12 sm:px-6", mainClassName ?? "items-center")}>
-          <div className={cn("w-full", APP_CONTENT_MAX_WIDTH_CLASS)}>
-            {children}
-          </div>
+          <div className={cn("w-full", APP_CONTENT_MAX_WIDTH_CLASS)}>{children}</div>
         </main>
       </div>
     </div>

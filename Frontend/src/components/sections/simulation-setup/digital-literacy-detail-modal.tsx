@@ -23,10 +23,12 @@ interface DigitalLiteracyDetailModalProps {
 
 function DigitalLiteracyDetailModal({ triggerClassName }: DigitalLiteracyDetailModalProps) {
   const [open, setOpen] = useState(false)
-  const [visionLoss, setVisionLoss] = useState(0)
-  const [attentionLevel, setAttentionLevel] = useState(50)
   const device = useSimulationDraftStore((state) => state.personaDevice)
+  const visionLoss = useSimulationDraftStore((state) => state.visionImpairment ?? 0)
+  const attentionLevel = useSimulationDraftStore((state) => state.attentionLevel ?? 50)
   const setDevice = useSimulationDraftStore((state) => state.setPersonaDevice)
+  const setVisionImpairment = useSimulationDraftStore((state) => state.setVisionImpairment)
+  const setAttentionLevelValue = useSimulationDraftStore((state) => state.setAttentionLevel)
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -56,7 +58,7 @@ function DigitalLiteracyDetailModal({ triggerClassName }: DigitalLiteracyDetailM
                 unit="%"
                 color="var(--color-border-soft-3)"
                 tooltipFormatter={(nextValue) => `${nextValue}%`}
-                onChange={setVisionLoss}
+                onChange={setVisionImpairment}
               />
             </div>
 
@@ -72,7 +74,7 @@ function DigitalLiteracyDetailModal({ triggerClassName }: DigitalLiteracyDetailM
                 startLabel="낮음"
                 endLabel="높음"
                 tooltipFormatter={(nextValue) => `${nextValue}%`}
-                onChange={setAttentionLevel}
+                onChange={setAttentionLevelValue}
               />
             </div>
 

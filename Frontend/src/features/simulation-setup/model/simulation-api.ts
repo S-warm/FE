@@ -1,30 +1,20 @@
 import { requestJson } from "@/shared/api/http-client"
-
-export interface CreateSimulationPayload {
-  targetUrl: string
-  projectTitle: string
-  personaCount: number
-  digitalLiteracy: "low" | "medium" | "high"
-  successCondition: string
-  ageRatios: {
-    teen: number
-    fifty: number
-    eighty: number
-  }
-}
-
-export interface CreateSimulationResponse {
-  simulationId: string
-  status: "queued" | "running"
-}
+import type {
+  BackendSimulationCreateRequest,
+  BackendSimulationCreateResponse,
+} from "@/shared/types/backend-api"
 
 export async function createSimulation(
-  payload: CreateSimulationPayload,
+  userId: string,
+  payload: BackendSimulationCreateRequest,
   signal?: AbortSignal
 ) {
-  return requestJson<CreateSimulationResponse>("/simulations", {
+  return requestJson<BackendSimulationCreateResponse>("/simulations", {
     method: "POST",
     signal,
+    query: {
+      userId,
+    },
     headers: {
       "Content-Type": "application/json",
     },

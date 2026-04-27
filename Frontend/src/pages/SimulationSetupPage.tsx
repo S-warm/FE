@@ -1,8 +1,8 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 
+import { CommonButton, TextArea, TextField } from "@/components/atoms"
 import { DonutChart } from "@/components/charts"
-import { Card, CardContent } from "@/components/ui/card"
 import { BrandingHeader } from "@/components/sections/auth/branding-header"
 import {
   DigitalLiteracySelector,
@@ -11,13 +11,14 @@ import {
   SetupSectionTitle,
   SimulationSummaryCard,
 } from "@/components/sections/simulation-setup"
-import { TextArea, TextField } from "@/components/atoms"
-import { AuthLayout } from "@/layouts/AuthLayout"
+import { Card, CardContent } from "@/components/ui/card"
 import routes from "@/constants/routes"
-import { useSimulationDraftStore } from "@/store/simulation-draft.store"
-import { cn } from "@/lib/utils"
+import { useAgeRatioController, useSimulationCreate } from "@/features/simulation-setup"
+import { AuthLayout } from "@/layouts/AuthLayout"
 import { motion } from "@/lib/motion"
-import { useAgeRatioController } from "@/features/simulation-setup/model/use-age-ratio-controller"
+import { cn } from "@/lib/utils"
+import { useActiveSimulationStore } from "@/store/active-simulation.store"
+import { useSimulationDraftStore } from "@/store/simulation-draft.store"
 import { formatRelativeTime } from "@/utils/format-relative-time"
 
 function SimulationSetupPage() {
@@ -28,6 +29,9 @@ function SimulationSetupPage() {
   const startedAt = useSimulationDraftStore((state) => state.startedAt)
   const setStartedAt = useSimulationDraftStore((state) => state.setStartedAt)
   const personaDevice = useSimulationDraftStore((state) => state.personaDevice)
+  const visionImpairment = useSimulationDraftStore((state) => state.visionImpairment)
+  const attentionLevel = useSimulationDraftStore((state) => state.attentionLevel)
+  const setActiveSimulation = useActiveSimulationStore((state) => state.setCurrent)
 
   const [personaCount, setPersonaCount] = useState(500)
   const [digitalLiteracy, setDigitalLiteracy] = useState<DigitalLiteracyLevel>("low")
@@ -40,12 +44,33 @@ function SimulationSetupPage() {
     redistributeAgeRatio,
     resetEqualDistribution,
   } = useAgeRatioController()
+  const { isSubmitting, submitError, submitSimulation } = useSimulationCreate({
+    onSuccess: (createdSimulation) => {
+      setActiveSimulation(createdSimulation)
+      setStartedAt(createdSimulation.createdAt)
+      navigate(routes.simulationProcess)
+    },
+  })
 
   const ageDonutData = [
     { name: "10대", value: displayAgeRatios.teen, color: "var(--color-persona-teen)" },
     { name: "50대", value: displayAgeRatios.fifty, color: "var(--color-persona-fifty)" },
     { name: "80대", value: displayAgeRatios.eighty, color: "var(--color-persona-eighty)" },
   ]
+
+  const handleStartSimulation = async () => {
+    await submitSimulation({
+      projectTitle,
+      targetUrl,
+      personaCount,
+      digitalLiteracy,
+      successCondition,
+      personaDevice,
+      ageRatios,
+      visionImpairment,
+      attentionLevel,
+    })
+  }
 
   return (
     <AuthLayout
@@ -225,13 +250,14 @@ function SimulationSetupPage() {
           <section className="grid w-full max-w-[760px] gap-3">
             <SetupSectionTitle title="성공 조건" description="페르소나의 최종 도착지를 지정" />
             <TextArea
-              placeholder="성공조건을 입력하세요."
+              placeholder="성공 조건을 입력하세요."
               value={successCondition}
               onChange={(event) => setSuccessCondition(event.target.value)}
               variant="default"
               size="md"
               className="h-[104px] resize-none overflow-y-auto overscroll-contain rounded-2xl border-border-soft-2 bg-card px-4 py-3 text-text-secondary placeholder:text-text-muted"
             />
+            {submitError ? <p className="text-left text-caption-12-regular text-destructive">{submitError}</p> : null}
           </section>
         </div>
 
@@ -249,16 +275,17 @@ function SimulationSetupPage() {
               className="rounded-2xl rounded-b-none border-b-0"
             />
             <Card className="rounded-2xl rounded-t-none border border-border-strong bg-surface-subtle py-0 shadow-none ring-0">
-              <button
+              <CommonButton
                 type="button"
-                className="flex h-[72px] w-full items-center justify-center rounded-b-2xl bg-brand-subtle px-4 text-subtitle-18-semibold text-text-link transition-colors hover:bg-brand-subtle-hover"
-                onClick={() => {
-                  if (!startedAt) setStartedAt(new Date().toISOString())
-                  navigate(routes.simulationProcess)
-                }}
+                variant="secondary"
+                size="lg"
+                state={isSubmitting ? "loading" : "default"}
+                loadingText="시뮬레이션 생성 중..."
+                className="h-[72px] w-full rounded-b-2xl rounded-t-none bg-brand-subtle px-4 text-subtitle-18-semibold text-text-link transition-colors hover:bg-brand-subtle-hover"
+                onClick={handleStartSimulation}
               >
                 시뮬레이션 시작
-              </button>
+              </CommonButton>
             </Card>
           </div>
         </div>

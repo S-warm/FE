@@ -79,4 +79,20 @@ export function useSimulationCreate({ onSuccess }: UseSimulationCreateOptions) {
           console.error("🔒 [403 Forbidden] JWT/Auth 토큰 문제 or 권한 없음")
           setSubmitError(`[403] 권한 없음: ${apiError?.message || error.statusText}`)
         } else if (error.status === 401) {
-          console.error("🔐 [401 Unauthorized] 인증 정보 누락 or 토
+          console.error("🔐 [401 Unauthorized] 인증 정보 누락 or 토큰 만료")
+          setSubmitError(`[401] 인증 실패: ${apiError?.message || error.statusText}`)
+        } else {
+          console.error(`🚨 [${error.status}] 서버 에러`, errorMessage)
+          setSubmitError(errorMessage)
+        }
+      } else {
+        console.error("🌐 [Network Error]", error)
+        setSubmitError("네트워크 오류가 발생했습니다.")
+      }
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  return { submitSimulation, submitError, isSubmitting }
+}

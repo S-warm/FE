@@ -20,15 +20,6 @@ import { useSimulationDraftStore } from "@/store/simulation-draft.store"
 import { cn } from "@/lib/utils"
 import { motion } from "@/lib/motion"
 
-function isValidHttpUrl(value: string) {
-  try {
-    const parsed = new URL(value)
-    return parsed.protocol === "http:" || parsed.protocol === "https:"
-  } catch {
-    return false
-  }
-}
-
 function SimulationSetupPage() {
   const targetUrl = useSimulationDraftStore((state) => state.targetUrl)
   const setTargetUrl = useSimulationDraftStore((state) => state.setTargetUrl)
@@ -47,7 +38,6 @@ function SimulationSetupPage() {
   const [targetUrlError, setTargetUrlError] = useState("")
   const [endUrlError, setEndUrlError] = useState("")
   const [successConditionError, setSuccessConditionError] = useState("")
-  const [submitErrorMessage, setSubmitErrorMessage] = useState("")
   const [ageRatioOpen, setAgeRatioOpen] = useState(false)
   const [advancedSettingsOpen, setAdvancedSettingsOpen] = useState(false)
   const [ageRatios, setAgeRatios] = useState({
@@ -69,7 +59,6 @@ function SimulationSetupPage() {
     setTargetUrlError("")
     setEndUrlError("")
     setSuccessConditionError("")
-    setSubmitErrorMessage("")
   }
 
   const redistributeAgeRatio = (changedKey: keyof typeof ageRatios, nextValue: number) => {
@@ -207,7 +196,6 @@ function SimulationSetupPage() {
                 onChange={(event) => {
                   setProjectTitle(event.target.value)
                   setProjectTitleError("")
-                  setSubmitErrorMessage("")
                 }}
                 variant="default"
                 size="lg"
@@ -227,10 +215,6 @@ function SimulationSetupPage() {
                 onChange={(event) => {
                   setTargetUrl(event.target.value)
                   setTargetUrlError("")
-                  setSubmitErrorMessage("")
-                  setEndUrlError((prev) =>
-                    prev === "시작 URL과 종료 URL은 서로 달라야 합니다." ? "" : prev
-                  )
                 }}
                 variant="default"
                 size="lg"
@@ -247,10 +231,6 @@ function SimulationSetupPage() {
                 onChange={(event) => {
                   setEndUrl(event.target.value)
                   setEndUrlError("")
-                  setSubmitErrorMessage("")
-                  setTargetUrlError((prev) =>
-                    prev === "시작 URL과 종료 URL은 서로 달라야 합니다." ? "" : prev
-                  )
                 }}
                 variant="default"
                 size="lg"
@@ -269,7 +249,6 @@ function SimulationSetupPage() {
               onChange={(event) => {
                 setSuccessCondition(event.target.value)
                 setSuccessConditionError("")
-                setSubmitErrorMessage("")
               }}
               variant="default"
               size="md"
@@ -487,17 +466,12 @@ function SimulationSetupPage() {
               className="rounded-2xl rounded-b-none border-b-0"
             />
             <Card className="rounded-2xl rounded-t-none border border-border-strong bg-surface-subtle py-0 shadow-none ring-0">
-              {submitErrorMessage ? (
-                <div className="border-b border-border-soft-2 bg-danger-surface px-4 py-3">
-                  <p className="text-caption-12-medium text-danger-text">{submitErrorMessage}</p>
-                </div>
-              ) : null}
               <button
                 type="button"
                 disabled={!canStartSimulation}
                 className={cn(
                   "flex h-[72px] w-full items-center justify-center px-4 text-subtitle-18-semibold transition-colors",
-                  submitErrorMessage ? "rounded-b-2xl" : "rounded-b-2xl",
+                  "rounded-b-2xl",
                   canStartSimulation
                     ? "bg-brand-subtle text-text-link hover:bg-brand-subtle-hover"
                     : "cursor-not-allowed bg-surface-muted text-text-muted"
@@ -514,22 +488,10 @@ function SimulationSetupPage() {
                   if (!trimmedTargetUrl) {
                     setTargetUrlError("시작 URL을 입력해주세요.")
                     hasError = true
-                  } else if (!isValidHttpUrl(trimmedTargetUrl)) {
-                    setTargetUrlError("올바른 URL 형식인지 확인해주세요.")
-                    hasError = true
                   }
 
                   if (!trimmedEndUrl) {
                     setEndUrlError("종료 URL을 입력해주세요.")
-                    hasError = true
-                  } else if (!isValidHttpUrl(trimmedEndUrl)) {
-                    setEndUrlError("올바른 URL 형식인지 확인해주세요.")
-                    hasError = true
-                  }
-
-                  if (trimmedTargetUrl && trimmedEndUrl && trimmedTargetUrl === trimmedEndUrl) {
-                    setTargetUrlError("시작 URL과 종료 URL은 서로 달라야 합니다.")
-                    setEndUrlError("시작 URL과 종료 URL은 서로 달라야 합니다.")
                     hasError = true
                   }
 
@@ -538,10 +500,7 @@ function SimulationSetupPage() {
                     hasError = true
                   }
 
-                  if (hasError) {
-                    setSubmitErrorMessage("필수 항목을 입력하고 올바른 URL 및 성공 조건을 확인해주세요.")
-                    return
-                  }
+                  if (hasError) return
 
                   if (!startedAt) setStartedAt(new Date().toISOString())
                   navigate(routes.simulationProcess)

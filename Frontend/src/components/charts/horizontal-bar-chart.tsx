@@ -1,4 +1,4 @@
-import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
+import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
 
 import type { ProgressDatum } from "@/mocks/data-visualization.mock"
 import { chartTooltipContentStyle } from "@/components/charts/chart-tooltip"
@@ -8,7 +8,9 @@ interface HorizontalBarChartProps {
   data: ProgressDatum[]
   heightClassName?: string
   barColor?: string
+  mutedBarColor?: string
   barSize?: number
+  highlightMode?: "none" | "min" | "max"
   emptyTitle?: string
   emptyDescription?: string
 }
@@ -17,7 +19,9 @@ function HorizontalBarChart({
   data,
   heightClassName = "h-[240px]",
   barColor = "var(--color-primary-main)",
+  mutedBarColor = "var(--color-primary-100)",
   barSize,
+  highlightMode = "none",
   emptyTitle,
   emptyDescription,
 }: HorizontalBarChartProps) {
@@ -28,6 +32,13 @@ function HorizontalBarChart({
       </div>
     )
   }
+
+  const targetScore =
+    highlightMode === "none"
+      ? null
+      : highlightMode === "min"
+        ? Math.min(...data.map((item) => item.score))
+        : Math.max(...data.map((item) => item.score))
 
   return (
     <div className={`${heightClassName} w-full`}>
@@ -56,7 +67,14 @@ function HorizontalBarChart({
             barSize={barSize}
             isAnimationActive
             animationDuration={450}
-          />
+          >
+            {data.map((entry, index) => {
+              const isHighlighted = targetScore !== null && entry.score === targetScore
+              const fill = entry.color ?? (isHighlighted ? barColor : mutedBarColor)
+
+              return <Cell key={`${entry.label}-${index}`} fill={fill} />
+            })}
+          </Bar>
         </BarChart>
       </ResponsiveContainer>
     </div>

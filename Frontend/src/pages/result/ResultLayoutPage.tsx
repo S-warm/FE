@@ -93,7 +93,7 @@ function ResultLayoutPage() {
                 <CommonButton
                   size="sm"
                   variant="secondary"
-                  className="group rounded-xl border border-border-soft-2 bg-surface-muted transition-colors hover:bg-surface-muted-hover"
+                  className="group rounded-xl border border-border-soft bg-card/60 text-text-muted transition-colors hover:border-border-soft-2 hover:bg-surface-subtle hover:text-text-secondary"
                 >
                   <Download className="size-4 transition-transform group-hover:translate-x-0.5" />
                   PDF 다운로드
@@ -101,7 +101,7 @@ function ResultLayoutPage() {
                 <CommonButton
                   size="sm"
                   variant="secondary"
-                  className="group rounded-xl border border-border-soft-2 bg-surface-muted transition-colors hover:bg-surface-muted-hover"
+                  className="group rounded-xl border border-border-soft bg-card/60 text-text-muted transition-colors hover:border-border-soft-2 hover:bg-surface-subtle hover:text-text-secondary"
                 >
                   <Share2 className="size-4 transition-transform group-hover:translate-x-0.5" />
                   공유하기

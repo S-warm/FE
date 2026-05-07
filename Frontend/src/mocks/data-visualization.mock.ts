@@ -7,6 +7,16 @@ export interface DonutDatum {
 export interface ProgressDatum {
   label: string
   score: number
+  color?: string
+}
+
+export interface AgeOverviewDatum {
+  label: string
+  successRate: number
+  avgDurationMinutes: number
+  failureRate: number
+  avgActions: number
+  declareFailure: number
 }
 
 export interface HeatmapCell {
@@ -35,6 +45,41 @@ export const progressData: ProgressDatum[] = [
   { label: "버튼 가시성", score: 82 },
   { label: "탐색 명확성", score: 74 },
   { label: "폼 피드백", score: 59 },
+]
+
+export const ageOverviewData: AgeOverviewDatum[] = [
+  {
+    label: "10대",
+    successRate: 82,
+    avgDurationMinutes: 2.1,
+    failureRate: 14,
+    avgActions: 5.4,
+    declareFailure: 6,
+  },
+  {
+    label: "20대",
+    successRate: 71,
+    avgDurationMinutes: 2.8,
+    failureRate: 23,
+    avgActions: 6.8,
+    declareFailure: 11,
+  },
+  {
+    label: "30대",
+    successRate: 54,
+    avgDurationMinutes: 3.7,
+    failureRate: 37,
+    avgActions: 8.9,
+    declareFailure: 18,
+  },
+  {
+    label: "40대",
+    successRate: 33,
+    avgDurationMinutes: 4.9,
+    failureRate: 58,
+    avgActions: 11.7,
+    declareFailure: 29,
+  },
 ]
 
 function seededPercent(index: number) {

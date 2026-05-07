@@ -63,8 +63,21 @@ function CodePanel({
             onClick={handleCopy}
             className="inline-flex items-center gap-1 rounded-lg border border-border-soft bg-surface-subtle px-2.5 py-1.5 text-[12px] text-text-secondary transition-colors hover:bg-surface-hover-2"
           >
-            {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
-            {copied ? "복사됨" : "코드 복사"}
+            <span className="relative grid size-3.5 place-items-center">
+              <Copy
+                className={cn(
+                  "absolute size-3.5 transition-all duration-200",
+                  copied ? "scale-75 opacity-0" : "scale-100 opacity-100"
+                )}
+              />
+              <Check
+                className={cn(
+                  "absolute size-3.5 transition-all duration-200",
+                  copied ? "scale-100 opacity-100" : "scale-75 opacity-0"
+                )}
+              />
+            </span>
+            <span className="transition-opacity duration-200">{copied ? "복사됨" : "코드 복사"}</span>
           </button>
         </div>
         <div className="min-h-[220px] overflow-auto rounded-2xl bg-code-surface p-3">
@@ -160,7 +173,7 @@ function ResultAiFixPage() {
         onExpandPage={toggleExpandedPage}
       />
 
-      <div className="grid gap-4">
+      <div className={cn("grid gap-4", motion.page)}>
         <Card className={cn("rounded-2xl border border-border-strong bg-card shadow-none", motion.card)}>
           <CardContent className="grid gap-4 px-6 py-5">
             <div className="flex flex-wrap items-center gap-2">
@@ -198,9 +211,14 @@ function ResultAiFixPage() {
                       <p className="mt-2 text-caption-12-regular text-text-muted">
                         +{fix.impactedUsers.count}명의 사용자가 개선 영향
                       </p>
-                      {active ? (
-                        <div className="mt-3 h-1 rounded-full bg-brand-accent" aria-hidden="true" />
-                      ) : null}
+                      <div className="mt-3 h-1 overflow-hidden rounded-full bg-brand-subtle" aria-hidden="true">
+                        <div
+                          className={cn(
+                            "h-full rounded-full bg-brand-accent transition-[width,opacity] duration-300 ease-out",
+                            active ? "w-full opacity-100" : "w-0 opacity-0"
+                          )}
+                        />
+                      </div>
                     </button>
                   )
                 })}

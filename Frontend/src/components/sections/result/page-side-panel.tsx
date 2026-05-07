@@ -61,11 +61,23 @@ function ResultPageSidePanel({
                     <ChevronDown className={cn("size-4 transition-transform", expanded ? "rotate-180" : "")} />
                   </button>
 
-                  {expanded ? (
-                    <div className="grid gap-2 px-3 pb-3">
+                  <div
+                    className={cn(
+                      "grid transition-[grid-template-rows,opacity] duration-300 ease-out motion-reduce:transition-none",
+                      expanded ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+                    )}
+                  >
+                    <div className="min-h-0 overflow-hidden">
+                    <div
+                      className={cn(
+                        "grid gap-2 px-3 pb-3 pt-0 transition-[transform,opacity] duration-300 ease-out motion-reduce:transition-none",
+                        expanded ? "translate-y-0 opacity-100" : "-translate-y-1 opacity-0"
+                      )}
+                    >
                       <button
                         type="button"
                         onClick={() => onSelectPage(page.id)}
+                        disabled={!expanded}
                         className={cn(
                           "overflow-hidden rounded-xl border bg-card transition-all duration-200 text-left",
                           isSelected ? "border-border-soft-3 bg-surface-hover shadow-sm" : "border-border-strong"
@@ -83,7 +95,8 @@ function ResultPageSidePanel({
                         />
                       </button>
                     </div>
-                  ) : null}
+                    </div>
+                  </div>
                 </div>
               )
             })}

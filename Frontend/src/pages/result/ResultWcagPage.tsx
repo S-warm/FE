@@ -204,7 +204,12 @@ function DetailIssueRow({
           )}
         >
           <div className="min-h-0 overflow-hidden">
-            <div className="mt-4 grid gap-3">
+            <div
+              className={cn(
+                "mt-4 grid gap-3 transition-[transform,opacity] duration-250 ease-out motion-reduce:transition-none",
+                expanded ? "translate-y-0 opacity-100" : "translate-y-1.5 opacity-0"
+              )}
+            >
               <div className="rounded-2xl border border-border-subtle bg-surface-subtle px-4 py-3">
                 <p className="text-caption-12-medium text-text-secondary">검사 기준</p>
                 <p className="mt-1 text-caption-12-regular text-text-body">{issue.criterion}</p>
@@ -290,7 +295,7 @@ function ResultWcagPage() {
         onExpandPage={toggleExpandedPage}
       />
 
-      <div className="grid gap-5">
+      <div className={cn("grid gap-5", motion.page)}>
         <section className="grid gap-3 md:grid-cols-3">
             <MetricCard
               title="준수 점수"

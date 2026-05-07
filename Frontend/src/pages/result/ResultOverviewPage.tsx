@@ -116,7 +116,7 @@ function ResultOverviewPage() {
   )
 
   return (
-    <div className="grid gap-5">
+    <div className={cn("grid gap-5", motion.page)}>
       <section className="grid gap-3 md:grid-cols-4">
         <MetricCard
           title="태스크 성공률"

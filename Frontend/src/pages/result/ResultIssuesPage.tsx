@@ -173,7 +173,7 @@ function ResultIssuesPage() {
         onExpandPage={toggleExpandedPage}
       />
 
-      <div className="grid gap-4">
+      <div className={cn("grid gap-4", motion.page)}>
         <Card className={cn("rounded-2xl border border-border-strong bg-card shadow-none", motion.card)}>
           <CardContent className="grid gap-4 px-6 py-5">
             <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">

@@ -79,11 +79,15 @@ function DigitalLiteracyDetailModal({ triggerClassName }: { triggerClassName?: s
           </div>
         </div>
 
-        <DialogFooter className="bg-[#f8faff]">
-          <CommonButton variant="ghost" onClick={() => setOpen(false)}>
-            취소
-          </CommonButton>
-          <CommonButton onClick={() => setOpen(false)}>적용</CommonButton>
+        <DialogFooter className="mx-0 mb-0 rounded-b-xl bg-[#f8faff] px-6 py-3 sm:justify-end">
+          <div className="flex w-full items-center justify-end gap-2">
+            <CommonButton variant="ghost" className="min-w-[72px]" onClick={() => setOpen(false)}>
+              취소
+            </CommonButton>
+            <CommonButton className="min-w-[88px]" onClick={() => setOpen(false)}>
+              적용
+            </CommonButton>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

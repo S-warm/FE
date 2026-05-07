@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 
 import { Sparkles, TrendingUp } from "lucide-react"
 
@@ -51,7 +51,7 @@ function firstFixIdForPage(pageId: string) {
 
 function ResultAiFixPage() {
   const { selectedPageId, setSelectedPageId } = useResultPageParam()
-  const [expandedPageId, setExpandedPageId] = useState<string>(() => selectedPageId ?? defaultAiFixPageId)
+  const [expandedPageIds, setExpandedPageIds] = useState<string[]>(() => [selectedPageId ?? defaultAiFixPageId])
   const [selectedFixId, setSelectedFixId] = useState<string>(() => firstFixIdForPage(selectedPageId) ?? defaultAiFixId)
 
   const selectedPage: AiFixPage = aiFixPagesMock.find((page) => page.id === selectedPageId) ?? aiFixPagesMock[0]
@@ -74,19 +74,25 @@ function ResultAiFixPage() {
     []
   )
 
+  useEffect(() => {
+    setExpandedPageIds((prev) => (prev.includes(selectedPageId) ? prev : [...prev, selectedPageId]))
+  }, [selectedPageId])
+
   return (
     <div className="grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
       <ResultPageSidePanel
         pages={sidePages}
         selectedPageId={selectedPageId}
-        expandedPageId={expandedPageId}
+        expandedPageIds={expandedPageIds}
         onSelectPage={(pageId) => {
           const nextFixId = firstFixIdForPage(pageId)
           setSelectedPageId(pageId)
           setSelectedFixId((prev) => nextFixId ?? prev)
-          setExpandedPageId(pageId)
+          setExpandedPageIds((prev) => (prev.includes(pageId) ? prev : [...prev, pageId]))
         }}
-        onExpandPage={setExpandedPageId}
+        onExpandPage={(pageId) =>
+          setExpandedPageIds((prev) => (prev.includes(pageId) ? prev : [...prev, pageId]))
+        }
       />
 
       <div className="grid gap-4">

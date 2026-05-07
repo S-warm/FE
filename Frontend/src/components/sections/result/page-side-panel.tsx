@@ -15,7 +15,7 @@ function ResultPageSidePanel({
   title = "페이지",
   pages,
   selectedPageId,
-  expandedPageId,
+  expandedPageIds,
   onSelectPage,
   onExpandPage,
   topSlot,
@@ -23,11 +23,11 @@ function ResultPageSidePanel({
   title?: string
   pages: ResultPageSidePanelItem[]
   selectedPageId: string
-  expandedPageId: string
+  expandedPageIds: string[]
   onSelectPage: (pageId: string) => void
   onExpandPage: (pageId: string) => void
   topSlot?: React.ReactNode
-  }) {
+}) {
   return (
     <Card className={cn("h-fit rounded-2xl border border-border-strong bg-card shadow-none", motion.card)}>
       <CardContent className="grid gap-4 px-4 py-5">
@@ -37,7 +37,7 @@ function ResultPageSidePanel({
           <p className="text-caption-12-medium text-text-secondary">{title}</p>
           <div className="grid gap-2">
             {pages.map((page) => {
-              const expanded = expandedPageId === page.id
+              const expanded = expandedPageIds.includes(page.id)
               const isSelected = selectedPageId === page.id
               return (
                 <div

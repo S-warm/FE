@@ -600,7 +600,7 @@ function HeatmapLogCanvas({
 
 function ResultHeatmapPage() {
   const { selectedPageId, setSelectedPageId } = useResultPageParam()
-  const [expandedPageId, setExpandedPageId] = useState<string>(defaultHeatmapPageId)
+  const [expandedPageIds, setExpandedPageIds] = useState<string[]>(() => [defaultHeatmapPageId])
   const [ageFilter, setAgeFilter] = useState<HeatmapAgeBand | "all">("all")
   const [overlayOpacity, setOverlayOpacity] = useState(60)
 
@@ -623,7 +623,7 @@ function ResultHeatmapPage() {
   )
 
   useEffect(() => {
-    setExpandedPageId(selectedPageId)
+    setExpandedPageIds((prev) => (prev.includes(selectedPageId) ? prev : [...prev, selectedPageId]))
   }, [selectedPageId])
 
   const resolvedTimeEndMs = heatmapTimelineMaxMsMock
@@ -639,12 +639,14 @@ function ResultHeatmapPage() {
       <ResultPageSidePanel
         pages={sidePages}
         selectedPageId={selectedPageId}
-        expandedPageId={expandedPageId}
+        expandedPageIds={expandedPageIds}
         onSelectPage={(pageId) => {
           setSelectedPageId(pageId)
-          setExpandedPageId(pageId)
+          setExpandedPageIds((prev) => (prev.includes(pageId) ? prev : [...prev, pageId]))
         }}
-        onExpandPage={setExpandedPageId}
+        onExpandPage={(pageId) =>
+          setExpandedPageIds((prev) => (prev.includes(pageId) ? prev : [...prev, pageId]))
+        }
       />
 
       <div className="grid gap-4">

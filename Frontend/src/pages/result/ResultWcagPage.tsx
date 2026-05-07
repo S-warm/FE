@@ -1,5 +1,5 @@
 import type { ComponentType } from "react"
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 
 import { AlertCircle, ChevronDown, ClipboardCheck, ShieldCheck, TriangleAlert } from "lucide-react"
 
@@ -189,7 +189,7 @@ function DetailIssueRow({
 function ResultWcagPage() {
   const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set())
   const { selectedPageId, setSelectedPageId } = useResultPageParam()
-  const [expandedPageId, setExpandedPageId] = useState<string>(selectedPageId)
+  const [expandedPageIds, setExpandedPageIds] = useState<string[]>(() => [selectedPageId])
 
   const summary = wcagResultMock
   const distributionTotal = useMemo(() => summary.distribution.reduce((acc, item) => acc + item.count, 0), [summary])
@@ -203,17 +203,23 @@ function ResultWcagPage() {
     []
   )
 
+  useEffect(() => {
+    setExpandedPageIds((prev) => (prev.includes(selectedPageId) ? prev : [...prev, selectedPageId]))
+  }, [selectedPageId])
+
   return (
     <div className="grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
       <ResultPageSidePanel
         pages={sidePages}
         selectedPageId={selectedPageId}
-        expandedPageId={expandedPageId}
+        expandedPageIds={expandedPageIds}
         onSelectPage={(pageId) => {
           setSelectedPageId(pageId)
-          setExpandedPageId(pageId)
+          setExpandedPageIds((prev) => (prev.includes(pageId) ? prev : [...prev, pageId]))
         }}
-        onExpandPage={setExpandedPageId}
+        onExpandPage={(pageId) =>
+          setExpandedPageIds((prev) => (prev.includes(pageId) ? prev : [...prev, pageId]))
+        }
       />
 
       <div className="grid gap-5">

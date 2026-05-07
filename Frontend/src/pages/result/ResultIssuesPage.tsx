@@ -129,12 +129,12 @@ function buildCategoryDonut(issues: ResultIssue[]) {
 
 function ResultIssuesPage() {
   const { selectedPageId, setSelectedPageId } = useResultPageParam()
-  const [expandedPageId, setExpandedPageId] = useState<string>(selectedPageId)
+  const [expandedPageIds, setExpandedPageIds] = useState<string[]>(() => [selectedPageId])
   const [activeFilters, setActiveFilters] = useState<IssueCategory[]>(["접근성", "사용성", "시각요소"])
   const issuesSectionRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    setExpandedPageId(selectedPageId)
+    setExpandedPageIds((prev) => (prev.includes(selectedPageId) ? prev : [...prev, selectedPageId]))
   }, [selectedPageId])
 
   const selectedPage: ResultIssuePage =
@@ -166,9 +166,11 @@ function ResultIssuesPage() {
       <ResultPageSidePanel
         pages={sidePages}
         selectedPageId={selectedPageId}
-        expandedPageId={expandedPageId}
+        expandedPageIds={expandedPageIds}
         onSelectPage={setSelectedPageId}
-        onExpandPage={setExpandedPageId}
+        onExpandPage={(pageId) =>
+          setExpandedPageIds((prev) => (prev.includes(pageId) ? prev : [...prev, pageId]))
+        }
       />
 
       <div className="grid gap-4">

@@ -38,6 +38,7 @@ function SummaryRow({
 function SimulationSummaryCard({
   projectTitle,
   targetUrl,
+  endUrl,
   startedAtLabel,
   personaCount,
   personaDevice,
@@ -47,6 +48,7 @@ function SimulationSummaryCard({
 }: {
   projectTitle: string
   targetUrl: string
+  endUrl: string
   startedAtLabel: string
   personaCount: number
   personaDevice: PersonaDevice
@@ -70,7 +72,14 @@ function SimulationSummaryCard({
             </p>
             <p className="text-caption-12-regular text-text-muted">{startedAtLabel}</p>
           </div>
-          <p className="text-caption-12-regular text-text-muted">{targetUrl.trim() || "타겟 URL을 입력하세요"}</p>
+          <div className="grid gap-1 md:grid-cols-2">
+            <p className="text-caption-12-regular text-text-muted">
+              시작: {targetUrl.trim() || "타겟 URL을 입력하세요"}
+            </p>
+            <p className="text-caption-12-regular text-text-muted">
+              종료: {endUrl.trim() || "종료 URL을 입력하세요"}
+            </p>
+          </div>
         </div>
 
         <SummaryRow title="페르소나 횟수" value={`총 ${personaCount.toLocaleString()}회 시뮬레이션`} />

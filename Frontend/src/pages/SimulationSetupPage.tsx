@@ -22,6 +22,8 @@ import { formatRelativeTime } from "@/utils/format-relative-time"
 function SimulationSetupPage() {
   const targetUrl = useSimulationDraftStore((state) => state.targetUrl)
   const setTargetUrl = useSimulationDraftStore((state) => state.setTargetUrl)
+  const endUrl = useSimulationDraftStore((state) => state.endUrl)
+  const setEndUrl = useSimulationDraftStore((state) => state.setEndUrl)
   const projectTitle = useSimulationDraftStore((state) => state.projectTitle)
   const setProjectTitle = useSimulationDraftStore((state) => state.setProjectTitle)
   const startedAt = useSimulationDraftStore((state) => state.startedAt)
@@ -153,11 +155,25 @@ function SimulationSetupPage() {
         )}
       >
         <div className="grid gap-5">
+          <section className="grid w-full max-w-[760px] gap-4">
+            <div className="grid gap-3">
+              <SetupSectionTitle title="프로젝트 제목" description="결과 리포트에 표시될 이름" />
+              <TextField
+                placeholder="예: A - Mall 구매 플로우"
+                value={projectTitle}
+                onChange={(event) => setProjectTitle(event.target.value)}
+                variant="default"
+                size="lg"
+                className="h-11 rounded-xl border-border-soft-2 bg-card px-4 text-text-secondary placeholder:text-text-muted"
+              />
+            </div>
+          </section>
+
           <section className="grid w-full max-w-[760px] gap-4 md:grid-cols-2">
             <div className="grid gap-3">
               <SetupSectionTitle title="타겟 URL" description="시뮬레이션이 시작되는 페이지" />
               <TextField
-                placeholder="URL 링크를 입력하세요."
+                placeholder="시작 URL 링크를 입력하세요."
                 value={targetUrl}
                 onChange={(event) => setTargetUrl(event.target.value)}
                 variant="default"
@@ -166,11 +182,11 @@ function SimulationSetupPage() {
               />
             </div>
             <div className="grid gap-3">
-              <SetupSectionTitle title="프로젝트 제목" description="결과 리포트에 표시될 이름" />
+              <SetupSectionTitle title="종료 URL" description="시뮬레이션이 도달해야 하는 페이지" />
               <TextField
-                placeholder="예: A - Mall 구매 플로우"
-                value={projectTitle}
-                onChange={(event) => setProjectTitle(event.target.value)}
+                placeholder="종료 URL 링크를 입력하세요."
+                value={endUrl}
+                onChange={(event) => setEndUrl(event.target.value)}
                 variant="default"
                 size="lg"
                 className="h-11 rounded-xl border-border-soft-2 bg-card px-4 text-text-secondary placeholder:text-text-muted"
@@ -340,9 +356,10 @@ function SimulationSetupPage() {
           <SetupSectionTitle title="시뮬레이션 요약" />
           <div className="grid gap-0">
             <SimulationSummaryCard
-            projectTitle={projectTitle}
-            targetUrl={targetUrl}
-            startedAtLabel={startedAt ? `${formatRelativeTime(startedAt)} · ${startedAt.slice(0, 10)}` : "-"}
+              projectTitle={projectTitle}
+              targetUrl={targetUrl}
+              endUrl={endUrl}
+              startedAtLabel={startedAt ? `${formatRelativeTime(startedAt)} · ${startedAt.slice(0, 10)}` : "-"}
               personaCount={personaCount}
               personaDevice={personaDevice}
               digitalLiteracy={digitalLiteracy}

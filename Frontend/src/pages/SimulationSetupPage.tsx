@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom"
 
 import { DonutChart } from "@/components/charts"
 import { Card, CardContent } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
 import { BrandingHeader } from "@/components/sections/auth/branding-header"
 import {
   DigitalLiteracySelector,
@@ -18,6 +19,32 @@ import { useSimulationDraftStore } from "@/store/simulation-draft.store"
 import { cn } from "@/lib/utils"
 import { motion } from "@/lib/motion"
 import { formatRelativeTime } from "@/utils/format-relative-time"
+
+function AgeRatioInput({
+  value,
+  onChange,
+}: {
+  value: number
+  onChange: (value: number) => void
+}) {
+  return (
+    <div className="flex items-center gap-2 self-center md:self-auto">
+      <Input
+        type="text"
+        inputMode="numeric"
+        pattern="[0-9]*"
+        value={String(value)}
+        aria-label="연령 비율 입력"
+        className="h-10 w-18 rounded-xl border-border-soft-2 bg-card px-3 text-center text-body-14-medium text-text-secondary"
+        onChange={(event) => {
+          const digitsOnly = event.target.value.replace(/\D/g, "")
+          onChange(digitsOnly ? Number(digitsOnly) : 0)
+        }}
+      />
+      <span className="text-body-14-medium text-text-subtle">%</span>
+    </div>
+  )
+}
 
 function SimulationSetupPage() {
   const targetUrl = useSimulationDraftStore((state) => state.targetUrl)
@@ -250,7 +277,7 @@ function SimulationSetupPage() {
 
               <div className="grid gap-3">
                 <Card className={cn("rounded-2xl border border-border-strong bg-card py-2 shadow-none", motion.card)}>
-                  <CardContent className="grid gap-2 md:grid-cols-[148px_minmax(0,1fr)] md:items-center">
+                  <CardContent className="grid gap-3 md:grid-cols-[148px_minmax(0,1fr)_80px] md:items-center">
                     <div className="rounded-xl bg-surface-muted px-3 py-2.5">
                       <p className="text-subtitle-20-medium text-[var(--color-primary-600)]">10대~30대</p>
                       <p className="mt-1 text-body-14-regular text-text-subtle">
@@ -269,11 +296,12 @@ function SimulationSetupPage() {
                       tooltipFormatter={(value) => `${value}%`}
                       onChange={(value) => redistributeAgeRatio("teen", value)}
                     />
+                    <AgeRatioInput value={ageRatios.teen} onChange={(value) => redistributeAgeRatio("teen", value)} />
                   </CardContent>
                 </Card>
 
                 <Card className={cn("rounded-2xl border border-border-strong bg-card py-2 shadow-none", motion.card)}>
-                  <CardContent className="grid gap-2 md:grid-cols-[148px_minmax(0,1fr)] md:items-center">
+                  <CardContent className="grid gap-3 md:grid-cols-[148px_minmax(0,1fr)_80px] md:items-center">
                     <div className="rounded-xl bg-surface-muted px-3 py-2.5">
                       <p className="text-subtitle-20-medium text-[var(--color-primary-600)]">40대~50대</p>
                       <p className="mt-1 text-body-14-regular text-text-subtle">안정성과 신뢰를 중시하는 중장년층</p>
@@ -288,11 +316,12 @@ function SimulationSetupPage() {
                       tooltipFormatter={(value) => `${value}%`}
                       onChange={(value) => redistributeAgeRatio("fifty", value)}
                     />
+                    <AgeRatioInput value={ageRatios.fifty} onChange={(value) => redistributeAgeRatio("fifty", value)} />
                   </CardContent>
                 </Card>
 
                 <Card className={cn("rounded-2xl border border-border-strong bg-card py-2 shadow-none", motion.card)}>
-                  <CardContent className="grid gap-2 md:grid-cols-[148px_minmax(0,1fr)] md:items-center">
+                  <CardContent className="grid gap-3 md:grid-cols-[148px_minmax(0,1fr)_80px] md:items-center">
                     <div className="rounded-xl bg-surface-muted px-3 py-2.5">
                       <p className="text-subtitle-20-medium text-[var(--color-primary-600)]">60대~80대</p>
                       <p className="mt-1 text-body-14-regular text-text-subtle">
@@ -311,6 +340,7 @@ function SimulationSetupPage() {
                       tooltipFormatter={(value) => `${value}%`}
                       onChange={(value) => redistributeAgeRatio("eighty", value)}
                     />
+                    <AgeRatioInput value={ageRatios.eighty} onChange={(value) => redistributeAgeRatio("eighty", value)} />
                   </CardContent>
                 </Card>
               </div>

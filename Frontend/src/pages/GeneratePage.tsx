@@ -32,7 +32,7 @@ function GeneratePage() {
           style={{ transitionDuration: `${LOGIN_TRANSITION_MS}ms` }}
         >
           <SimulationButton
-            className="w-full rounded-xl bg-accent text-primary hover:bg-accent/80"
+            className="w-full rounded-xl bg-[var(--color-primary-100)] text-[var(--color-primary-600)] shadow-[0_10px_24px_rgba(68,99,208,0.12)] hover:bg-[var(--color-primary-200)] hover:text-[var(--color-primary-800)] hover:shadow-[0_12px_28px_rgba(68,99,208,0.16)]"
             onClick={() => navigate(routes.simulationSetup)}
           />
         </div>

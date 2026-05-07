@@ -47,36 +47,36 @@ function AuthSidebar({
 
       <div
         className={[
-          "px-4 pb-6 transition-[opacity,transform] duration-200",
+          "flex h-[calc(100%-4rem)] flex-col px-4 pb-6 transition-[opacity,transform] duration-200",
           open ? "opacity-100 translate-x-0" : "pointer-events-none opacity-0 -translate-x-2",
         ].join(" ")}
       >
-        <p className="text-caption-12-regular text-text-muted">최근 프로젝트</p>
-        <div className="mt-3 grid gap-3">
-          {recentSimulations.map((item) => {
-            const isActive = item.id === activeSimulationId
-            return (
-              <button
-                key={item.id}
-                type="button"
-                className={cn(
-                  "rounded-xl border bg-card px-4 py-3 text-left transition-colors hover:bg-surface-hover-2",
-                  isActive
-                    ? "border-border-focus ring-2 ring-border-focus/40"
-                    : "border-border-soft-3"
-                )}
-                onClick={() => onSelectSimulation(item.id)}
-              >
-                <p className="text-body-14-medium text-foreground">{item.siteName}</p>
-                <p className="mt-1 text-caption-12-regular text-text-muted">
-                  {formatRelativeTime(item.createdAt)} · {item.createdAt}
-                </p>
-              </button>
-            )
-          })}
+        <div className="min-h-0 flex-1">
+          <p className="text-caption-12-regular text-text-muted">최근 프로젝트</p>
+          <div className="mt-3 grid gap-3 overflow-y-auto pr-1">
+            {recentSimulations.map((item) => {
+              const isActive = item.id === activeSimulationId
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  className={cn(
+                    "rounded-xl border bg-card px-4 py-3 text-left transition-colors hover:bg-surface-hover-2",
+                    isActive
+                      ? "border-border-focus ring-2 ring-border-focus/40"
+                      : "border-border-soft-3"
+                  )}
+                  onClick={() => onSelectSimulation(item.id)}
+                >
+                  <p className="text-body-14-medium text-foreground">{item.siteName}</p>
+                  <p className="mt-1 text-caption-12-regular text-text-muted">
+                    {formatRelativeTime(item.createdAt)} · {item.createdAt}
+                  </p>
+                </button>
+              )
+            })}
+          </div>
         </div>
-
-        <div className="mt-8 border-t border-border pt-6" />
       </div>
     </aside>
   )

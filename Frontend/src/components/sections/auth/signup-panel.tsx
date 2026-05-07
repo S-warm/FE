@@ -58,17 +58,15 @@ function SignUpPanel({ onGoToLogin }: { onGoToLogin: () => void }) {
         회원가입
       </CommonButton>
 
-      <div className="grid gap-3 pt-1">
+      <div className="grid justify-items-center gap-2 pt-1">
         <p className="text-body-14-regular text-muted-foreground">이미 계정이 있으신가요?</p>
-        <CommonButton
+        <button
           type="button"
-          size="lg"
-          variant="secondary"
-          className="h-12 w-full rounded-xl bg-accent text-primary hover:bg-accent/80"
+          className="rounded-lg px-2 py-1 text-body-14-medium text-text-link underline-offset-4 transition-colors hover:text-[var(--color-primary-800)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
           onClick={onGoToLogin}
         >
           로그인 하러 가기
-        </CommonButton>
+        </button>
       </div>
     </form>
   )

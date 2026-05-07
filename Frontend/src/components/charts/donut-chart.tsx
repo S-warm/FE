@@ -34,8 +34,10 @@ function DonutChart({
             data={data}
             dataKey="value"
             nameKey="name"
-            innerRadius={52}
-            outerRadius={80}
+            cx="50%"
+            cy="56%"
+            innerRadius="50%"
+            outerRadius="92%"
             stroke="transparent"
             paddingAngle={2}
             isAnimationActive

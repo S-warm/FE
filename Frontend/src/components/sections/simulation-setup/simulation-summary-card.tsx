@@ -39,7 +39,6 @@ function SimulationSummaryCard({
   projectTitle,
   targetUrl,
   endUrl,
-  startedAtLabel,
   personaCount,
   personaDevice,
   digitalLiteracy,
@@ -49,7 +48,6 @@ function SimulationSummaryCard({
   projectTitle: string
   targetUrl: string
   endUrl: string
-  startedAtLabel: string
   personaCount: number
   personaDevice: PersonaDevice
   digitalLiteracy: DigitalLiteracyLevel
@@ -65,23 +63,11 @@ function SimulationSummaryCard({
       )}
     >
       <CardContent className="flex flex-col gap-2.5 py-0 text-left">
-        <div className="grid gap-1.5 rounded-xl border border-border-subtle bg-card/70 px-3 py-1.5">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className="text-body-14-medium font-semibold text-text-body">
-              {projectTitle.trim() || "프로젝트 제목을 입력하세요"}
-            </p>
-            <p className="text-caption-12-regular text-text-muted">{startedAtLabel}</p>
-          </div>
-          <div className="grid gap-1 md:grid-cols-2">
-            <p className="text-caption-12-regular text-text-muted">
-              시작: {targetUrl.trim() || "타겟 URL을 입력하세요"}
-            </p>
-            <p className="text-caption-12-regular text-text-muted">
-              종료: {endUrl.trim() || "종료 URL을 입력하세요"}
-            </p>
-          </div>
-        </div>
-
+        <SummaryRow title="프로젝트 제목" value={projectTitle.trim() || "프로젝트 제목을 입력하세요"} />
+        <div className="h-px bg-border-subtle" />
+        <SummaryRow title="시작 URL" value={targetUrl.trim() || "타겟 URL을 입력하세요"} />
+        <div className="h-px bg-border-subtle" />
+        <SummaryRow title="종료 URL" value={endUrl.trim() || "종료 URL을 입력하세요"} />
         <SummaryRow title="페르소나 횟수" value={`총 ${personaCount.toLocaleString()}회 시뮬레이션`} />
         <div className="h-px bg-border-subtle" />
         <SummaryRow title="디바이스" value={personaDeviceLabelMap[personaDevice]} />

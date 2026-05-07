@@ -621,6 +621,9 @@ function ResultHeatmapPage() {
       }),
     []
   )
+  const toggleExpandedPage = (pageId: string) => {
+    setExpandedPageIds((prev) => (prev.includes(pageId) ? prev.filter((id) => id !== pageId) : [...prev, pageId]))
+  }
 
   useEffect(() => {
     setExpandedPageIds((prev) => (prev.includes(selectedPageId) ? prev : [...prev, selectedPageId]))
@@ -644,9 +647,7 @@ function ResultHeatmapPage() {
           setSelectedPageId(pageId)
           setExpandedPageIds((prev) => (prev.includes(pageId) ? prev : [...prev, pageId]))
         }}
-        onExpandPage={(pageId) =>
-          setExpandedPageIds((prev) => (prev.includes(pageId) ? prev : [...prev, pageId]))
-        }
+        onExpandPage={toggleExpandedPage}
       />
 
       <div className="grid gap-4">

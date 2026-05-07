@@ -43,9 +43,9 @@ function ResultPageSidePanel({
                 <div
                   key={page.id}
                   className={cn(
-                    "rounded-2xl border transition-colors",
+                    "overflow-hidden rounded-2xl border transition-all duration-200",
                     isSelected
-                      ? "border-border-soft-2 bg-surface-muted hover:bg-surface-muted-hover"
+                      ? "border-border-soft-3 bg-surface-muted-hover shadow-sm"
                       : "border-border-soft bg-surface-subtle hover:bg-surface-hover-2"
                   )}
                 >
@@ -55,10 +55,7 @@ function ResultPageSidePanel({
                       "flex w-full items-center justify-between gap-2 rounded-2xl px-3 py-2 text-body-14-medium transition-colors",
                       isSelected ? "text-text-strong" : "text-text-secondary hover:text-text-strong"
                     )}
-                    onClick={() => {
-                      onSelectPage(page.id)
-                      onExpandPage(page.id)
-                    }}
+                    onClick={() => onExpandPage(page.id)}
                   >
                     <span className="truncate">{page.name}</span>
                     <ChevronDown className={cn("size-4 transition-transform", expanded ? "rotate-180" : "")} />
@@ -66,18 +63,25 @@ function ResultPageSidePanel({
 
                   {expanded ? (
                     <div className="grid gap-2 px-3 pb-3">
-                      <div className="overflow-hidden rounded-xl border border-border-strong bg-card">
+                      <button
+                        type="button"
+                        onClick={() => onSelectPage(page.id)}
+                        className={cn(
+                          "overflow-hidden rounded-xl border bg-card transition-all duration-200 text-left",
+                          isSelected ? "border-border-soft-3 bg-surface-hover shadow-sm" : "border-border-strong"
+                        )}
+                      >
                         <img
                           src={page.screenshotUrl}
                           alt={page.name}
                           loading="lazy"
                           decoding="async"
-                          className="aspect-[16/10] w-full object-cover"
+                          className={cn(
+                            "aspect-[16/10] w-full object-cover transition-[filter,opacity]",
+                            isSelected ? "opacity-100 saturate-[1.06] contrast-[1.08]" : "opacity-92"
+                          )}
                         />
-                      </div>
-                      {page.metaText ? (
-                        <p className="text-caption-12-regular text-text-subtle">{page.metaText}</p>
-                      ) : null}
+                      </button>
                     </div>
                   ) : null}
                 </div>

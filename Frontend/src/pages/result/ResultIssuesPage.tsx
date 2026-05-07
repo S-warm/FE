@@ -159,6 +159,9 @@ function ResultIssuesPage() {
   }, [activeFilters, selectedPage])
 
   const donut = useMemo(() => buildCategoryDonut(filteredIssues), [filteredIssues])
+  const toggleExpandedPage = (pageId: string) => {
+    setExpandedPageIds((prev) => (prev.includes(pageId) ? prev.filter((id) => id !== pageId) : [...prev, pageId]))
+  }
 
   return (
     <div className="grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
@@ -167,9 +170,7 @@ function ResultIssuesPage() {
         selectedPageId={selectedPageId}
         expandedPageIds={expandedPageIds}
         onSelectPage={setSelectedPageId}
-        onExpandPage={(pageId) =>
-          setExpandedPageIds((prev) => (prev.includes(pageId) ? prev : [...prev, pageId]))
-        }
+        onExpandPage={toggleExpandedPage}
       />
 
       <div className="grid gap-4">

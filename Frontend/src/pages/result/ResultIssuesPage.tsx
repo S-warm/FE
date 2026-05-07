@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import { useLocation, useNavigate, useParams } from "react-router-dom"
 
-import { AlertTriangle, ArrowRight, Sparkles } from "lucide-react"
+import { AlertTriangle, ArrowRight, CheckCircle2, Sparkles } from "lucide-react"
 
 import { CommonButton, IssueBadge } from "@/components/atoms"
 import { DonutChart } from "@/components/charts"
@@ -57,10 +57,16 @@ function IssueCard({ issue }: { issue: ResultIssue }) {
               <p className="mt-1 text-caption-12-regular text-text-subtle">
                 {issue.affectedUsers.count}명 사용자 영향 ({issue.affectedUsers.percent}%)
               </p>
+              <p className="mt-1 text-caption-12-regular text-text-secondary">
+                발견 페르소나: {issue.reportedPersona}
+              </p>
             </div>
           </div>
 
-          <p className="text-caption-12-regular text-text-muted">{issue.description}</p>
+          <div className="flex items-start gap-2 rounded-xl border border-border-soft bg-surface-subtle/80 px-3 py-2">
+            <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-brand-accent" />
+            <p className="text-caption-12-regular leading-5 text-text-secondary">{issue.prioritySummary}</p>
+          </div>
 
           <div className="grid gap-1">
             <p className="text-caption-12-medium text-text-subtle">영향받는 요소</p>
@@ -72,9 +78,9 @@ function IssueCard({ issue }: { issue: ResultIssue }) {
 
         <div className="flex flex-row flex-wrap items-center justify-end gap-2 md:flex-col md:items-end md:justify-start">
           <span className="inline-flex h-6 items-center rounded-full bg-brand-accent px-3 text-caption-12-medium text-white">
-            {issue.expectedBenefit.label} {issue.expectedBenefit.delta}
+            AI 수정 시 예상 {issue.expectedBenefit.delta}
           </span>
-          <div className="flex items-center gap-2">
+          <div className="grid justify-items-end gap-2">
             <CommonButton
               size="sm"
               variant="secondary"
@@ -83,15 +89,6 @@ function IssueCard({ issue }: { issue: ResultIssue }) {
             >
               <Sparkles className="size-4" />
               AI 수정 받기
-            </CommonButton>
-            <CommonButton
-              size="sm"
-              variant="secondary"
-              className="rounded-xl border border-border-soft-2 bg-surface-muted text-text-secondary hover:bg-surface-muted-hover"
-              onClick={() => navigate(`/result/${resolvedId}/heatmap${search}`)}
-            >
-              히트맵에서 보기
-              <ArrowRight className="size-4" />
             </CommonButton>
           </div>
         </div>
@@ -128,6 +125,8 @@ function buildCategoryDonut(issues: ResultIssue[]) {
 }
 
 function ResultIssuesPage() {
+  const { simulationId } = useParams()
+  const navigate = useNavigate()
   const { selectedPageId, setSelectedPageId } = useResultPageParam()
   const [expandedPageIds, setExpandedPageIds] = useState<string[]>(() => [selectedPageId])
   const [activeFilters, setActiveFilters] = useState<IssueCategory[]>(["접근성", "사용성", "시각요소"])
@@ -179,6 +178,18 @@ function ResultIssuesPage() {
             <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
               <div className="grid gap-2">
                 <div className="flex flex-wrap items-center gap-2">
+                  <p className="text-body-14-medium text-text-body">{selectedPage.name}</p>
+                  <span className="text-caption-12-regular text-text-subtle">{selectedPage.issues.length}건 이슈</span>
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-1 text-caption-12-medium text-text-link transition-colors hover:text-primary-600"
+                    onClick={() => navigate(`/result/${simulationId ?? "unknown"}/heatmap${location.search}`)}
+                  >
+                    히트맵에서 보기
+                    <ArrowRight className="size-3.5" />
+                  </button>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
                   <p className="text-caption-12-medium text-text-secondary">필터링</p>
                   <div className="flex flex-wrap gap-2">
                     {filterCategories.map((category) => {
@@ -187,7 +198,12 @@ function ResultIssuesPage() {
                         <ChipTag
                           key={category}
                           selected={selected}
-                          className="h-7 px-2.5 text-[12px]"
+                          className={cn(
+                            "h-7 px-2.5 text-[12px]",
+                            selected
+                              ? "border-primary-main bg-primary-50 text-primary-600 ring-1 ring-primary-200 shadow-sm"
+                              : "border-border-soft bg-card text-text-muted hover:bg-surface-subtle"
+                          )}
                           onClick={() => {
                             setActiveFilters((prev) =>
                               prev.includes(category) ? prev.filter((item) => item !== category) : [...prev, category]

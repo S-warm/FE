@@ -1,38 +1,5 @@
 export type IssueCategory = "접근성" | "사용성" | "시각요소" | "기타"
 
-export interface IssuePersonaBreakdown {
-  personaLabel: string
-  ageGroup: string
-  digitalLiteracy: "low" | "medium" | "high"
-  device: string
-  occurrences: number
-  failureRate: number
-  lastFailedStep: string
-}
-
-export interface IssueFailureStageStat {
-  label: string
-  count: number
-  percent: number
-}
-
-export interface IssueSessionSample {
-  sessionId: string
-  personaLabel: string
-  ageGroup: string
-  digitalLiteracy: "low" | "medium" | "high"
-  device: string
-  failureStep: string
-  errorType: "interaction" | "validation" | "network" | "timeout"
-  summary: string
-}
-
-export interface ResultIssueDetail {
-  breakdown: IssuePersonaBreakdown[]
-  topFailureStages: IssueFailureStageStat[]
-  sessionSamples: IssueSessionSample[]
-}
-
 export interface ResultIssue {
   id: string
   category: IssueCategory
@@ -49,7 +16,6 @@ export interface ResultIssue {
     label: string
     delta: string
   }
-  detail?: ResultIssueDetail
 }
 
 export interface ResultIssuePage {

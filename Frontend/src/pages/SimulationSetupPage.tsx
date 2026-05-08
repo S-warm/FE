@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useMemo, useState } from "react"
 import { useNavigate } from "react-router-dom"
 
 import { ChevronDown } from "lucide-react"
@@ -8,7 +8,6 @@ import { Card, CardContent } from "@/components/ui/card"
 import { BrandingHeader } from "@/components/sections/auth/branding-header"
 import {
   DigitalLiteracySelector,
-  PersonaRangeSlider,
   type DigitalLiteracyLevel,
   SetupSectionTitle,
   SimulationSummaryCard,
@@ -19,6 +18,29 @@ import routes from "@/constants/routes"
 import { useSimulationDraftStore } from "@/store/simulation-draft.store"
 import { cn } from "@/lib/utils"
 import { motion } from "@/lib/motion"
+
+const AGE_GROUP_CONFIG = [
+  { key: "teens", label: "10대", color: "var(--color-persona-teen)" },
+  { key: "twenties", label: "20대", color: "var(--color-primary-100)" },
+  { key: "thirties", label: "30대", color: "var(--color-primary-200)" },
+  { key: "forties", label: "40대", color: "var(--color-primary-300)" },
+  { key: "fifties", label: "50대", color: "var(--color-persona-fifty)" },
+  { key: "sixties", label: "60대", color: "var(--color-chart-form-start)" },
+  { key: "seventies", label: "70대", color: "var(--color-persona-eighty)" },
+] as const
+
+type AgeGroupCountKey = (typeof AGE_GROUP_CONFIG)[number]["key"]
+type AgeGroupCounts = Record<AgeGroupCountKey, number>
+
+const DEFAULT_AGE_GROUP_COUNTS: AgeGroupCounts = {
+  teens: 72,
+  twenties: 72,
+  thirties: 72,
+  forties: 71,
+  fifties: 71,
+  sixties: 71,
+  seventies: 71,
+}
 
 function SimulationSetupPage() {
   const targetUrl = useSimulationDraftStore((state) => state.targetUrl)
@@ -31,7 +53,6 @@ function SimulationSetupPage() {
   const setStartedAt = useSimulationDraftStore((state) => state.setStartedAt)
   const personaDevice = useSimulationDraftStore((state) => state.personaDevice)
 
-  const [personaCount, setPersonaCount] = useState(500)
   const [digitalLiteracy, setDigitalLiteracy] = useState<DigitalLiteracyLevel>("low")
   const [successCondition, setSuccessCondition] = useState("")
   const [projectTitleError, setProjectTitleError] = useState("")
@@ -40,19 +61,8 @@ function SimulationSetupPage() {
   const [successConditionError, setSuccessConditionError] = useState("")
   const [ageRatioOpen, setAgeRatioOpen] = useState(false)
   const [advancedSettingsOpen, setAdvancedSettingsOpen] = useState(false)
-  const [ageRatios, setAgeRatios] = useState({
-    teen: 25,
-    fifty: 25,
-    eighty: 50,
-  })
-  const [displayAgeRatios, setDisplayAgeRatios] = useState(ageRatios)
-  const animationFrameRef = useRef<number | null>(null)
-  const displayAgeRatiosRef = useRef(displayAgeRatios)
+  const [ageGroupCounts, setAgeGroupCounts] = useState<AgeGroupCounts>(DEFAULT_AGE_GROUP_COUNTS)
   const navigate = useNavigate()
-
-  useEffect(() => {
-    displayAgeRatiosRef.current = displayAgeRatios
-  }, [displayAgeRatios])
 
   const resetValidationErrors = () => {
     setProjectTitleError("")
@@ -61,105 +71,40 @@ function SimulationSetupPage() {
     setSuccessConditionError("")
   }
 
-  const redistributeAgeRatio = (changedKey: keyof typeof ageRatios, nextValue: number) => {
-    const clamped = Math.min(100, Math.max(0, Math.round(nextValue)))
-    const otherKeys = (Object.keys(ageRatios) as Array<keyof typeof ageRatios>).filter(
-      (key) => key !== changedKey
-    )
-    const remaining = 100 - clamped
+  const updateAgeGroupCount = (ageGroupKey: AgeGroupCountKey, rawValue: string) => {
+    const numericValue = Number(rawValue.replaceAll(",", ""))
+    const nextValue = Number.isFinite(numericValue) ? Math.max(0, Math.floor(numericValue)) : 0
 
-    const nextState = { ...ageRatios, [changedKey]: clamped }
-
-    if (remaining <= 0) {
-      otherKeys.forEach((key) => {
-        nextState[key] = 0
-      })
-      setAgeRatios(nextState)
-      return
-    }
-
-    const weights = otherKeys.map((key) => ageRatios[key])
-    const weightTotal = weights.reduce((sum, value) => sum + value, 0)
-
-    if (weightTotal <= 0) {
-      const split = Math.floor(remaining / otherKeys.length)
-      const rest = remaining - split * otherKeys.length
-      otherKeys.forEach((key, index) => {
-        nextState[key] = split + (index < rest ? 1 : 0)
-      })
-      setAgeRatios(nextState)
-      return
-    }
-
-    const raw = weights.map((weight) => (weight / weightTotal) * remaining)
-    const floors = raw.map((value) => Math.floor(value))
-    const allocated = floors.reduce((sum, value) => sum + value, 0)
-    const leftover = remaining - allocated
-
-    const order = raw
-      .map((value, index) => ({ index, frac: value - floors[index] }))
-      .sort((a, b) => b.frac - a.frac)
-
-    for (let i = 0; i < leftover; i += 1) {
-      const target = order[i % order.length]?.index
-      if (target === undefined) break
-      floors[target] += 1
-    }
-
-    otherKeys.forEach((key, index) => {
-      nextState[key] = floors[index]
-    })
-    setAgeRatios(nextState)
+    setAgeGroupCounts((prev) => ({
+      ...prev,
+      [ageGroupKey]: nextValue,
+    }))
   }
 
-  useEffect(() => {
-    if (animationFrameRef.current) {
-      window.cancelAnimationFrame(animationFrameRef.current)
-    }
+  const resetAgeGroupCounts = () => {
+    setAgeGroupCounts(DEFAULT_AGE_GROUP_COUNTS)
+  }
 
-    const start = performance.now()
-    const from = displayAgeRatiosRef.current
-    const to = ageRatios
-    const duration = 300
-
-    const easeOutCubic = (t: number) => 1 - (1 - t) ** 3
-
-    const tick = (now: number) => {
-      const progress = Math.min((now - start) / duration, 1)
-      const eased = easeOutCubic(progress)
-
-      setDisplayAgeRatios({
-        teen: from.teen + (to.teen - from.teen) * eased,
-        fifty: from.fifty + (to.fifty - from.fifty) * eased,
-        eighty: from.eighty + (to.eighty - from.eighty) * eased,
-      })
-
-      if (progress < 1) {
-        animationFrameRef.current = window.requestAnimationFrame(tick)
-      }
-    }
-
-    animationFrameRef.current = window.requestAnimationFrame(tick)
-
-    return () => {
-      if (animationFrameRef.current) {
-        window.cancelAnimationFrame(animationFrameRef.current)
-      }
-    }
-  }, [ageRatios])
-
-  const ageDonutData = useMemo(
-    () => [
-      { name: "10대", value: displayAgeRatios.teen, color: "var(--color-persona-teen)" },
-      { name: "50대", value: displayAgeRatios.fifty, color: "var(--color-persona-fifty)" },
-      { name: "80대", value: displayAgeRatios.eighty, color: "var(--color-persona-eighty)" },
-    ],
-    [displayAgeRatios]
+  const personaCount = useMemo(
+    () => Object.values(ageGroupCounts).reduce((sum, count) => sum + count, 0),
+    [ageGroupCounts]
   )
 
-  const ageRatioSummary = useMemo(
-    () => `10대 ${ageRatios.teen}% · 50대 ${ageRatios.fifty}% · 80대 ${ageRatios.eighty}%`,
-    [ageRatios]
+  const ageDonutData = useMemo(
+    () =>
+      AGE_GROUP_CONFIG.map((ageGroup) => ({
+        name: ageGroup.label,
+        value: personaCount > 0 ? Number(((ageGroupCounts[ageGroup.key] / personaCount) * 100).toFixed(1)) : 0,
+        color: ageGroup.color,
+        count: ageGroupCounts[ageGroup.key],
+      })),
+    [ageGroupCounts, personaCount]
+  )
+
+  const ageGroupSummary = useMemo(
+    () =>
+      AGE_GROUP_CONFIG.map((ageGroup) => `${ageGroup.label} ${ageGroupCounts[ageGroup.key].toLocaleString()}회`).join(" · "),
+    [ageGroupCounts]
   )
 
   const trimmedProjectTitle = projectTitle.trim()
@@ -264,19 +209,12 @@ function SimulationSetupPage() {
               aria-expanded={ageRatioOpen}
             >
               <div className="grid gap-1">
-                <SetupSectionTitle title="연령별 투입 비율" description="페르소나 연령대 비율" />
-                <p className="text-caption-12-regular text-text-muted">{ageRatioSummary}</p>
+                <SetupSectionTitle title="연령대별 페르소나 횟수" description="10대부터 70대까지 직접 입력" />
+                <p className="text-caption-12-regular text-text-muted">{ageGroupSummary}</p>
               </div>
               <div className="flex items-center gap-2">
-                <span
-                  className={[
-                    "inline-flex h-8 items-center rounded-xl border px-3 text-caption-12-medium",
-                    ageRatios.teen + ageRatios.fifty + ageRatios.eighty === 100
-                      ? "border-border-soft bg-surface-subtle text-text-secondary"
-                      : "border-critical-accent/40 bg-danger-surface text-critical-text",
-                  ].join(" ")}
-                >
-                  합계 {ageRatios.teen + ageRatios.fifty + ageRatios.eighty}%
+                <span className="inline-flex h-8 items-center rounded-xl border border-border-soft bg-surface-subtle px-3 text-caption-12-medium text-text-secondary">
+                  합계 {personaCount.toLocaleString()}회
                 </span>
                 <ChevronDown className={cn("size-4 text-text-muted transition-transform", ageRatioOpen && "rotate-180")} />
               </div>
@@ -296,94 +234,56 @@ function SimulationSetupPage() {
                         <button
                           type="button"
                           className="rounded-xl bg-[var(--color-primary-50)] px-4 py-2 text-body-14-medium text-[var(--color-primary-main)]"
-                          onClick={() =>
-                            setAgeRatios({
-                              teen: 34,
-                              fifty: 33,
-                              eighty: 33,
-                            })
-                          }
+                          onClick={resetAgeGroupCounts}
                         >
-                          균등배치
+                          기본값 복원
                         </button>
                       </div>
-
-                      <Card className={cn("rounded-2xl border border-border-strong bg-card py-2 shadow-none", motion.card)}>
-                        <CardContent className="grid gap-2 md:grid-cols-[148px_minmax(0,1fr)] md:items-center">
-                          <div className="rounded-xl bg-surface-muted px-3 py-2.5">
-                            <p className="text-subtitle-20-medium text-[var(--color-primary-600)]">10대~30대</p>
-                            <p className="mt-1 text-body-14-regular text-text-subtle">
-                              트렌드에 민감한
-                              <br />
-                              알파 세대
-                            </p>
-                          </div>
-                          <PersonaRangeSlider
-                            value={ageRatios.teen}
-                            min={0}
-                            max={100}
-                            step={1}
-                            unit="%"
-                            color="var(--color-persona-teen)"
-                            tooltipFormatter={(value) => `${value}%`}
-                            onChange={(value) => redistributeAgeRatio("teen", value)}
-                          />
-                        </CardContent>
-                      </Card>
-
-                      <Card className={cn("rounded-2xl border border-border-strong bg-card py-2 shadow-none", motion.card)}>
-                        <CardContent className="grid gap-2 md:grid-cols-[148px_minmax(0,1fr)] md:items-center">
-                          <div className="rounded-xl bg-surface-muted px-3 py-2.5">
-                            <p className="text-subtitle-20-medium text-[var(--color-primary-600)]">40대~50대</p>
-                            <p className="mt-1 text-body-14-regular text-text-subtle">안정성과 신뢰를 중시하는 중장년층</p>
-                          </div>
-                          <PersonaRangeSlider
-                            value={ageRatios.fifty}
-                            min={0}
-                            max={100}
-                            step={1}
-                            unit="%"
-                            color="var(--color-persona-fifty)"
-                            tooltipFormatter={(value) => `${value}%`}
-                            onChange={(value) => redistributeAgeRatio("fifty", value)}
-                          />
-                        </CardContent>
-                      </Card>
-
-                      <Card className={cn("rounded-2xl border border-border-strong bg-card py-2 shadow-none", motion.card)}>
-                        <CardContent className="grid gap-2 md:grid-cols-[148px_minmax(0,1fr)] md:items-center">
-                          <div className="rounded-xl bg-surface-muted px-3 py-2.5">
-                            <p className="text-subtitle-20-medium text-[var(--color-primary-600)]">60대~80대</p>
-                            <p className="mt-1 text-body-14-regular text-text-subtle">
-                              접근성 개선이 필요한
-                              <br />
-                              디지털 소외계층
-                            </p>
-                          </div>
-                          <PersonaRangeSlider
-                            value={ageRatios.eighty}
-                            min={0}
-                            max={100}
-                            step={1}
-                            unit="%"
-                            color="var(--color-persona-eighty)"
-                            tooltipFormatter={(value) => `${value}%`}
-                            onChange={(value) => redistributeAgeRatio("eighty", value)}
-                          />
-                        </CardContent>
-                      </Card>
+                      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                        {AGE_GROUP_CONFIG.map((ageGroup) => (
+                          <Card
+                            key={ageGroup.key}
+                            className={cn("rounded-2xl border border-border-strong bg-card py-2 shadow-none", motion.card)}
+                          >
+                            <CardContent className="grid gap-3">
+                              <div className="rounded-xl bg-surface-muted px-3 py-2.5">
+                                <div className="flex items-center justify-between gap-3">
+                                  <p className="text-subtitle-20-medium text-text-secondary">{ageGroup.label}</p>
+                                  <span
+                                    className="size-2.5 rounded-full"
+                                    style={{ backgroundColor: ageGroup.color }}
+                                    aria-hidden="true"
+                                  />
+                                </div>
+                                <p className="mt-1 text-body-14-regular text-text-subtle">해당 연령대 페르소나 실행 횟수</p>
+                              </div>
+                              <TextField
+                                type="number"
+                                min={0}
+                                step={1}
+                                inputMode="numeric"
+                                value={String(ageGroupCounts[ageGroup.key])}
+                                onChange={(event) => updateAgeGroupCount(ageGroup.key, event.target.value)}
+                                variant="default"
+                                size="lg"
+                                className="h-11 rounded-xl border-border-soft-2 bg-card px-4 text-text-secondary"
+                              />
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
                     </div>
 
                     <Card className={cn("rounded-2xl border border-border-strong bg-card py-3 shadow-none", motion.card)}>
                       <CardContent className="grid gap-4">
-                        <p className="text-body-14-medium text-text-secondary-2">연령층 비율</p>
+                        <p className="text-body-14-medium text-text-secondary-2">연령대별 비율</p>
                         <div className="grid gap-3">
                           <div className="grid gap-2">
                             {ageDonutData.map((item) => (
                               <div key={item.name} className="flex items-center gap-2.5">
                                 <span className="size-2.5 rounded-full" style={{ backgroundColor: item.color }} aria-hidden />
                                 <span className="text-caption-12-regular text-text-secondary">
-                                  {item.name} {Math.round(item.value)}%
+                                  {item.name} {item.count.toLocaleString()}회 ({item.value.toFixed(1)}%)
                                 </span>
                               </div>
                             ))}
@@ -410,7 +310,7 @@ function SimulationSetupPage() {
               <div className="grid gap-1">
                 <SetupSectionTitle title="고급 설정" description="추가 시뮬레이션 옵션" />
                 <p className="text-caption-12-regular text-text-muted">
-                  페르소나 횟수, 디지털 리터러시를 세부 조정할 수 있습니다.
+                  디지털 리터러시를 세부 조정할 수 있습니다.
                 </p>
               </div>
               <ChevronDown
@@ -425,27 +325,13 @@ function SimulationSetupPage() {
               )}
             >
               <div className="min-h-0 overflow-hidden">
-                <div className="grid gap-4 pt-1 pb-3 md:grid-cols-[minmax(0,1.50fr)_minmax(0,0.70fr)]">
-                  <div className="grid gap-3">
-                    <SetupSectionTitle
-                      title="페르소나 횟수"
-                      description="테스트에 사용할 시뮬레이션별 페르소나 양"
-                    />
-                    <Card className={cn("h-[68px] rounded-2xl border border-border-strong bg-card py-2 shadow-none", motion.card)}>
-                      <CardContent className="pt-0.5">
-                        <PersonaRangeSlider value={personaCount} onChange={setPersonaCount} />
-                      </CardContent>
-                    </Card>
-                  </div>
-
-                  <div className="grid gap-3">
-                    <SetupSectionTitle title="디지털 리터러시" description="디지털 정보를 다루는 힘" />
-                    <DigitalLiteracySelector
-                      value={digitalLiteracy}
-                      onChange={setDigitalLiteracy}
-                      className="h-[68px]"
-                    />
-                  </div>
+                <div className="grid gap-4 pt-1 pb-3">
+                  <SetupSectionTitle title="디지털 리터러시" description="디지털 정보를 다루는 힘" />
+                  <DigitalLiteracySelector
+                    value={digitalLiteracy}
+                    onChange={setDigitalLiteracy}
+                    className="h-[68px]"
+                  />
                 </div>
               </div>
             </div>
@@ -460,6 +346,7 @@ function SimulationSetupPage() {
               targetUrl={targetUrl}
               endUrl={endUrl}
               personaCount={personaCount}
+              ageGroupSummary={ageGroupSummary}
               personaDevice={personaDevice}
               digitalLiteracy={digitalLiteracy}
               successCondition={successCondition}

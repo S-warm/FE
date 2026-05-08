@@ -40,6 +40,7 @@ function SimulationSummaryCard({
   targetUrl,
   endUrl,
   personaCount,
+  ageGroupSummary,
   personaDevice,
   digitalLiteracy,
   successCondition,
@@ -49,6 +50,7 @@ function SimulationSummaryCard({
   targetUrl: string
   endUrl: string
   personaCount: number
+  ageGroupSummary: string
   personaDevice: PersonaDevice
   digitalLiteracy: DigitalLiteracyLevel
   successCondition: string
@@ -69,6 +71,8 @@ function SimulationSummaryCard({
         <div className="h-px bg-border-subtle" />
         <SummaryRow title="종료 URL" value={endUrl.trim() || "종료 URL을 입력하세요"} />
         <SummaryRow title="페르소나 횟수" value={`총 ${personaCount.toLocaleString()}회 시뮬레이션`} />
+        <div className="h-px bg-border-subtle" />
+        <SummaryRow title="연령대별 횟수" value={ageGroupSummary} scrollable />
         <div className="h-px bg-border-subtle" />
         <SummaryRow title="디바이스" value={personaDeviceLabelMap[personaDevice]} />
         <div className="h-px bg-border-subtle" />

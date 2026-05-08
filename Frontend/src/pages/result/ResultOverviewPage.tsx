@@ -106,13 +106,13 @@ function ResultOverviewPage() {
     "failureRate",
     "max",
     "var(--color-persona-fifty)",
-    "#ead8fb"
+    "var(--color-chart-failure-muted)"
   )
   const declareFailureBars = buildMetricBars(
     "declareFailure",
     "max",
     "var(--color-chart-validation)",
-    "#d7e8ff"
+    "var(--color-chart-declare-muted)"
   )
 
   return (
@@ -144,7 +144,7 @@ function ResultOverviewPage() {
         />
       </section>
 
-      <section className="grid gap-3 xl:grid-cols-[1.15fr_0.85fr]">
+      <section className="grid gap-3">
         <ChartCard
           title="연령대별 성공률"
           badge="가장 낮음 40대 33%"
@@ -157,7 +157,9 @@ function ResultOverviewPage() {
             heightClassName="h-[250px]"
           />
         </ChartCard>
+      </section>
 
+      <section className="grid gap-3 xl:grid-cols-2">
         <ChartCard
           title="연령대별 평균 소요시간"
           badge="최장 40대 4.9분"
@@ -173,9 +175,6 @@ function ResultOverviewPage() {
             tooltipFormatter={formatMinutes}
           />
         </ChartCard>
-      </section>
-
-      <section className="grid gap-3 xl:grid-cols-2">
         <ChartCard
           title="연령대별 실패율"
           badge="가장 높음 40대 58%"
@@ -183,12 +182,11 @@ function ResultOverviewPage() {
           <HorizontalBarChart
             data={failureRateBars}
             barColor="var(--color-persona-fifty)"
-            mutedBarColor="#ead8fb"
+            mutedBarColor="var(--color-chart-failure-muted)"
             highlightMode="max"
             heightClassName="h-[220px]"
           />
         </ChartCard>
-
         <ChartCard
           title="연령대별 평균 액션 수"
           badge="최다 40대 11.7회"
@@ -204,17 +202,14 @@ function ResultOverviewPage() {
             tooltipFormatter={formatActions}
           />
         </ChartCard>
-      </section>
-
-      <section className="grid gap-3">
         <ChartCard
-          title="연령대별 declare_failure"
+          title="연령대별 실패 후 재탐색률"
           badge="가장 높음 40대 29%"
         >
           <HorizontalBarChart
             data={declareFailureBars}
             barColor="var(--color-chart-validation)"
-            mutedBarColor="#d7e8ff"
+            mutedBarColor="var(--color-chart-declare-muted)"
             highlightMode="max"
             heightClassName="h-[240px]"
           />

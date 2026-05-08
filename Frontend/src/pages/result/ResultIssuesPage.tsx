@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useMemo, useRef, useState } from "react"
 import { useLocation, useNavigate, useParams } from "react-router-dom"
 
-import { AlertTriangle, ArrowRight, CheckCircle2, Sparkles } from "lucide-react"
+import { AlertTriangle, ArrowRight, Sparkles } from "lucide-react"
 
 import { CommonButton, IssueBadge } from "@/components/atoms"
 import { DonutChart } from "@/components/charts"
@@ -13,24 +13,25 @@ import type { IssueCategory, ResultIssue, ResultIssuePage } from "@/mocks/result
 import { resultIssuePages } from "@/mocks/result-issues.mock"
 import { resultPagesMock } from "@/mocks/result-pages.mock"
 import { useResultPageParam } from "@/lib/result-page-param"
+import { useResultPageSidePanelState } from "@/lib/result-page-side-panel-state"
 import { motion } from "@/lib/motion"
 
 const filterCategories: IssueCategory[] = ["접근성", "사용성", "시각요소", "기타"]
 
 const categoryColorMap: Record<IssueCategory, string> = {
-  접근성: "#B79CFF",
-  시각요소: "#8BC5FF",
-  사용성: "#79E2E6",
-  기타: "#B7C2D9",
+  접근성: "var(--color-category-accessibility)",
+  시각요소: "var(--color-category-visual)",
+  사용성: "var(--color-category-usability)",
+  기타: "var(--color-category-etc)",
 }
 
-function IssueCard({ issue }: { issue: ResultIssue }) {
-  const { simulationId } = useParams()
-  const navigate = useNavigate()
-  const location = useLocation()
-  const resolvedId = simulationId ?? "unknown"
-  const search = location.search
-
+function IssueCard({
+  issue,
+  onNavigateAiFix,
+}: {
+  issue: ResultIssue
+  onNavigateAiFix: () => void
+}) {
   return (
     <Card className={cn("rounded-2xl border border-border-strong bg-card shadow-none", motion.card)}>
       <CardContent className="grid gap-4 px-5 py-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-start">
@@ -57,16 +58,10 @@ function IssueCard({ issue }: { issue: ResultIssue }) {
               <p className="mt-1 text-caption-12-regular text-text-subtle">
                 {issue.affectedUsers.count}명 사용자 영향 ({issue.affectedUsers.percent}%)
               </p>
-              <p className="mt-1 text-caption-12-regular text-text-secondary">
-                발견 페르소나: {issue.reportedPersona}
-              </p>
             </div>
           </div>
 
-          <div className="flex items-start gap-2 rounded-xl border border-border-soft bg-surface-subtle/80 px-3 py-2">
-            <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-brand-accent" />
-            <p className="text-caption-12-regular leading-5 text-text-secondary">{issue.prioritySummary}</p>
-          </div>
+          <p className="text-caption-12-regular text-text-muted">{issue.description}</p>
 
           <div className="grid gap-1">
             <p className="text-caption-12-medium text-text-subtle">영향받는 요소</p>
@@ -76,21 +71,19 @@ function IssueCard({ issue }: { issue: ResultIssue }) {
           </div>
         </div>
 
-        <div className="flex flex-row flex-wrap items-center justify-end gap-2 md:flex-col md:items-end md:justify-start">
+        <div className="flex flex-row flex-wrap items-center justify-end gap-2 md:self-center md:flex-col md:items-center md:justify-center">
           <span className="inline-flex h-6 items-center rounded-full bg-brand-accent px-3 text-caption-12-medium text-white">
-            AI 수정 시 예상 {issue.expectedBenefit.delta}
+            {issue.expectedBenefit.label} {issue.expectedBenefit.delta}
           </span>
-          <div className="grid justify-items-end gap-2">
-            <CommonButton
-              size="sm"
-              variant="secondary"
-              className="rounded-xl border border-border-soft-2 bg-brand-subtle text-text-link hover:bg-brand-subtle-hover"
-              onClick={() => navigate(`/result/${resolvedId}/ai${search}`)}
-            >
-              <Sparkles className="size-4" />
-              AI 수정 받기
-            </CommonButton>
-          </div>
+          <CommonButton
+            size="sm"
+            variant="secondary"
+            className="rounded-xl border border-border-soft-2 bg-brand-subtle text-text-link hover:bg-brand-subtle-hover"
+            onClick={onNavigateAiFix}
+          >
+            <Sparkles className="size-4" />
+            AI 수정 받기
+          </CommonButton>
         </div>
       </CardContent>
     </Card>
@@ -127,14 +120,13 @@ function buildCategoryDonut(issues: ResultIssue[]) {
 function ResultIssuesPage() {
   const { simulationId } = useParams()
   const navigate = useNavigate()
+  const location = useLocation()
   const { selectedPageId, setSelectedPageId } = useResultPageParam()
-  const [expandedPageIds, setExpandedPageIds] = useState<string[]>(() => [selectedPageId])
+  const { expandedPageIds, expandPage, togglePage } = useResultPageSidePanelState(selectedPageId)
   const [activeFilters, setActiveFilters] = useState<IssueCategory[]>(["접근성", "사용성", "시각요소"])
   const issuesSectionRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    setExpandedPageIds((prev) => (prev.includes(selectedPageId) ? prev : [...prev, selectedPageId]))
-  }, [selectedPageId])
+  const resolvedId = simulationId ?? "unknown"
+  const search = location.search
 
   const selectedPage: ResultIssuePage =
     resultIssuePages.find((page) => page.id === selectedPageId) ?? resultIssuePages[0]
@@ -159,9 +151,6 @@ function ResultIssuesPage() {
   }, [activeFilters, selectedPage])
 
   const donut = useMemo(() => buildCategoryDonut(filteredIssues), [filteredIssues])
-  const toggleExpandedPage = (pageId: string) => {
-    setExpandedPageIds((prev) => (prev.includes(pageId) ? prev.filter((id) => id !== pageId) : [...prev, pageId]))
-  }
 
   return (
     <div className="grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
@@ -169,27 +158,18 @@ function ResultIssuesPage() {
         pages={sidePages}
         selectedPageId={selectedPageId}
         expandedPageIds={expandedPageIds}
-        onSelectPage={setSelectedPageId}
-        onExpandPage={toggleExpandedPage}
+        onSelectPage={(pageId) => {
+          setSelectedPageId(pageId)
+          expandPage(pageId)
+        }}
+        onTogglePage={togglePage}
       />
 
-      <div className={cn("grid gap-4", motion.page)}>
+      <div className="grid gap-4">
         <Card className={cn("rounded-2xl border border-border-strong bg-card shadow-none", motion.card)}>
           <CardContent className="grid gap-4 px-6 py-5">
             <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
               <div className="grid gap-2">
-                <div className="flex flex-wrap items-center gap-2">
-                  <p className="text-body-14-medium text-text-body">{selectedPage.name}</p>
-                  <span className="text-caption-12-regular text-text-subtle">{selectedPage.issues.length}건 이슈</span>
-                  <button
-                    type="button"
-                    className="inline-flex items-center gap-1 text-caption-12-medium text-text-link transition-colors hover:text-primary-600"
-                    onClick={() => navigate(`/result/${simulationId ?? "unknown"}/heatmap${location.search}`)}
-                  >
-                    히트맵에서 보기
-                    <ArrowRight className="size-3.5" />
-                  </button>
-                </div>
                 <div className="flex flex-wrap items-center gap-2">
                   <p className="text-caption-12-medium text-text-secondary">필터링</p>
                   <div className="flex flex-wrap gap-2">
@@ -199,12 +179,7 @@ function ResultIssuesPage() {
                         <ChipTag
                           key={category}
                           selected={selected}
-                          className={cn(
-                            "h-7 px-2.5 text-[12px]",
-                            selected
-                              ? "border-primary-main bg-primary-50 text-primary-600 ring-1 ring-primary-200 shadow-sm"
-                              : "border-border-soft bg-card text-text-muted hover:bg-surface-subtle"
-                          )}
+                          className="h-7 px-2.5 text-[12px]"
                           onClick={() => {
                             setActiveFilters((prev) =>
                               prev.includes(category) ? prev.filter((item) => item !== category) : [...prev, category]
@@ -219,7 +194,16 @@ function ResultIssuesPage() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-end">
+              <div className="flex flex-wrap items-center justify-end gap-2">
+                <CommonButton
+                  size="sm"
+                  variant="secondary"
+                  className="rounded-xl border border-border-soft-2 bg-surface-muted text-text-secondary hover:bg-surface-muted-hover"
+                  onClick={() => navigate(`/result/${resolvedId}/heatmap${search}`)}
+                >
+                  히트맵에서 보기
+                  <ArrowRight className="size-4" />
+                </CommonButton>
                 <CommonButton
                   size="sm"
                   variant="secondary"
@@ -272,7 +256,11 @@ function ResultIssuesPage() {
           <p className="text-body-14-medium text-text-body">이슈목록</p>
           <div className="grid gap-3">
             {filteredIssues.map((issue) => (
-              <IssueCard key={issue.id} issue={issue} />
+              <IssueCard
+                key={issue.id}
+                issue={issue}
+                onNavigateAiFix={() => navigate(`/result/${resolvedId}/ai${search}`)}
+              />
             ))}
           </div>
         </section>

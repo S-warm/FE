@@ -16,6 +16,7 @@ import {
 import { cn } from "@/lib/utils"
 import { motion } from "@/lib/motion"
 import { useResultPageParam } from "@/lib/result-page-param"
+import { useResultPageSidePanelState } from "@/lib/result-page-side-panel-state"
 import { heatmapAgeBands, defaultHeatmapPageId } from "@/mocks/result-heatmap.mock"
 import type { HeatmapAgeBand } from "@/mocks/result-heatmap.mock"
 import { heatmapPageLogsMock, heatmapTimelineMaxMsMock } from "@/mocks/result-heatmap-log.mock"
@@ -292,7 +293,7 @@ function spotlightGradient({
 }) {
   const inner = Math.max(12, Math.round(radiusPx * 0.55))
   const outer = Math.max(inner + 12, Math.round(radiusPx))
-  const color = "rgba(15, 23, 42, 0.3)"
+  const color = "var(--color-heatmap-spotlight)"
   return `radial-gradient(circle at ${xPercent}% ${yPercent}%, rgba(15, 23, 42, 0) 0px, rgba(15, 23, 42, 0) ${inner}px, ${color} ${outer}px, ${color} 100%)`
 }
 
@@ -304,12 +305,12 @@ function hotspotSeverity(score: number) {
 
 function hotspotMarkerStyle(score: number) {
   if (score >= 0.72) {
-    return "border-critical-accent/40 bg-danger-surface/90 text-danger-text shadow-[0_10px_30px_rgba(245,121,104,0.18)]"
+    return "border-critical-accent/40 bg-danger-surface/90 text-danger-text shadow-[var(--shadow-heatmap-critical)]"
   }
   if (score >= 0.52) {
-    return "border-moderate-accent/50 bg-warning-surface/90 text-warning-text shadow-[0_10px_30px_rgba(246,196,139,0.18)]"
+    return "border-moderate-accent/50 bg-warning-surface/90 text-warning-text shadow-[var(--shadow-heatmap-warning)]"
   }
-  return "border-border-soft-2 bg-brand-subtle/90 text-text-link shadow-[0_10px_30px_rgba(68,99,208,0.14)]"
+  return "border-border-soft-2 bg-brand-subtle/90 text-text-link shadow-[var(--shadow-heatmap-info)]"
 }
 
 function primaryErrorKind(errors: { timeout: number; network: number; console: number }) {
@@ -600,7 +601,7 @@ function HeatmapLogCanvas({
 
 function ResultHeatmapPage() {
   const { selectedPageId, setSelectedPageId } = useResultPageParam()
-  const [expandedPageIds, setExpandedPageIds] = useState<string[]>(() => [defaultHeatmapPageId])
+  const { expandedPageIds, expandPage, togglePage } = useResultPageSidePanelState(selectedPageId, [defaultHeatmapPageId])
   const [ageFilter, setAgeFilter] = useState<HeatmapAgeBand | "all">("all")
   const [overlayOpacity, setOverlayOpacity] = useState(60)
 
@@ -621,13 +622,6 @@ function ResultHeatmapPage() {
       }),
     []
   )
-  const toggleExpandedPage = (pageId: string) => {
-    setExpandedPageIds((prev) => (prev.includes(pageId) ? prev.filter((id) => id !== pageId) : [...prev, pageId]))
-  }
-
-  useEffect(() => {
-    setExpandedPageIds((prev) => (prev.includes(selectedPageId) ? prev : [...prev, selectedPageId]))
-  }, [selectedPageId])
 
   const resolvedTimeEndMs = heatmapTimelineMaxMsMock
 
@@ -645,12 +639,12 @@ function ResultHeatmapPage() {
         expandedPageIds={expandedPageIds}
         onSelectPage={(pageId) => {
           setSelectedPageId(pageId)
-          setExpandedPageIds((prev) => (prev.includes(pageId) ? prev : [...prev, pageId]))
+          expandPage(pageId)
         }}
-        onExpandPage={toggleExpandedPage}
+        onTogglePage={togglePage}
       />
 
-      <div className={cn("grid gap-4", motion.page)}>
+      <div className="grid gap-4">
         <Card className={cn("rounded-2xl border border-border-strong bg-card shadow-none", motion.card)}>
           <CardContent className="grid gap-4 px-6 py-5">
             <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
@@ -670,19 +664,19 @@ function ResultHeatmapPage() {
 
             <div className="flex flex-wrap items-center gap-2 text-caption-12-regular text-text-muted">
               <span className="inline-flex items-center gap-2 rounded-full border border-border-soft bg-surface-subtle px-3 py-1">
-                <span className="size-2 rounded-full bg-[hsla(120,92%,54%,0.7)]" aria-hidden="true" />
+                <span className="size-2 rounded-full bg-[var(--color-heatmap-low)]" aria-hidden="true" />
                 낮음
               </span>
               <span className="inline-flex items-center gap-2 rounded-full border border-border-soft bg-surface-subtle px-3 py-1">
-                <span className="size-2 rounded-full bg-[hsla(60,92%,54%,0.7)]" aria-hidden="true" />
+                <span className="size-2 rounded-full bg-[var(--color-heatmap-medium)]" aria-hidden="true" />
                 보통
               </span>
               <span className="inline-flex items-center gap-2 rounded-full border border-border-soft bg-surface-subtle px-3 py-1">
-                <span className="size-2 rounded-full bg-[hsla(30,92%,54%,0.7)]" aria-hidden="true" />
+                <span className="size-2 rounded-full bg-[var(--color-heatmap-high)]" aria-hidden="true" />
                 높음
               </span>
               <span className="inline-flex items-center gap-2 rounded-full border border-border-soft bg-surface-subtle px-3 py-1">
-                <span className="size-2 rounded-full bg-[hsla(0,92%,54%,0.7)]" aria-hidden="true" />
+                <span className="size-2 rounded-full bg-[var(--color-heatmap-critical)]" aria-hidden="true" />
                 치명적(블락)
               </span>
             </div>

@@ -113,6 +113,24 @@
   --color-chart-form-start: var(--color-persona-eighty);
   --color-chart-field-input: #6a36d9;
   --color-chart-validation: #3182f6;
+  --color-chart-failure-muted: #ead8fb;
+  --color-chart-declare-muted: #d7e8ff;
+
+  /* Result categories */
+  --color-category-accessibility: #b79cff;
+  --color-category-visual: #8bc5ff;
+  --color-category-usability: #79e2e6;
+  --color-category-etc: #b7c2d9;
+
+  /* Heatmap */
+  --color-heatmap-low: hsla(120, 92%, 54%, 0.7);
+  --color-heatmap-medium: hsla(60, 92%, 54%, 0.7);
+  --color-heatmap-high: hsla(30, 92%, 54%, 0.7);
+  --color-heatmap-critical: hsla(0, 92%, 54%, 0.7);
+  --color-heatmap-spotlight: rgba(15, 23, 42, 0.3);
+  --shadow-heatmap-critical: 0 10px 30px rgba(245, 121, 104, 0.18);
+  --shadow-heatmap-warning: 0 10px 30px rgba(246, 196, 139, 0.18);
+  --shadow-heatmap-info: 0 10px 30px rgba(68, 99, 208, 0.14);
 
 }
 
@@ -184,6 +202,23 @@
   --color-persona-teen: #c8d0f6;
   --color-persona-fifty: #d5b8f3;
   --color-persona-eighty: #7edfe6;
+
+  --color-chart-failure-muted: color-mix(in srgb, var(--color-persona-fifty) 55%, var(--color-neutral-00));
+  --color-chart-declare-muted: color-mix(in srgb, var(--color-chart-validation) 35%, var(--color-neutral-00));
+
+  --color-category-accessibility: #b79cff;
+  --color-category-visual: #8bc5ff;
+  --color-category-usability: #79e2e6;
+  --color-category-etc: #b7c2d9;
+
+  --color-heatmap-low: hsla(120, 92%, 54%, 0.7);
+  --color-heatmap-medium: hsla(60, 92%, 54%, 0.7);
+  --color-heatmap-high: hsla(30, 92%, 54%, 0.7);
+  --color-heatmap-critical: hsla(0, 92%, 54%, 0.7);
+  --color-heatmap-spotlight: rgba(15, 23, 42, 0.3);
+  --shadow-heatmap-critical: 0 10px 30px rgba(245, 121, 104, 0.18);
+  --shadow-heatmap-warning: 0 10px 30px rgba(246, 196, 139, 0.18);
+  --shadow-heatmap-info: 0 10px 30px rgba(68, 99, 208, 0.14);
 }
 
 /* 2) Tailwind v4 mapping layer:

@@ -17,7 +17,7 @@ function ResultPageSidePanel({
   selectedPageId,
   expandedPageIds,
   onSelectPage,
-  onExpandPage,
+  onTogglePage,
   topSlot,
 }: {
   title?: string
@@ -25,7 +25,7 @@ function ResultPageSidePanel({
   selectedPageId: string
   expandedPageIds: string[]
   onSelectPage: (pageId: string) => void
-  onExpandPage: (pageId: string) => void
+  onTogglePage: (pageId: string) => void
   topSlot?: React.ReactNode
 }) {
   return (
@@ -43,60 +43,50 @@ function ResultPageSidePanel({
                 <div
                   key={page.id}
                   className={cn(
-                    "overflow-hidden rounded-2xl border transition-all duration-200",
+                    "rounded-2xl border transition-colors",
                     isSelected
-                      ? "border-border-soft-3 bg-surface-muted-hover shadow-sm"
+                      ? "border-border-soft-2 bg-surface-muted hover:bg-surface-muted-hover"
                       : "border-border-soft bg-surface-subtle hover:bg-surface-hover-2"
                   )}
                 >
-                  <button
-                    type="button"
-                    className={cn(
-                      "flex w-full items-center justify-between gap-2 rounded-2xl px-3 py-2 text-body-14-medium transition-colors",
-                      isSelected ? "text-text-strong" : "text-text-secondary hover:text-text-strong"
-                    )}
-                    onClick={() => onExpandPage(page.id)}
-                  >
-                    <span className="truncate">{page.name}</span>
-                    <ChevronDown className={cn("size-4 transition-transform", expanded ? "rotate-180" : "")} />
-                  </button>
-
-                  <div
-                    className={cn(
-                      "grid transition-[grid-template-rows,opacity] duration-300 ease-out motion-reduce:transition-none",
-                      expanded ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
-                    )}
-                  >
-                    <div className="min-h-0 overflow-hidden">
-                    <div
+                  <div className="flex items-center gap-2 px-3">
+                    <button
+                      type="button"
                       className={cn(
-                        "grid gap-2 px-3 pb-3 pt-0 transition-[transform,opacity] duration-300 ease-out motion-reduce:transition-none",
-                        expanded ? "translate-y-0 opacity-100" : "-translate-y-1 opacity-0"
+                        "min-w-0 flex-1 rounded-2xl py-2 text-left text-body-14-medium transition-colors",
+                        isSelected ? "text-text-strong" : "text-text-secondary hover:text-text-strong"
                       )}
+                      onClick={() => onSelectPage(page.id)}
                     >
-                      <button
-                        type="button"
-                        onClick={() => onSelectPage(page.id)}
-                        disabled={!expanded}
-                        className={cn(
-                          "overflow-hidden rounded-xl border bg-card transition-all duration-200 text-left",
-                          isSelected ? "border-border-soft-3 bg-surface-hover shadow-sm" : "border-border-strong"
-                        )}
-                      >
+                      <span className="truncate">{page.name}</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="grid size-8 shrink-0 place-items-center rounded-xl text-text-muted transition-colors hover:bg-surface-hover hover:text-text-strong"
+                      onClick={() => onTogglePage(page.id)}
+                      aria-label={expanded ? `${page.name} 접기` : `${page.name} 펼치기`}
+                      aria-expanded={expanded}
+                    >
+                      <ChevronDown className={cn("size-4 transition-transform", expanded ? "rotate-180" : "")} />
+                    </button>
+                  </div>
+
+                  {expanded ? (
+                    <div className="grid gap-2 px-3 pb-3">
+                      <div className="overflow-hidden rounded-xl border border-border-strong bg-card">
                         <img
                           src={page.screenshotUrl}
                           alt={page.name}
                           loading="lazy"
                           decoding="async"
-                          className={cn(
-                            "aspect-[16/10] w-full object-cover transition-[filter,opacity]",
-                            isSelected ? "opacity-100 saturate-[1.06] contrast-[1.08]" : "opacity-92"
-                          )}
+                          className="aspect-[16/10] w-full object-cover"
                         />
-                      </button>
+                      </div>
+                      {page.metaText ? (
+                        <p className="text-caption-12-regular text-text-subtle">{page.metaText}</p>
+                      ) : null}
                     </div>
-                    </div>
-                  </div>
+                  ) : null}
                 </div>
               )
             })}

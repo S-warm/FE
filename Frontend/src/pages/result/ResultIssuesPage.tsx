@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from "react"
 import { useLocation, useNavigate, useParams } from "react-router-dom"
 
-import { AlertTriangle, ArrowRight } from "lucide-react"
+import { AlertTriangle, ArrowRight, Sparkles } from "lucide-react"
 
 import { CommonButton, IssueBadge } from "@/components/atoms"
 import { DonutChart } from "@/components/charts"
@@ -180,6 +180,15 @@ function ResultIssuesPage() {
               </div>
 
               <div className="flex flex-wrap items-center justify-end gap-2">
+                <CommonButton
+                  size="sm"
+                  variant="secondary"
+                  className="rounded-xl border border-border-soft-2 bg-brand-subtle text-text-link hover:bg-brand-subtle-hover"
+                  onClick={() => navigate(`/result/${resolvedId}/ai${search}`)}
+                >
+                  <Sparkles className="size-4" />
+                  AI 수정 받기
+                </CommonButton>
                 <CommonButton
                   size="sm"
                   variant="secondary"

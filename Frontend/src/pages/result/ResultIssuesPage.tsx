@@ -25,7 +25,13 @@ const categoryColorMap: Record<IssueCategory, string> = {
   기타: "var(--color-category-etc)",
 }
 
-function IssueCard({ issue }: { issue: ResultIssue }) {
+function IssueCard({
+  issue,
+  onNavigateAiFix,
+}: {
+  issue: ResultIssue
+  onNavigateAiFix: () => void
+}) {
   return (
     <Card className={cn("rounded-2xl border border-border-strong bg-card shadow-none", motion.card)}>
       <CardContent className="grid gap-4 px-5 py-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-start">
@@ -65,10 +71,19 @@ function IssueCard({ issue }: { issue: ResultIssue }) {
           </div>
         </div>
 
-        <div className="flex flex-row flex-wrap items-center justify-end gap-2 md:flex-col md:items-end md:justify-start">
+        <div className="flex flex-row flex-wrap items-center justify-end gap-2 md:self-center md:flex-col md:items-center md:justify-center">
           <span className="inline-flex h-6 items-center rounded-full bg-brand-accent px-3 text-caption-12-medium text-white">
             {issue.expectedBenefit.label} {issue.expectedBenefit.delta}
           </span>
+          <CommonButton
+            size="sm"
+            variant="secondary"
+            className="rounded-xl border border-border-soft-2 bg-brand-subtle text-text-link hover:bg-brand-subtle-hover"
+            onClick={onNavigateAiFix}
+          >
+            <Sparkles className="size-4" />
+            AI 수정 받기
+          </CommonButton>
         </div>
       </CardContent>
     </Card>
@@ -183,15 +198,6 @@ function ResultIssuesPage() {
                 <CommonButton
                   size="sm"
                   variant="secondary"
-                  className="rounded-xl border border-border-soft-2 bg-brand-subtle text-text-link hover:bg-brand-subtle-hover"
-                  onClick={() => navigate(`/result/${resolvedId}/ai${search}`)}
-                >
-                  <Sparkles className="size-4" />
-                  AI 수정 받기
-                </CommonButton>
-                <CommonButton
-                  size="sm"
-                  variant="secondary"
                   className="rounded-xl border border-border-soft-2 bg-surface-muted text-text-secondary hover:bg-surface-muted-hover"
                   onClick={() => navigate(`/result/${resolvedId}/heatmap${search}`)}
                 >
@@ -250,7 +256,11 @@ function ResultIssuesPage() {
           <p className="text-body-14-medium text-text-body">이슈목록</p>
           <div className="grid gap-3">
             {filteredIssues.map((issue) => (
-              <IssueCard key={issue.id} issue={issue} />
+              <IssueCard
+                key={issue.id}
+                issue={issue}
+                onNavigateAiFix={() => navigate(`/result/${resolvedId}/ai${search}`)}
+              />
             ))}
           </div>
         </section>

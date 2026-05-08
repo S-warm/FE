@@ -14,6 +14,7 @@ import { motion } from "@/lib/motion"
 const DUMMY_PROJECT = { title: "A - Mall 로그인 플로우", date: "2026-01-01" }
 
 const steps = ["페이지 수집", "페르소나 생성", "시뮬레이션 실행", "결과 분석"] as const
+const REDIRECT_DELAY_MS = 1200
 
 function SimulationProcessPage() {
   const [tick, setTick] = useState(0)
@@ -33,11 +34,15 @@ function SimulationProcessPage() {
   }, [maxTick, tick])
 
   useEffect(() => {
+    if (tick < maxTick) {
+      return
+    }
+
     const handle = window.setTimeout(() => {
       navigate(buildResultOverviewPath(defaultSimulationId))
-    }, 3000)
+    }, REDIRECT_DELAY_MS)
     return () => window.clearTimeout(handle)
-  }, [navigate])
+  }, [maxTick, navigate, tick])
 
   return (
     <AuthLayout

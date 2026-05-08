@@ -1,6 +1,5 @@
-import mockScreenshot from "@/assets/mocks/img-example-site.png"
-
 import type { HeatmapAgeBand } from "@/mocks/result-heatmap.mock"
+import { resultPageScreenshotUrl } from "@/mocks/mock-assets"
 
 export type HeatmapLogEventType = "click" | "step"
 
@@ -156,28 +155,28 @@ export const heatmapPageLogsMock: HeatmapPageLogMock[] = [
   {
     pageId: "login",
     pageName: "로그인 페이지",
-    screenshotUrl: mockScreenshot,
+    screenshotUrl: resultPageScreenshotUrl,
     viewport: { width: 1440, height: 900, dpr: 2 },
     sessions: generateSessions(11, 120),
   },
   {
     pageId: "main",
     pageName: "메인 페이지",
-    screenshotUrl: mockScreenshot,
+    screenshotUrl: resultPageScreenshotUrl,
     viewport: { width: 1440, height: 900, dpr: 2 },
     sessions: generateSessions(22, 140),
   },
   {
     pageId: "signup",
     pageName: "회원가입 페이지",
-    screenshotUrl: mockScreenshot,
+    screenshotUrl: resultPageScreenshotUrl,
     viewport: { width: 1440, height: 900, dpr: 2 },
     sessions: generateSessions(33, 110),
   },
   {
     pageId: "payment",
     pageName: "결제 페이지",
-    screenshotUrl: mockScreenshot,
+    screenshotUrl: resultPageScreenshotUrl,
     viewport: { width: 1440, height: 900, dpr: 2 },
     sessions: generateSessions(44, 130),
   },

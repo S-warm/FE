@@ -57,10 +57,16 @@ function RangeSlider({
     }
 
     updateTrackWidth()
-    window.addEventListener("resize", updateTrackWidth)
+    const element = trackRef.current
+    if (!element) return
+
+    const observer = new ResizeObserver(() => {
+      updateTrackWidth()
+    })
+    observer.observe(element)
 
     return () => {
-      window.removeEventListener("resize", updateTrackWidth)
+      observer.disconnect()
     }
   }, [])
 

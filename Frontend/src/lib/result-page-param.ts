@@ -1,3 +1,4 @@
+import { useCallback } from "react"
 import { useSearchParams } from "react-router-dom"
 
 import { defaultResultPageId, resultPagesMock } from "@/mocks/result-pages.mock"
@@ -14,14 +15,16 @@ function useResultPageParam() {
   const [searchParams, setSearchParams] = useSearchParams()
   const selectedPageId = resolveResultPageId(searchParams.get(PAGE_PARAM_KEY))
 
-  const setSelectedPageId = (nextPageId: string) => {
-    const next = new URLSearchParams(searchParams)
-    next.set(PAGE_PARAM_KEY, nextPageId)
-    setSearchParams(next, { replace: true })
-  }
+  const setSelectedPageId = useCallback(
+    (nextPageId: string) => {
+      const next = new URLSearchParams(searchParams)
+      next.set(PAGE_PARAM_KEY, nextPageId)
+      setSearchParams(next, { replace: true })
+    },
+    [searchParams, setSearchParams]
+  )
 
   return { selectedPageId, setSelectedPageId, searchParams }
 }
 
 export { useResultPageParam }
-

@@ -106,13 +106,13 @@ function ResultOverviewPage() {
     "failureRate",
     "max",
     "var(--color-persona-fifty)",
-    "#ead8fb"
+    "var(--color-chart-failure-muted)"
   )
   const declareFailureBars = buildMetricBars(
     "declareFailure",
     "max",
     "var(--color-chart-validation)",
-    "#d7e8ff"
+    "var(--color-chart-declare-muted)"
   )
 
   return (
@@ -183,7 +183,7 @@ function ResultOverviewPage() {
           <HorizontalBarChart
             data={failureRateBars}
             barColor="var(--color-persona-fifty)"
-            mutedBarColor="#ead8fb"
+            mutedBarColor="var(--color-chart-failure-muted)"
             highlightMode="max"
             heightClassName="h-[220px]"
           />
@@ -214,7 +214,7 @@ function ResultOverviewPage() {
           <HorizontalBarChart
             data={declareFailureBars}
             barColor="var(--color-chart-validation)"
-            mutedBarColor="#d7e8ff"
+            mutedBarColor="var(--color-chart-declare-muted)"
             highlightMode="max"
             heightClassName="h-[240px]"
           />

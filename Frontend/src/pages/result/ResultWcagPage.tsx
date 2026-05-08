@@ -1,5 +1,5 @@
 import type { ComponentType } from "react"
-import { useEffect, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
 
 import { AlertCircle, ChevronDown, ClipboardCheck, ShieldCheck, TriangleAlert } from "lucide-react"
 
@@ -8,6 +8,7 @@ import { ResultPageSidePanel } from "@/components/sections/result/page-side-pane
 import { Card, CardContent } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 import { motion } from "@/lib/motion"
+import { useResultPageSidePanelState } from "@/lib/result-page-side-panel-state"
 import type { WcagDetailIssue, WcagIssueDistribution, WcagSeverity } from "@/mocks/result-wcag.mock"
 import { wcagResultMock } from "@/mocks/result-wcag.mock"
 import { resultPagesMock } from "@/mocks/result-pages.mock"
@@ -189,7 +190,7 @@ function DetailIssueRow({
 function ResultWcagPage() {
   const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set())
   const { selectedPageId, setSelectedPageId } = useResultPageParam()
-  const [expandedPageIds, setExpandedPageIds] = useState<string[]>(() => [selectedPageId])
+  const { expandedPageIds, expandPage } = useResultPageSidePanelState(selectedPageId)
 
   const summary = wcagResultMock
   const distributionTotal = useMemo(() => summary.distribution.reduce((acc, item) => acc + item.count, 0), [summary])
@@ -203,10 +204,6 @@ function ResultWcagPage() {
     []
   )
 
-  useEffect(() => {
-    setExpandedPageIds((prev) => (prev.includes(selectedPageId) ? prev : [...prev, selectedPageId]))
-  }, [selectedPageId])
-
   return (
     <div className="grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
       <ResultPageSidePanel
@@ -215,11 +212,9 @@ function ResultWcagPage() {
         expandedPageIds={expandedPageIds}
         onSelectPage={(pageId) => {
           setSelectedPageId(pageId)
-          setExpandedPageIds((prev) => (prev.includes(pageId) ? prev : [...prev, pageId]))
+          expandPage(pageId)
         }}
-        onExpandPage={(pageId) =>
-          setExpandedPageIds((prev) => (prev.includes(pageId) ? prev : [...prev, pageId]))
-        }
+        onExpandPage={expandPage}
       />
 
       <div className="grid gap-5">

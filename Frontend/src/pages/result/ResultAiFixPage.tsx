@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
 
 import { Sparkles, TrendingUp } from "lucide-react"
 
@@ -7,6 +7,7 @@ import { ResultPageSidePanel } from "@/components/sections/result/page-side-pane
 import { Card, CardContent } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 import { motion } from "@/lib/motion"
+import { useResultPageSidePanelState } from "@/lib/result-page-side-panel-state"
 import { aiFixPagesMock, defaultAiFixId, defaultAiFixPageId } from "@/mocks/result-ai-fix.mock"
 import type { AiFixItem, AiFixPage } from "@/mocks/result-ai-fix.mock"
 import { resultPagesMock } from "@/mocks/result-pages.mock"
@@ -51,13 +52,15 @@ function firstFixIdForPage(pageId: string) {
 
 function ResultAiFixPage() {
   const { selectedPageId, setSelectedPageId } = useResultPageParam()
-  const [expandedPageIds, setExpandedPageIds] = useState<string[]>(() => [selectedPageId ?? defaultAiFixPageId])
+  const { expandedPageIds, expandPage } = useResultPageSidePanelState(selectedPageId, [defaultAiFixPageId])
   const [selectedFixId, setSelectedFixId] = useState<string>(() => firstFixIdForPage(selectedPageId) ?? defaultAiFixId)
 
   const selectedPage: AiFixPage = aiFixPagesMock.find((page) => page.id === selectedPageId) ?? aiFixPagesMock[0]
-
+  const resolvedSelectedFixId = selectedPage.fixes.some((fix) => fix.id === selectedFixId)
+    ? selectedFixId
+    : (selectedPage.fixes[0]?.id ?? defaultAiFixId)
   const selectedFix: AiFixItem =
-    selectedPage.fixes.find((fix) => fix.id === selectedFixId) ?? selectedPage.fixes[0]
+    selectedPage.fixes.find((fix) => fix.id === resolvedSelectedFixId) ?? selectedPage.fixes[0]
 
   const fixes = useMemo(() => selectedPage.fixes, [selectedPage])
   const sidePages = useMemo(
@@ -74,10 +77,6 @@ function ResultAiFixPage() {
     []
   )
 
-  useEffect(() => {
-    setExpandedPageIds((prev) => (prev.includes(selectedPageId) ? prev : [...prev, selectedPageId]))
-  }, [selectedPageId])
-
   return (
     <div className="grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
       <ResultPageSidePanel
@@ -88,11 +87,9 @@ function ResultAiFixPage() {
           const nextFixId = firstFixIdForPage(pageId)
           setSelectedPageId(pageId)
           setSelectedFixId((prev) => nextFixId ?? prev)
-          setExpandedPageIds((prev) => (prev.includes(pageId) ? prev : [...prev, pageId]))
+          expandPage(pageId)
         }}
-        onExpandPage={(pageId) =>
-          setExpandedPageIds((prev) => (prev.includes(pageId) ? prev : [...prev, pageId]))
-        }
+        onExpandPage={expandPage}
       />
 
       <div className="grid gap-4">
@@ -108,7 +105,7 @@ function ResultAiFixPage() {
               <p className="text-caption-12-medium text-text-secondary">수정 할 이슈 선택</p>
               <div className="grid gap-3 md:grid-cols-3">
                 {fixes.map((fix) => {
-                  const active = fix.id === selectedFixId
+                  const active = fix.id === resolvedSelectedFixId
                   return (
                     <button
                       key={fix.id}

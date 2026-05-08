@@ -1,4 +1,4 @@
-import mockScreenshot from "@/assets/mocks/img-example-site.png"
+import { resultPageScreenshotUrl } from "@/mocks/mock-assets"
 
 export type HeatmapMode = "click" | "move" | "scroll" | "attention"
 
@@ -70,7 +70,7 @@ export const heatmapPagesMock: HeatmapPageMock[] = [
   {
     id: "login",
     name: "로그인 페이지",
-    screenshotUrl: mockScreenshot,
+    screenshotUrl: resultPageScreenshotUrl,
     targetRegion: { x: 30, y: 20, width: 58, height: 42 },
     pointsByMode: {
       click: points(1),
@@ -110,7 +110,7 @@ export const heatmapPagesMock: HeatmapPageMock[] = [
   {
     id: "main",
     name: "메인 페이지",
-    screenshotUrl: mockScreenshot,
+    screenshotUrl: resultPageScreenshotUrl,
     targetRegion: { x: 26, y: 18, width: 62, height: 46 },
     pointsByMode: {
       click: points(6),
@@ -132,7 +132,7 @@ export const heatmapPagesMock: HeatmapPageMock[] = [
   {
     id: "signup",
     name: "회원가입 페이지",
-    screenshotUrl: mockScreenshot,
+    screenshotUrl: resultPageScreenshotUrl,
     targetRegion: { x: 28, y: 22, width: 60, height: 44 },
     pointsByMode: {
       click: points(11),
@@ -154,7 +154,7 @@ export const heatmapPagesMock: HeatmapPageMock[] = [
   {
     id: "payment",
     name: "결제 페이지",
-    screenshotUrl: mockScreenshot,
+    screenshotUrl: resultPageScreenshotUrl,
     targetRegion: { x: 30, y: 26, width: 58, height: 44 },
     pointsByMode: {
       click: points(16),

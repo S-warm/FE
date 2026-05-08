@@ -8,11 +8,11 @@ import LoginPage from "@/pages/LoginPage"
 import SimulationProcessPage from "@/pages/SimulationProcessPage"
 import SimulationSetupPage from "@/pages/SimulationSetupPage"
 import SignUpPage from "@/pages/SignUpPage"
-import ResultLayoutPage from "@/pages/result/ResultLayoutPage"
-import ResultOverviewPage from "@/pages/result/ResultOverviewPage"
 import routes from "@/constants/routes"
 import { useAuthStore } from "@/store/auth.store"
 
+const ResultLayoutPage = lazy(() => import("@/pages/result/ResultLayoutPage"))
+const ResultOverviewPage = lazy(() => import("@/pages/result/ResultOverviewPage"))
 const ResultIssuesPage = lazy(() => import("@/pages/result/ResultIssuesPage"))
 const ResultWcagPage = lazy(() => import("@/pages/result/ResultWcagPage"))
 const ResultAiFixPage = lazy(() => import("@/pages/result/ResultAiFixPage"))
@@ -92,13 +92,22 @@ export default function AppRouter() {
         <Route
           path={routes.result}
           element={
-            <RequireAuth>
-              <ResultLayoutPage />
-            </RequireAuth>
+            <Suspense fallback={<RouteFallback />}>
+              <RequireAuth>
+                <ResultLayoutPage />
+              </RequireAuth>
+            </Suspense>
           }
         >
           <Route index element={<Navigate to="overview" replace />} />
-          <Route path="overview" element={<ResultOverviewPage />} />
+          <Route
+            path="overview"
+            element={
+              <Suspense fallback={<RouteFallback />}>
+                <ResultOverviewPage />
+              </Suspense>
+            }
+          />
           <Route
             path="issues"
             element={

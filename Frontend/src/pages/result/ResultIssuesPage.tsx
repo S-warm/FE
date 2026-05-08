@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useMemo, useRef, useState } from "react"
 import { useLocation, useNavigate, useParams } from "react-router-dom"
 
 import { AlertTriangle, ArrowRight, Sparkles } from "lucide-react"
@@ -13,15 +13,16 @@ import type { IssueCategory, ResultIssue, ResultIssuePage } from "@/mocks/result
 import { resultIssuePages } from "@/mocks/result-issues.mock"
 import { resultPagesMock } from "@/mocks/result-pages.mock"
 import { useResultPageParam } from "@/lib/result-page-param"
+import { useResultPageSidePanelState } from "@/lib/result-page-side-panel-state"
 import { motion } from "@/lib/motion"
 
 const filterCategories: IssueCategory[] = ["접근성", "사용성", "시각요소", "기타"]
 
 const categoryColorMap: Record<IssueCategory, string> = {
-  접근성: "#B79CFF",
-  시각요소: "#8BC5FF",
-  사용성: "#79E2E6",
-  기타: "#B7C2D9",
+  접근성: "var(--color-category-accessibility)",
+  시각요소: "var(--color-category-visual)",
+  사용성: "var(--color-category-usability)",
+  기타: "var(--color-category-etc)",
 }
 
 function IssueCard({ issue }: { issue: ResultIssue }) {
@@ -129,13 +130,9 @@ function buildCategoryDonut(issues: ResultIssue[]) {
 
 function ResultIssuesPage() {
   const { selectedPageId, setSelectedPageId } = useResultPageParam()
-  const [expandedPageIds, setExpandedPageIds] = useState<string[]>(() => [selectedPageId])
+  const { expandedPageIds, expandPage } = useResultPageSidePanelState(selectedPageId)
   const [activeFilters, setActiveFilters] = useState<IssueCategory[]>(["접근성", "사용성", "시각요소"])
   const issuesSectionRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    setExpandedPageIds((prev) => (prev.includes(selectedPageId) ? prev : [...prev, selectedPageId]))
-  }, [selectedPageId])
 
   const selectedPage: ResultIssuePage =
     resultIssuePages.find((page) => page.id === selectedPageId) ?? resultIssuePages[0]
@@ -168,9 +165,7 @@ function ResultIssuesPage() {
         selectedPageId={selectedPageId}
         expandedPageIds={expandedPageIds}
         onSelectPage={setSelectedPageId}
-        onExpandPage={(pageId) =>
-          setExpandedPageIds((prev) => (prev.includes(pageId) ? prev : [...prev, pageId]))
-        }
+        onExpandPage={expandPage}
       />
 
       <div className="grid gap-4">

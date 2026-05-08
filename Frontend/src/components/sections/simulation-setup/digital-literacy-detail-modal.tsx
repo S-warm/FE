@@ -41,28 +41,28 @@ function DigitalLiteracyDetailModal({ triggerClassName }: { triggerClassName?: s
 
           <div className="grid gap-6">
             <div className="grid gap-2">
-              <p className="text-body-14-medium text-[#283452]">시력저하</p>
+              <p className="text-body-14-medium text-text-strong">시력저하</p>
               <RangeSlider
                 value={visionLoss}
                 min={0}
                 max={100}
                 step={1}
                 unit="%"
-                color="#cfd7ea"
+                color="var(--color-border-soft-3)"
                 tooltipFormatter={(nextValue) => `${nextValue}%`}
                 onChange={setVisionLoss}
               />
             </div>
 
             <div className="grid gap-2">
-              <p className="text-body-14-medium text-[#283452]">주의력</p>
+              <p className="text-body-14-medium text-text-strong">주의력</p>
               <RangeSlider
                 value={attentionLevel}
                 min={0}
                 max={100}
                 step={1}
                 unit="%"
-                color="#6f86d9"
+                color="var(--color-brand-accent)"
                 startLabel="낮음"
                 endLabel="높음"
                 tooltipFormatter={(nextValue) => `${nextValue}%`}
@@ -79,7 +79,7 @@ function DigitalLiteracyDetailModal({ triggerClassName }: { triggerClassName?: s
           </div>
         </div>
 
-        <DialogFooter className="bg-[#f8faff]">
+        <DialogFooter className="bg-surface-hover-2">
           <CommonButton variant="ghost" onClick={() => setOpen(false)}>
             취소
           </CommonButton>

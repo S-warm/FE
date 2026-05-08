@@ -1,4 +1,4 @@
-import mockScreenshot from "@/assets/mocks/img-example-site.png"
+import { resultPageScreenshotUrl } from "@/mocks/mock-assets"
 
 export interface ResultPageSummary {
   id: string
@@ -7,10 +7,10 @@ export interface ResultPageSummary {
 }
 
 export const resultPagesMock: ResultPageSummary[] = [
-  { id: "login", name: "로그인 페이지", screenshotUrl: mockScreenshot },
-  { id: "main", name: "메인 페이지", screenshotUrl: mockScreenshot },
-  { id: "signup", name: "회원가입 페이지", screenshotUrl: mockScreenshot },
-  { id: "payment", name: "결제 페이지", screenshotUrl: mockScreenshot },
+  { id: "login", name: "로그인 페이지", screenshotUrl: resultPageScreenshotUrl },
+  { id: "main", name: "메인 페이지", screenshotUrl: resultPageScreenshotUrl },
+  { id: "signup", name: "회원가입 페이지", screenshotUrl: resultPageScreenshotUrl },
+  { id: "payment", name: "결제 페이지", screenshotUrl: resultPageScreenshotUrl },
 ]
 
 export const defaultResultPageId = resultPagesMock[0]?.id ?? "login"

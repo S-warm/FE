@@ -11,4 +11,35 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes("node_modules")) {
+            return
+          }
+
+          if (
+            id.includes("/recharts/") ||
+            id.includes("/d3-") ||
+            id.includes("/internmap/")
+          ) {
+            return "charts-vendor"
+          }
+
+          if (id.includes("/react-router-dom/") || id.includes("/react-router/") || id.includes("/history/")) {
+            return "router-vendor"
+          }
+
+          if (id.includes("/zustand/") || id.includes("/@tanstack/")) {
+            return "state-vendor"
+          }
+
+          if (id.includes("/lucide-react/")) {
+            return "icon-vendor"
+          }
+        },
+      },
+    },
+  },
 })

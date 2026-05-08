@@ -17,7 +17,7 @@ function ResultPageSidePanel({
   selectedPageId,
   expandedPageIds,
   onSelectPage,
-  onExpandPage,
+  onTogglePage,
   topSlot,
 }: {
   title?: string
@@ -25,7 +25,7 @@ function ResultPageSidePanel({
   selectedPageId: string
   expandedPageIds: string[]
   onSelectPage: (pageId: string) => void
-  onExpandPage: (pageId: string) => void
+  onTogglePage: (pageId: string) => void
   topSlot?: React.ReactNode
 }) {
   return (
@@ -49,20 +49,27 @@ function ResultPageSidePanel({
                       : "border-border-soft bg-surface-subtle hover:bg-surface-hover-2"
                   )}
                 >
-                  <button
-                    type="button"
-                    className={cn(
-                      "flex w-full items-center justify-between gap-2 rounded-2xl px-3 py-2 text-body-14-medium transition-colors",
-                      isSelected ? "text-text-strong" : "text-text-secondary hover:text-text-strong"
-                    )}
-                    onClick={() => {
-                      onSelectPage(page.id)
-                      onExpandPage(page.id)
-                    }}
-                  >
-                    <span className="truncate">{page.name}</span>
-                    <ChevronDown className={cn("size-4 transition-transform", expanded ? "rotate-180" : "")} />
-                  </button>
+                  <div className="flex items-center gap-2 px-3">
+                    <button
+                      type="button"
+                      className={cn(
+                        "min-w-0 flex-1 rounded-2xl py-2 text-left text-body-14-medium transition-colors",
+                        isSelected ? "text-text-strong" : "text-text-secondary hover:text-text-strong"
+                      )}
+                      onClick={() => onSelectPage(page.id)}
+                    >
+                      <span className="truncate">{page.name}</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="grid size-8 shrink-0 place-items-center rounded-xl text-text-muted transition-colors hover:bg-surface-hover hover:text-text-strong"
+                      onClick={() => onTogglePage(page.id)}
+                      aria-label={expanded ? `${page.name} 접기` : `${page.name} 펼치기`}
+                      aria-expanded={expanded}
+                    >
+                      <ChevronDown className={cn("size-4 transition-transform", expanded ? "rotate-180" : "")} />
+                    </button>
+                  </div>
 
                   {expanded ? (
                     <div className="grid gap-2 px-3 pb-3">

@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom"
 import { ChevronDown } from "lucide-react"
 
 import { DonutChart } from "@/components/charts"
+import { RangeSlider, SelectionSelect } from "@/components/forms"
 import { Card, CardContent } from "@/components/ui/card"
 import { BrandingHeader } from "@/components/sections/auth/branding-header"
 import {
@@ -15,6 +16,7 @@ import {
 import { TextArea, TextField } from "@/components/atoms"
 import { AuthLayout } from "@/layouts/AuthLayout"
 import routes from "@/constants/routes"
+import { personaDeviceOptions, type PersonaDevice } from "@/constants/persona-device"
 import { useSimulationDraftStore } from "@/store/simulation-draft.store"
 import { cn } from "@/lib/utils"
 import { motion } from "@/lib/motion"
@@ -33,13 +35,13 @@ type AgeGroupCountKey = (typeof AGE_GROUP_CONFIG)[number]["key"]
 type AgeGroupCounts = Record<AgeGroupCountKey, number>
 
 const DEFAULT_AGE_GROUP_COUNTS: AgeGroupCounts = {
-  teens: 72,
-  twenties: 72,
-  thirties: 72,
-  forties: 71,
-  fifties: 71,
-  sixties: 71,
-  seventies: 71,
+  teens: 10,
+  twenties: 10,
+  thirties: 10,
+  forties: 10,
+  fifties: 10,
+  sixties: 10,
+  seventies: 10,
 }
 
 function SimulationSetupPage() {
@@ -52,6 +54,7 @@ function SimulationSetupPage() {
   const startedAt = useSimulationDraftStore((state) => state.startedAt)
   const setStartedAt = useSimulationDraftStore((state) => state.setStartedAt)
   const personaDevice = useSimulationDraftStore((state) => state.personaDevice)
+  const setPersonaDevice = useSimulationDraftStore((state) => state.setPersonaDevice)
 
   const [digitalLiteracy, setDigitalLiteracy] = useState<DigitalLiteracyLevel>("low")
   const [successCondition, setSuccessCondition] = useState("")
@@ -60,8 +63,10 @@ function SimulationSetupPage() {
   const [endUrlError, setEndUrlError] = useState("")
   const [successConditionError, setSuccessConditionError] = useState("")
   const [ageRatioOpen, setAgeRatioOpen] = useState(false)
-  const [advancedSettingsOpen, setAdvancedSettingsOpen] = useState(false)
+  const [advancedSettingsOpen, setAdvancedSettingsOpen] = useState(true)
   const [ageGroupCounts, setAgeGroupCounts] = useState<AgeGroupCounts>(DEFAULT_AGE_GROUP_COUNTS)
+  const [visionLoss, setVisionLoss] = useState(0)
+  const [attentionLevel, setAttentionLevel] = useState(50)
   const navigate = useNavigate()
 
   const resetValidationErrors = () => {
@@ -79,10 +84,6 @@ function SimulationSetupPage() {
       ...prev,
       [ageGroupKey]: nextValue,
     }))
-  }
-
-  const resetAgeGroupCounts = () => {
-    setAgeGroupCounts(DEFAULT_AGE_GROUP_COUNTS)
   }
 
   const personaCount = useMemo(
@@ -209,13 +210,10 @@ function SimulationSetupPage() {
               aria-expanded={ageRatioOpen}
             >
               <div className="grid gap-1">
-                <SetupSectionTitle title="연령대별 페르소나 횟수" description="10대부터 70대까지 직접 입력" />
-                <p className="text-caption-12-regular text-text-muted">{ageGroupSummary}</p>
+                <SetupSectionTitle title="연령대별 페르소나 횟수" description="연령대별 실행 수를 직접 조정합니다." />
+                <p className="text-caption-12-regular text-text-muted">총합은 시뮬레이션 요약에서 확인할 수 있습니다.</p>
               </div>
               <div className="flex items-center gap-2">
-                <span className="inline-flex h-8 items-center rounded-xl border border-border-soft bg-surface-subtle px-3 text-caption-12-medium text-text-secondary">
-                  합계 {personaCount.toLocaleString()}회
-                </span>
                 <ChevronDown className={cn("size-4 text-text-muted transition-transform", ageRatioOpen && "rotate-180")} />
               </div>
             </button>
@@ -228,35 +226,52 @@ function SimulationSetupPage() {
             >
               <div className="min-h-0 overflow-hidden">
                 <div className="pt-1 pb-3">
-                  <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_260px]">
-                    <div className="grid gap-3">
-                      <div className="flex justify-end">
-                        <button
-                          type="button"
-                          className="rounded-xl bg-[var(--color-primary-50)] px-4 py-2 text-body-14-medium text-[var(--color-primary-main)]"
-                          onClick={resetAgeGroupCounts}
-                        >
-                          기본값 복원
-                        </button>
-                      </div>
-                      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                  <div className="grid gap-4 xl:grid-cols-2 xl:items-stretch">
+                    <Card className={cn("h-full rounded-2xl border border-border-strong bg-card py-3 shadow-none", motion.card)}>
+                      <CardContent className="grid h-full gap-3">
                         {AGE_GROUP_CONFIG.map((ageGroup) => (
-                          <Card
+                          (() => {
+                            const count = ageGroupCounts[ageGroup.key]
+                            const percent = personaCount > 0 ? (count / personaCount) * 100 : 0
+                            const isEmpty = count === 0
+
+                            return (
+                          <div
                             key={ageGroup.key}
-                            className={cn("rounded-2xl border border-border-strong bg-card py-2 shadow-none", motion.card)}
+                            className={cn(
+                              "grid gap-2.5 rounded-2xl border px-4 py-2.5 transition-colors md:grid-cols-[minmax(0,1fr)_88px] md:items-center",
+                              isEmpty
+                                ? "border-border-subtle bg-surface-subtle/70"
+                                : "border-border-soft bg-surface-subtle"
+                            )}
                           >
-                            <CardContent className="grid gap-3">
-                              <div className="rounded-xl bg-surface-muted px-3 py-2.5">
-                                <div className="flex items-center justify-between gap-3">
-                                  <p className="text-subtitle-20-medium text-text-secondary">{ageGroup.label}</p>
-                                  <span
-                                    className="size-2.5 rounded-full"
-                                    style={{ backgroundColor: ageGroup.color }}
-                                    aria-hidden="true"
+                            <div className="grid gap-2 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span
+                                  className={cn("size-2.5 rounded-full", isEmpty && "opacity-45")}
+                                  style={{ backgroundColor: ageGroup.color }}
+                                  aria-hidden="true"
+                                />
+                                <p className={cn("text-subtitle-18-semibold", isEmpty ? "text-text-subtle" : "text-text-secondary")}>
+                                  {ageGroup.label}
+                                </p>
+                              </div>
+
+                              <div className="grid items-center gap-3 md:grid-cols-[minmax(0,1fr)_52px]">
+                                <div className="h-1.5 w-full min-w-0 overflow-hidden rounded-full bg-border-subtle">
+                                  <div
+                                    className={cn("h-full rounded-full transition-[width,opacity] duration-300", isEmpty && "opacity-35")}
+                                    style={{
+                                      width: `${percent}%`,
+                                      backgroundColor: ageGroup.color,
+                                    }}
                                   />
                                 </div>
-                                <p className="mt-1 text-body-14-regular text-text-subtle">해당 연령대 페르소나 실행 횟수</p>
+                                <span className="sr-only">{percent.toFixed(1)}%</span>
                               </div>
+                            </div>
+
+                            <div className="relative md:justify-self-end md:w-[88px]">
                               <TextField
                                 type="number"
                                 min={0}
@@ -265,32 +280,49 @@ function SimulationSetupPage() {
                                 value={String(ageGroupCounts[ageGroup.key])}
                                 onChange={(event) => updateAgeGroupCount(ageGroup.key, event.target.value)}
                                 variant="default"
-                                size="lg"
-                                className="h-11 rounded-xl border-border-soft-2 bg-card px-4 text-text-secondary"
+                                size="md"
+                                className={cn(
+                                  "h-9 rounded-lg bg-card px-2.5 pr-7 text-right text-body-14-medium tabular-nums [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-inner-spin-button]:m-0 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-outer-spin-button]:m-0",
+                                  isEmpty
+                                    ? "border-border-subtle text-text-subtle"
+                                    : "border-border-soft-2 text-text-secondary"
+                                )}
                               />
-                            </CardContent>
-                          </Card>
+                              <span className={cn("pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-caption-12-medium", isEmpty ? "text-text-subtle" : "text-text-muted")}>
+                                회
+                              </span>
+                            </div>
+                          </div>
+                            )
+                          })()
                         ))}
-                      </div>
-                    </div>
+                      </CardContent>
+                    </Card>
 
-                    <Card className={cn("rounded-2xl border border-border-strong bg-card py-3 shadow-none", motion.card)}>
-                      <CardContent className="grid gap-4">
-                        <p className="text-body-14-medium text-text-secondary-2">연령대별 비율</p>
+                    <Card className={cn("h-full rounded-2xl border border-border-strong bg-card py-3 shadow-none", motion.card)}>
+                      <CardContent className="grid gap-5">
+                        <div className="flex items-end justify-between gap-3">
+                          <p className="text-body-14-medium text-text-secondary-2">연령대별 비율</p>
+                          <p className="text-caption-12-medium text-text-muted">
+                            총 페르소나 {personaCount.toLocaleString()}회
+                          </p>
+                        </div>
                         <div className="grid gap-3">
-                          <div className="grid gap-2">
-                            {ageDonutData.map((item) => (
-                              <div key={item.name} className="flex items-center gap-2.5">
-                                <span className="size-2.5 rounded-full" style={{ backgroundColor: item.color }} aria-hidden />
-                                <span className="text-caption-12-regular text-text-secondary">
-                                  {item.name} {item.count.toLocaleString()}회 ({item.value.toFixed(1)}%)
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                          <div className="mx-auto mt-3 w-full max-w-[200px]">
-                            <DonutChart data={ageDonutData} heightClassName="h-[208px]" />
-                          </div>
+                          {ageDonutData.map((item) => (
+                            <div key={item.name} className="flex items-center gap-2.5">
+                              <span
+                                className="size-2.5 rounded-full"
+                                style={{ backgroundColor: item.color }}
+                                aria-hidden
+                              />
+                              <span className="text-caption-12-medium text-text-muted">
+                                {item.name} · {item.count.toLocaleString()}회 · {item.value.toFixed(1)}%
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="mx-auto w-full max-w-[220px]">
+                          <DonutChart data={ageDonutData} heightClassName="h-[220px]" />
                         </div>
                       </CardContent>
                     </Card>
@@ -308,9 +340,9 @@ function SimulationSetupPage() {
               aria-expanded={advancedSettingsOpen}
             >
               <div className="grid gap-1">
-                <SetupSectionTitle title="고급 설정" description="추가 시뮬레이션 옵션" />
+                <SetupSectionTitle title="고급 설정" description="디지털 리터러시와 세부 조건을 함께 조정합니다." />
                 <p className="text-caption-12-regular text-text-muted">
-                  디지털 리터러시를 세부 조정할 수 있습니다.
+                  리터러시, 시력 저하, 주의력, 디바이스를 한 번에 설정할 수 있습니다.
                 </p>
               </div>
               <ChevronDown
@@ -326,12 +358,70 @@ function SimulationSetupPage() {
             >
               <div className="min-h-0 overflow-hidden">
                 <div className="grid gap-4 pt-1 pb-3">
-                  <SetupSectionTitle title="디지털 리터러시" description="디지털 정보를 다루는 힘" />
-                  <DigitalLiteracySelector
-                    value={digitalLiteracy}
-                    onChange={setDigitalLiteracy}
-                    className="h-[68px]"
-                  />
+                  <div className="grid gap-3">
+                    <SetupSectionTitle title="디지털 리터러시" description="디지털 정보를 다루는 힘" />
+                    <DigitalLiteracySelector
+                      value={digitalLiteracy}
+                      onChange={setDigitalLiteracy}
+                      className="h-[56px]"
+                      showDetailTrigger={false}
+                    />
+                  </div>
+
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <Card className="rounded-2xl border border-border-strong bg-card py-0 shadow-none">
+                      <CardContent className="grid gap-4 p-4">
+                        <div className="grid gap-1">
+                          <p className="text-body-14-medium text-text-secondary">시력 저하</p>
+                          <p className="text-caption-12-regular text-text-muted">시각 정보 인지 난이도를 조절합니다.</p>
+                        </div>
+                        <RangeSlider
+                          value={visionLoss}
+                          min={0}
+                          max={100}
+                          step={1}
+                          unit="%"
+                          color="var(--color-border-soft-3)"
+                          tooltipFormatter={(nextValue) => `${nextValue}%`}
+                          onChange={setVisionLoss}
+                        />
+                      </CardContent>
+                    </Card>
+
+                    <Card className="rounded-2xl border border-border-strong bg-card py-0 shadow-none">
+                      <CardContent className="grid gap-4 p-4">
+                        <div className="grid gap-1">
+                          <p className="text-body-14-medium text-text-secondary">주의력</p>
+                          <p className="text-caption-12-regular text-text-muted">탐색 집중도와 이탈 성향을 가정합니다.</p>
+                        </div>
+                        <RangeSlider
+                          value={attentionLevel}
+                          min={0}
+                          max={100}
+                          step={1}
+                          color="var(--color-brand-accent)"
+                          startLabel="낮음"
+                          endLabel="높음"
+                          tooltipFormatter={(nextValue) => `${nextValue}%`}
+                          onChange={setAttentionLevel}
+                        />
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  <Card className="rounded-2xl border border-border-strong bg-card py-0 shadow-none">
+                    <CardContent className="grid gap-4 p-4">
+                      <div className="grid gap-1">
+                        <p className="text-body-14-medium text-text-secondary">디바이스</p>
+                        <p className="text-caption-12-regular text-text-muted">페르소나가 사용하는 기본 환경을 선택합니다.</p>
+                      </div>
+                      <SelectionSelect
+                        value={personaDevice}
+                        options={[...personaDeviceOptions]}
+                        onChange={(nextDevice) => setPersonaDevice(nextDevice as PersonaDevice)}
+                      />
+                    </CardContent>
+                  </Card>
                 </div>
               </div>
             </div>

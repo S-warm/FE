@@ -1,5 +1,4 @@
 import { cn } from "@/lib/utils"
-
 import { DigitalLiteracyDetailModal } from "@/components/sections/simulation-setup/digital-literacy-detail-modal"
 
 type DigitalLiteracyLevel = "low" | "medium" | "high"
@@ -14,10 +13,12 @@ function DigitalLiteracySelector({
   value,
   onChange,
   className,
+  showDetailTrigger = true,
 }: {
   value: DigitalLiteracyLevel
   onChange: (value: DigitalLiteracyLevel) => void
   className?: string
+  showDetailTrigger?: boolean
 }) {
   return (
     <div className={cn("flex items-center rounded-xl border border-border-soft-2 bg-card p-0.5", className)}>
@@ -37,9 +38,11 @@ function DigitalLiteracySelector({
         </button>
       ))}
 
-      <DigitalLiteracyDetailModal
-        triggerClassName="ml-1 flex-[1.35] rounded-md border border-border-soft-2 bg-surface-muted px-3 text-caption-12-medium text-text-muted hover:bg-surface-muted-hover"
-      />
+      {showDetailTrigger ? (
+        <DigitalLiteracyDetailModal
+          triggerClassName="ml-1 flex-[1.35] rounded-md border border-border-soft-2 bg-surface-muted px-3 text-caption-12-medium text-text-muted hover:bg-surface-muted-hover"
+        />
+      ) : null}
     </div>
   )
 }

@@ -190,7 +190,7 @@ function DetailIssueRow({
 function ResultWcagPage() {
   const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set())
   const { selectedPageId, setSelectedPageId } = useResultPageParam()
-  const { expandedPageIds, expandPage } = useResultPageSidePanelState(selectedPageId)
+  const { expandedPageIds, expandPage, togglePage } = useResultPageSidePanelState(selectedPageId)
 
   const summary = wcagResultMock
   const distributionTotal = useMemo(() => summary.distribution.reduce((acc, item) => acc + item.count, 0), [summary])
@@ -214,7 +214,7 @@ function ResultWcagPage() {
           setSelectedPageId(pageId)
           expandPage(pageId)
         }}
-        onExpandPage={expandPage}
+        onTogglePage={togglePage}
       />
 
       <div className="grid gap-5">

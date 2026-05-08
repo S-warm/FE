@@ -52,7 +52,7 @@ function firstFixIdForPage(pageId: string) {
 
 function ResultAiFixPage() {
   const { selectedPageId, setSelectedPageId } = useResultPageParam()
-  const { expandedPageIds, expandPage } = useResultPageSidePanelState(selectedPageId, [defaultAiFixPageId])
+  const { expandedPageIds, expandPage, togglePage } = useResultPageSidePanelState(selectedPageId, [defaultAiFixPageId])
   const [selectedFixId, setSelectedFixId] = useState<string>(() => firstFixIdForPage(selectedPageId) ?? defaultAiFixId)
 
   const selectedPage: AiFixPage = aiFixPagesMock.find((page) => page.id === selectedPageId) ?? aiFixPagesMock[0]
@@ -89,7 +89,7 @@ function ResultAiFixPage() {
           setSelectedFixId((prev) => nextFixId ?? prev)
           expandPage(pageId)
         }}
-        onExpandPage={expandPage}
+        onTogglePage={togglePage}
       />
 
       <div className="grid gap-4">

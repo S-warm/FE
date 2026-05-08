@@ -601,7 +601,7 @@ function HeatmapLogCanvas({
 
 function ResultHeatmapPage() {
   const { selectedPageId, setSelectedPageId } = useResultPageParam()
-  const { expandedPageIds, expandPage } = useResultPageSidePanelState(selectedPageId, [defaultHeatmapPageId])
+  const { expandedPageIds, expandPage, togglePage } = useResultPageSidePanelState(selectedPageId, [defaultHeatmapPageId])
   const [ageFilter, setAgeFilter] = useState<HeatmapAgeBand | "all">("all")
   const [overlayOpacity, setOverlayOpacity] = useState(60)
 
@@ -641,7 +641,7 @@ function ResultHeatmapPage() {
           setSelectedPageId(pageId)
           expandPage(pageId)
         }}
-        onExpandPage={expandPage}
+        onTogglePage={togglePage}
       />
 
       <div className="grid gap-4">

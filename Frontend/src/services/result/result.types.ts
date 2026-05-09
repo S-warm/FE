@@ -1,4 +1,4 @@
-import type { ResultAgeFilter } from "@/types/view-model/result/result-heatmap"
+import type { ResultAgeFilter } from "@/types/view-model/common/result-meta"
 
 export interface GetResultHeatmapParams {
   simulationId: string

@@ -53,13 +53,16 @@ function HeatmapCanvas({
   selectedPointId: string | null
   onSelectPoint: (issueId: string) => void
 }) {
+  const [failedScreenshotUrl, setFailedScreenshotUrl] = useState<string | null>(null)
+
   return (
     <div className="relative overflow-hidden rounded-2xl border border-border-strong bg-card">
-      {page.screenshotUrl ? (
+      {page.screenshotUrl && failedScreenshotUrl !== page.screenshotUrl ? (
         <img
           src={page.screenshotUrl}
           alt={page.pageName}
           className="aspect-[16/10] w-full object-cover"
+          onError={() => setFailedScreenshotUrl(page.screenshotUrl ?? null)}
         />
       ) : (
         <div className="grid aspect-[16/10] place-items-center bg-surface-subtle">

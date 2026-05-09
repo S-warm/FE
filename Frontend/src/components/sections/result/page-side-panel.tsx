@@ -1,3 +1,4 @@
+import { useState } from "react"
 import { ChevronDown } from "lucide-react"
 
 import { Card, CardContent } from "@/components/ui/card"
@@ -9,6 +10,39 @@ export interface ResultPageSidePanelItem {
   name: string
   screenshotUrl?: string
   metaText?: string
+}
+
+function ScreenshotPreview({
+  screenshotUrl,
+  alt,
+}: {
+  screenshotUrl?: string
+  alt: string
+}) {
+  const [failedScreenshotUrl, setFailedScreenshotUrl] = useState<string | null>(null)
+
+  if (!screenshotUrl || failedScreenshotUrl === screenshotUrl) {
+    return (
+      <div className="grid aspect-[16/10] place-items-center rounded-xl border border-border-strong bg-surface-subtle">
+        <p className="text-caption-12-regular text-text-muted">
+          스크린샷이 없습니다
+        </p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="overflow-hidden rounded-xl border border-border-strong bg-card">
+      <img
+        src={screenshotUrl}
+        alt={alt}
+        loading="lazy"
+        decoding="async"
+        className="aspect-[16/10] w-full object-cover"
+        onError={() => setFailedScreenshotUrl(screenshotUrl)}
+      />
+    </div>
+  )
 }
 
 function ResultPageSidePanel({
@@ -73,23 +107,7 @@ function ResultPageSidePanel({
 
                   {expanded ? (
                     <div className="grid gap-2 px-3 pb-3">
-                      {page.screenshotUrl ? (
-                        <div className="overflow-hidden rounded-xl border border-border-strong bg-card">
-                          <img
-                            src={page.screenshotUrl}
-                            alt={page.name}
-                            loading="lazy"
-                            decoding="async"
-                            className="aspect-[16/10] w-full object-cover"
-                          />
-                        </div>
-                      ) : (
-                        <div className="grid aspect-[16/10] place-items-center rounded-xl border border-border-strong bg-surface-subtle">
-                          <p className="text-caption-12-regular text-text-muted">
-                            스크린샷이 없습니다
-                          </p>
-                        </div>
-                      )}
+                      <ScreenshotPreview screenshotUrl={page.screenshotUrl} alt={page.name} />
                       {page.metaText ? (
                         <p className="text-caption-12-regular text-text-subtle">{page.metaText}</p>
                       ) : null}

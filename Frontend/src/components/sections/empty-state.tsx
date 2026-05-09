@@ -1,14 +1,19 @@
 import { Info } from "lucide-react"
 
+import { CommonButton } from "@/components/atoms"
 import { cn } from "@/lib/utils"
 
 function EmptyState({
   title = "데이터가 없습니다",
   description = "시뮬레이션을 시작하면 데이터가 표시됩니다.",
+  actionLabel,
+  onAction,
   className,
 }: {
   title?: string
   description?: string
+  actionLabel?: string
+  onAction?: () => void
   className?: string
 }) {
   return (
@@ -26,10 +31,22 @@ function EmptyState({
         </span>
         <p className="text-body-14-medium text-text-body">{title}</p>
         <p className="text-caption-12-regular text-text-muted">{description}</p>
+        {actionLabel && onAction ? (
+          <div className="pt-2">
+            <CommonButton
+              type="button"
+              size="sm"
+              variant="secondary"
+              className="rounded-xl border border-border-soft-2 bg-card text-text-secondary hover:bg-surface-subtle"
+              onClick={onAction}
+            >
+              {actionLabel}
+            </CommonButton>
+          </div>
+        ) : null}
       </div>
     </div>
   )
 }
 
 export { EmptyState }
-

@@ -5,6 +5,7 @@ import { ChevronDown } from "lucide-react"
 
 import { DonutChart } from "@/components/charts"
 import { RangeSlider, SelectionSelect } from "@/components/forms"
+import { InlineError } from "@/components/states"
 import { Card, CardContent } from "@/components/ui/card"
 import { BrandingHeader } from "@/components/sections/auth/branding-header"
 import {
@@ -342,9 +343,7 @@ function SimulationSetupPage() {
                 </div>
               </div>
             </div>
-            {errors.ageCounts ? (
-              <p className="text-caption-12-regular text-danger-text">{errors.ageCounts}</p>
-            ) : null}
+            <InlineError message={errors.ageCounts} />
           </section>
 
           <section className="grid w-full max-w-[760px] gap-3">
@@ -384,9 +383,7 @@ function SimulationSetupPage() {
                       className="h-[56px]"
                       showDetailTrigger={false}
                     />
-                    {errors.digitalLiteracy ? (
-                      <p className="text-caption-12-regular text-danger-text">{errors.digitalLiteracy}</p>
-                    ) : null}
+                    <InlineError message={errors.digitalLiteracy} />
                   </div>
 
                   <div className="grid gap-3 md:grid-cols-2">
@@ -409,9 +406,7 @@ function SimulationSetupPage() {
                             setErrors((prev) => ({ ...prev, visionImpairment: undefined }))
                           }}
                         />
-                        {errors.visionImpairment ? (
-                          <p className="text-caption-12-regular text-danger-text">{errors.visionImpairment}</p>
-                        ) : null}
+                        <InlineError message={errors.visionImpairment} />
                       </CardContent>
                     </Card>
 
@@ -435,9 +430,7 @@ function SimulationSetupPage() {
                             setErrors((prev) => ({ ...prev, attentionLevel: undefined }))
                           }}
                         />
-                        {errors.attentionLevel ? (
-                          <p className="text-caption-12-regular text-danger-text">{errors.attentionLevel}</p>
-                        ) : null}
+                        <InlineError message={errors.attentionLevel} />
                       </CardContent>
                     </Card>
                   </div>
@@ -457,9 +450,7 @@ function SimulationSetupPage() {
                           setErrors((prev) => ({ ...prev, personaDevice: undefined }))
                         }}
                       />
-                      {errors.personaDevice ? (
-                        <p className="text-caption-12-regular text-danger-text">{errors.personaDevice}</p>
-                      ) : null}
+                      <InlineError message={errors.personaDevice} />
                     </CardContent>
                   </Card>
                 </div>

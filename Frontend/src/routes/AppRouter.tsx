@@ -8,6 +8,7 @@ import LoginPage from "@/pages/LoginPage"
 import SimulationProcessPage from "@/pages/SimulationProcessPage"
 import SimulationSetupPage from "@/pages/SimulationSetupPage"
 import SignUpPage from "@/pages/SignUpPage"
+import { PageSkeleton, ResultPageSkeleton } from "@/components/states"
 import routes from "@/constants/routes"
 import { useAuthStore } from "@/store/auth.store"
 
@@ -19,11 +20,11 @@ const ResultAiFixPage = lazy(() => import("@/pages/result/ResultAiFixPage"))
 const ResultHeatmapPage = lazy(() => import("@/pages/result/ResultHeatmapPage"))
 
 function RouteFallback() {
-  return (
-    <div className="grid min-h-[240px] place-items-center text-caption-12-regular text-text-muted">
-      로딩 중...
-    </div>
-  )
+  return <PageSkeleton className="pt-2" />
+}
+
+function ResultRouteFallback() {
+  return <ResultPageSkeleton />
 }
 
 function RequireAuth({ children }: { children: ReactNode }) {
@@ -103,7 +104,7 @@ export default function AppRouter() {
           <Route
             path="overview"
             element={
-              <Suspense fallback={<RouteFallback />}>
+              <Suspense fallback={<ResultRouteFallback />}>
                 <ResultOverviewPage />
               </Suspense>
             }
@@ -111,7 +112,7 @@ export default function AppRouter() {
           <Route
             path="issues"
             element={
-              <Suspense fallback={<RouteFallback />}>
+              <Suspense fallback={<ResultRouteFallback />}>
                 <ResultIssuesPage />
               </Suspense>
             }
@@ -119,7 +120,7 @@ export default function AppRouter() {
           <Route
             path="heatmap"
             element={
-              <Suspense fallback={<RouteFallback />}>
+              <Suspense fallback={<ResultRouteFallback />}>
                 <ResultHeatmapPage />
               </Suspense>
             }
@@ -127,7 +128,7 @@ export default function AppRouter() {
           <Route
             path="wcag"
             element={
-              <Suspense fallback={<RouteFallback />}>
+              <Suspense fallback={<ResultRouteFallback />}>
                 <ResultWcagPage />
               </Suspense>
             }
@@ -135,7 +136,7 @@ export default function AppRouter() {
           <Route
             path="ai"
             element={
-              <Suspense fallback={<RouteFallback />}>
+              <Suspense fallback={<ResultRouteFallback />}>
                 <ResultAiFixPage />
               </Suspense>
             }

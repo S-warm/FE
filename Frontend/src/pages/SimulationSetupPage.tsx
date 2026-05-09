@@ -20,6 +20,12 @@ import { personaDeviceOptions, type PersonaDevice } from "@/constants/persona-de
 import { useSimulationDraftStore } from "@/store/simulation-draft.store"
 import { cn } from "@/lib/utils"
 import { motion } from "@/lib/motion"
+import type { SimulationFormViewModel } from "@/types/view-model/simulation/simulation-form"
+import {
+  hasSimulationSetupValidationErrors,
+  validateSimulationSetupForm,
+  type SimulationSetupValidationErrors,
+} from "@/validation/simulation-setup"
 
 const AGE_GROUP_CONFIG = [
   { key: "teens", label: "10대", color: "var(--color-persona-teen)" },
@@ -58,10 +64,7 @@ function SimulationSetupPage() {
 
   const [digitalLiteracy, setDigitalLiteracy] = useState<DigitalLiteracyLevel>("low")
   const [successCondition, setSuccessCondition] = useState("")
-  const [projectTitleError, setProjectTitleError] = useState("")
-  const [targetUrlError, setTargetUrlError] = useState("")
-  const [endUrlError, setEndUrlError] = useState("")
-  const [successConditionError, setSuccessConditionError] = useState("")
+  const [errors, setErrors] = useState<SimulationSetupValidationErrors>({})
   const [ageRatioOpen, setAgeRatioOpen] = useState(false)
   const [advancedSettingsOpen, setAdvancedSettingsOpen] = useState(true)
   const [ageGroupCounts, setAgeGroupCounts] = useState<AgeGroupCounts>(DEFAULT_AGE_GROUP_COUNTS)
@@ -70,10 +73,19 @@ function SimulationSetupPage() {
   const navigate = useNavigate()
 
   const resetValidationErrors = () => {
-    setProjectTitleError("")
-    setTargetUrlError("")
-    setEndUrlError("")
-    setSuccessConditionError("")
+    setErrors({})
+  }
+
+  const formValues: SimulationFormViewModel = {
+    projectTitle,
+    targetUrl,
+    endUrl,
+    successCondition,
+    digitalLiteracy,
+    personaDevice,
+    ageCounts: ageGroupCounts,
+    visionImpairment: visionLoss,
+    attentionLevel,
   }
 
   const updateAgeGroupCount = (ageGroupKey: AgeGroupCountKey, rawValue: string) => {
@@ -137,11 +149,11 @@ function SimulationSetupPage() {
               <TextField
                 placeholder="예: A - Mall 구매 플로우"
                 value={projectTitle}
-                state={projectTitleError ? "error" : "default"}
-                errorMessage={projectTitleError || undefined}
+                state={errors.projectTitle ? "error" : "default"}
+                errorMessage={errors.projectTitle || undefined}
                 onChange={(event) => {
                   setProjectTitle(event.target.value)
-                  setProjectTitleError("")
+                  setErrors((prev) => ({ ...prev, projectTitle: undefined }))
                 }}
                 variant="default"
                 size="lg"
@@ -156,11 +168,11 @@ function SimulationSetupPage() {
               <TextField
                 placeholder="시작 URL 링크를 입력하세요."
                 value={targetUrl}
-                state={targetUrlError ? "error" : "default"}
-                errorMessage={targetUrlError || undefined}
+                state={errors.targetUrl ? "error" : "default"}
+                errorMessage={errors.targetUrl || undefined}
                 onChange={(event) => {
                   setTargetUrl(event.target.value)
-                  setTargetUrlError("")
+                  setErrors((prev) => ({ ...prev, targetUrl: undefined }))
                 }}
                 variant="default"
                 size="lg"
@@ -172,11 +184,11 @@ function SimulationSetupPage() {
               <TextField
                 placeholder="종료 URL 링크를 입력하세요."
                 value={endUrl}
-                state={endUrlError ? "error" : "default"}
-                errorMessage={endUrlError || undefined}
+                state={errors.endUrl ? "error" : "default"}
+                errorMessage={errors.endUrl || undefined}
                 onChange={(event) => {
                   setEndUrl(event.target.value)
-                  setEndUrlError("")
+                  setErrors((prev) => ({ ...prev, endUrl: undefined }))
                 }}
                 variant="default"
                 size="lg"
@@ -190,11 +202,11 @@ function SimulationSetupPage() {
             <TextArea
               placeholder="예: 로그인 완료 후 /mypage 진입"
               value={successCondition}
-              state={successConditionError ? "error" : "default"}
-              errorMessage={successConditionError || undefined}
+              state={errors.successCondition ? "error" : "default"}
+              errorMessage={errors.successCondition || undefined}
               onChange={(event) => {
                 setSuccessCondition(event.target.value)
-                setSuccessConditionError("")
+                setErrors((prev) => ({ ...prev, successCondition: undefined }))
               }}
               variant="default"
               size="md"
@@ -330,6 +342,9 @@ function SimulationSetupPage() {
                 </div>
               </div>
             </div>
+            {errors.ageCounts ? (
+              <p className="text-caption-12-regular text-danger-text">{errors.ageCounts}</p>
+            ) : null}
           </section>
 
           <section className="grid w-full max-w-[760px] gap-3">
@@ -362,10 +377,16 @@ function SimulationSetupPage() {
                     <SetupSectionTitle title="디지털 리터러시" description="디지털 정보를 다루는 힘" />
                     <DigitalLiteracySelector
                       value={digitalLiteracy}
-                      onChange={setDigitalLiteracy}
+                      onChange={(nextValue) => {
+                        setDigitalLiteracy(nextValue)
+                        setErrors((prev) => ({ ...prev, digitalLiteracy: undefined }))
+                      }}
                       className="h-[56px]"
                       showDetailTrigger={false}
                     />
+                    {errors.digitalLiteracy ? (
+                      <p className="text-caption-12-regular text-danger-text">{errors.digitalLiteracy}</p>
+                    ) : null}
                   </div>
 
                   <div className="grid gap-3 md:grid-cols-2">
@@ -383,8 +404,14 @@ function SimulationSetupPage() {
                           unit="%"
                           color="var(--color-border-soft-3)"
                           tooltipFormatter={(nextValue) => `${nextValue}%`}
-                          onChange={setVisionLoss}
+                          onChange={(nextValue) => {
+                            setVisionLoss(nextValue)
+                            setErrors((prev) => ({ ...prev, visionImpairment: undefined }))
+                          }}
                         />
+                        {errors.visionImpairment ? (
+                          <p className="text-caption-12-regular text-danger-text">{errors.visionImpairment}</p>
+                        ) : null}
                       </CardContent>
                     </Card>
 
@@ -403,8 +430,14 @@ function SimulationSetupPage() {
                           startLabel="낮음"
                           endLabel="높음"
                           tooltipFormatter={(nextValue) => `${nextValue}%`}
-                          onChange={setAttentionLevel}
+                          onChange={(nextValue) => {
+                            setAttentionLevel(nextValue)
+                            setErrors((prev) => ({ ...prev, attentionLevel: undefined }))
+                          }}
                         />
+                        {errors.attentionLevel ? (
+                          <p className="text-caption-12-regular text-danger-text">{errors.attentionLevel}</p>
+                        ) : null}
                       </CardContent>
                     </Card>
                   </div>
@@ -418,8 +451,15 @@ function SimulationSetupPage() {
                       <SelectionSelect
                         value={personaDevice}
                         options={[...personaDeviceOptions]}
-                        onChange={(nextDevice) => setPersonaDevice(nextDevice as PersonaDevice)}
+                        state={errors.personaDevice ? "error" : "default"}
+                        onChange={(nextDevice) => {
+                          setPersonaDevice(nextDevice as PersonaDevice)
+                          setErrors((prev) => ({ ...prev, personaDevice: undefined }))
+                        }}
                       />
+                      {errors.personaDevice ? (
+                        <p className="text-caption-12-regular text-danger-text">{errors.personaDevice}</p>
+                      ) : null}
                     </CardContent>
                   </Card>
                 </div>
@@ -455,29 +495,10 @@ function SimulationSetupPage() {
                 )}
                 onClick={() => {
                   resetValidationErrors()
-                  let hasError = false
+                  const nextErrors = validateSimulationSetupForm(formValues)
+                  setErrors(nextErrors)
 
-                  if (!trimmedProjectTitle) {
-                    setProjectTitleError("프로젝트 제목을 입력해주세요.")
-                    hasError = true
-                  }
-
-                  if (!trimmedTargetUrl) {
-                    setTargetUrlError("시작 URL을 입력해주세요.")
-                    hasError = true
-                  }
-
-                  if (!trimmedEndUrl) {
-                    setEndUrlError("종료 URL을 입력해주세요.")
-                    hasError = true
-                  }
-
-                  if (!trimmedSuccessCondition) {
-                    setSuccessConditionError("성공 조건을 입력해주세요.")
-                    hasError = true
-                  }
-
-                  if (hasError) return
+                  if (hasSimulationSetupValidationErrors(nextErrors)) return
 
                   if (!startedAt) setStartedAt(new Date().toISOString())
                   navigate(routes.simulationProcess)

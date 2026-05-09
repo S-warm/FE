@@ -3,6 +3,7 @@ import { useMemo, useState } from "react"
 import { Sparkles, TrendingUp } from "lucide-react"
 
 import { StatusBadge } from "@/components/atoms"
+import { EmptyState } from "@/components/sections"
 import { ResultPageSidePanel } from "@/components/sections/result/page-side-panel"
 import { Card, CardContent } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
@@ -55,14 +56,15 @@ function ResultAiFixPage() {
   const { expandedPageIds, expandPage, togglePage } = useResultPageSidePanelState(selectedPageId, [defaultAiFixPageId])
   const [selectedFixId, setSelectedFixId] = useState<string>(() => firstFixIdForPage(selectedPageId) ?? defaultAiFixId)
 
-  const selectedPage: AiFixPage = aiFixPagesMock.find((page) => page.id === selectedPageId) ?? aiFixPagesMock[0]
-  const resolvedSelectedFixId = selectedPage.fixes.some((fix) => fix.id === selectedFixId)
+  const selectedPage: AiFixPage | null =
+    aiFixPagesMock.find((page) => page.id === selectedPageId) ?? aiFixPagesMock[0] ?? null
+  const fixes = useMemo(() => selectedPage?.fixes ?? [], [selectedPage])
+  const resolvedSelectedFixId = fixes.some((fix) => fix.id === selectedFixId)
     ? selectedFixId
-    : (selectedPage.fixes[0]?.id ?? defaultAiFixId)
-  const selectedFix: AiFixItem =
-    selectedPage.fixes.find((fix) => fix.id === resolvedSelectedFixId) ?? selectedPage.fixes[0]
+    : (fixes[0]?.id ?? defaultAiFixId)
+  const selectedFix: AiFixItem | null =
+    fixes.find((fix) => fix.id === resolvedSelectedFixId) ?? fixes[0] ?? null
 
-  const fixes = useMemo(() => selectedPage.fixes, [selectedPage])
   const sidePages = useMemo(
     () =>
       resultPagesMock.map((page) => {
@@ -93,6 +95,13 @@ function ResultAiFixPage() {
       />
 
       <div className="grid gap-4">
+        {!selectedPage || !selectedFix ? (
+          <EmptyState
+            title="AI 수정 제안이 없습니다"
+            description="선택한 페이지에 연결된 수정 제안 데이터가 아직 없습니다."
+          />
+        ) : null}
+
         <Card className={cn("rounded-2xl border border-border-strong bg-card shadow-none", motion.card)}>
           <CardContent className="grid gap-4 px-6 py-5">
             <div className="flex flex-wrap items-center gap-2">
@@ -137,8 +146,8 @@ function ResultAiFixPage() {
         </Card>
 
         <div className="grid gap-3 md:grid-cols-2">
-          <CodePanel title="이전 코드" code={selectedFix.beforeCode} />
-          <CodePanel title="AI 생성 수정 이후 코드" active code={selectedFix.afterCode} />
+          <CodePanel title="이전 코드" code={selectedFix?.beforeCode ?? ""} />
+          <CodePanel title="AI 생성 수정 이후 코드" active code={selectedFix?.afterCode ?? ""} />
         </div>
 
         <Card className={cn("rounded-2xl border border-border-focus bg-card shadow-none", motion.card)}>
@@ -149,12 +158,14 @@ function ResultAiFixPage() {
             </div>
 
             <div className="rounded-2xl border border-border-subtle bg-surface-subtle px-4 py-3">
-              <p className="text-body-14-medium text-text-body">{selectedFix.impactSummary}</p>
+              <p className="text-body-14-medium text-text-body">{selectedFix?.impactSummary ?? "-"}</p>
             </div>
 
             <div className="rounded-2xl border border-border-subtle bg-card px-4 py-3">
-              <p className="text-caption-12-medium text-text-secondary">{selectedFix.changeSummaryTitle}</p>
-              <p className="mt-2 text-caption-12-regular leading-relaxed text-text-body">{selectedFix.changeSummaryBody}</p>
+              <p className="text-caption-12-medium text-text-secondary">{selectedFix?.changeSummaryTitle ?? "-"}</p>
+              <p className="mt-2 text-caption-12-regular leading-relaxed text-text-body">
+                {selectedFix?.changeSummaryBody ?? "-"}
+              </p>
             </div>
           </CardContent>
         </Card>

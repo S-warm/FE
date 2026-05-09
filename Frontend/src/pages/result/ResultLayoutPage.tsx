@@ -59,7 +59,7 @@ function MetaRow({ label, children }: { label: string; children: ReactNode }) {
 function ResultLayoutPage() {
   const { simulationId } = useParams()
   const simulation = recentSimulations.find((item) => item.id === simulationId) ?? recentSimulations[0]
-  const resolvedId = simulation?.id ?? "unknown"
+  const resolvedId = simulation?.id ?? simulationId ?? "unknown"
   const location = useLocation()
   const search = location.search
 

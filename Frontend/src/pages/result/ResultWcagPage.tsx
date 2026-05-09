@@ -3,13 +3,19 @@ import { useMemo, useState } from "react"
 
 import { AlertCircle, ChevronDown, ClipboardCheck, ShieldCheck, TriangleAlert } from "lucide-react"
 
+import { EmptyState } from "@/components/sections"
 import { Badge } from "@/components/ui/badge"
 import { ResultPageSidePanel } from "@/components/sections/result/page-side-panel"
 import { Card, CardContent } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 import { motion } from "@/lib/motion"
 import { useResultPageSidePanelState } from "@/lib/result-page-side-panel-state"
-import type { WcagDetailIssue, WcagIssueDistribution, WcagSeverity } from "@/mocks/result-wcag.mock"
+import type {
+  WcagDetailIssue,
+  WcagIssueDistribution,
+  WcagPageResult,
+  WcagSeverity,
+} from "@/mocks/result-wcag.mock"
 import { wcagResultMock } from "@/mocks/result-wcag.mock"
 import { resultPagesMock } from "@/mocks/result-pages.mock"
 import { useResultPageParam } from "@/lib/result-page-param"
@@ -192,8 +198,19 @@ function ResultWcagPage() {
   const { selectedPageId, setSelectedPageId } = useResultPageParam()
   const { expandedPageIds, expandPage, togglePage } = useResultPageSidePanelState(selectedPageId)
 
-  const summary = wcagResultMock
-  const distributionTotal = useMemo(() => summary.distribution.reduce((acc, item) => acc + item.count, 0), [summary])
+  const selectedPageResult = useMemo<WcagPageResult | null>(() => {
+    return (
+      wcagResultMock.pageResults.find((pageResult) => pageResult.pageId === selectedPageId) ??
+      wcagResultMock.pageResults[0] ??
+      null
+    )
+  }, [selectedPageId])
+
+  const distributionTotal = useMemo(
+    () => selectedPageResult?.distribution.reduce((sum, distributionItem) => sum + distributionItem.count, 0) ?? 0,
+    [selectedPageResult]
+  )
+
   const sidePages = useMemo(
     () =>
       resultPagesMock.map((page) => ({
@@ -218,17 +235,24 @@ function ResultWcagPage() {
       />
 
       <div className="grid gap-5">
+        {!selectedPageResult ? (
+          <EmptyState
+            title="WCAG 검사 결과가 없습니다"
+            description="선택한 페이지에 연결된 WCAG 검사 데이터가 아직 없습니다."
+          />
+        ) : null}
+
         <section className="grid gap-3 md:grid-cols-3">
           <MetricCard
             title="준수 점수"
-            value={`${summary.complianceScore}%`}
-            subtitle={summary.wcagLabel}
+            value={`${selectedPageResult?.complianceScore ?? 0}%`}
+            subtitle={selectedPageResult?.wcagLabel ?? "-"}
             icon={<ShieldCheck className="size-4" />}
           />
           <MetricCard
             title="통과된 테스트"
-            value={`${summary.passedTests}`}
-            subtitle={`${summary.totalTests}개 테스트 중`}
+            value={`${selectedPageResult?.passedTests ?? 0}`}
+            subtitle={`${selectedPageResult?.totalTests ?? 0}개 테스트 중`}
             icon={<ClipboardCheck className="size-4" />}
           />
           <Card className={cn("rounded-2xl border border-border-strong bg-card shadow-none", motion.card)}>
@@ -249,8 +273,10 @@ function ResultWcagPage() {
                 </button>
               </div>
               <div className="grid gap-1">
-                <p className="text-title-24-bold text-text-strong">{summary.foundIssues}</p>
-                <p className="text-caption-12-regular text-text-subtle">{summary.foundIssues}건 발견됨</p>
+                <p className="text-title-24-bold text-text-strong">{selectedPageResult?.foundIssues ?? 0}</p>
+                <p className="text-caption-12-regular text-text-subtle">
+                  {selectedPageResult?.foundIssues ?? 0}건 발견됨
+                </p>
               </div>
             </CardContent>
           </Card>
@@ -259,40 +285,47 @@ function ResultWcagPage() {
         <Card className={cn("rounded-2xl border border-border-strong bg-card shadow-none", motion.card)}>
           <CardContent className="grid gap-4 px-6 py-5">
             <div className="flex flex-wrap items-center gap-2">
-            <p className="text-body-14-medium text-text-body">검출 이슈 분석</p>
-            <Badge variant="secondary" className="h-7 rounded-full bg-brand-subtle px-3 text-sm text-text-link">
-              전체 {distributionTotal}건
-            </Badge>
-          </div>
+              <p className="text-body-14-medium text-text-body">검출 이슈 분석</p>
+              <Badge variant="secondary" className="h-7 rounded-full bg-brand-subtle px-3 text-sm text-text-link">
+                전체 {distributionTotal}건
+              </Badge>
+            </div>
 
-          <DistributionBar distribution={summary.distribution} />
-          <DistributionSummary distribution={summary.distribution} />
-        </CardContent>
-      </Card>
+            <DistributionBar distribution={selectedPageResult?.distribution ?? []} />
+            <DistributionSummary distribution={selectedPageResult?.distribution ?? []} />
+          </CardContent>
+        </Card>
 
-      <section className="grid gap-3">
-        <p className="text-body-14-medium text-text-body">상세 검사 결과</p>
-        <div className="grid gap-3">
-          {summary.details.map((issue) => {
-            const expanded = expandedIds.has(issue.id)
-            return (
-              <DetailIssueRow
-                key={issue.id}
-                issue={issue}
-                expanded={expanded}
-                onToggle={() =>
-                  setExpandedIds((prev) => {
-                    const next = new Set(prev)
-                    if (next.has(issue.id)) next.delete(issue.id)
-                    else next.add(issue.id)
-                    return next
-                  })
-                }
-              />
-            )
-          })}
-        </div>
-      </section>
+        <section className="grid gap-3">
+          <p className="text-body-14-medium text-text-body">상세 검사 결과</p>
+          {selectedPageResult && selectedPageResult.details.length > 0 ? (
+            <div className="grid gap-3">
+              {selectedPageResult.details.map((issue) => {
+                const expanded = expandedIds.has(issue.id)
+                return (
+                  <DetailIssueRow
+                    key={issue.id}
+                    issue={issue}
+                    expanded={expanded}
+                    onToggle={() =>
+                      setExpandedIds((prev) => {
+                        const next = new Set(prev)
+                        if (next.has(issue.id)) next.delete(issue.id)
+                        else next.add(issue.id)
+                        return next
+                      })
+                    }
+                  />
+                )
+              })}
+            </div>
+          ) : (
+            <EmptyState
+              title="상세 검사 결과가 없습니다"
+              description="표시할 상세 이슈가 없거나, 아직 검사 데이터가 연결되지 않았습니다."
+            />
+          )}
+        </section>
       </div>
     </div>
   )

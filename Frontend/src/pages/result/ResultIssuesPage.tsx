@@ -6,6 +6,7 @@ import { AlertTriangle, ArrowRight, Sparkles } from "lucide-react"
 import { CommonButton, IssueBadge } from "@/components/atoms"
 import { DonutChart } from "@/components/charts"
 import { ChipTag } from "@/components/forms"
+import { EmptyState } from "@/components/sections"
 import { ResultPageSidePanel } from "@/components/sections/result/page-side-panel"
 import { Card, CardContent } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
@@ -128,8 +129,8 @@ function ResultIssuesPage() {
   const resolvedId = simulationId ?? "unknown"
   const search = location.search
 
-  const selectedPage: ResultIssuePage =
-    resultIssuePages.find((page) => page.id === selectedPageId) ?? resultIssuePages[0]
+  const selectedPage: ResultIssuePage | null =
+    resultIssuePages.find((page) => page.id === selectedPageId) ?? resultIssuePages[0] ?? null
 
   const sidePages = useMemo(
     () =>
@@ -146,6 +147,7 @@ function ResultIssuesPage() {
   )
 
   const filteredIssues = useMemo(() => {
+    if (!selectedPage) return []
     if (!activeFilters.length) return selectedPage.issues
     return selectedPage.issues.filter((issue) => activeFilters.includes(issue.category))
   }, [activeFilters, selectedPage])
@@ -166,6 +168,13 @@ function ResultIssuesPage() {
       />
 
       <div className="grid gap-4">
+        {!selectedPage ? (
+          <EmptyState
+            title="이슈 데이터가 없습니다"
+            description="선택한 페이지에 연결된 주요 이슈 데이터가 아직 없습니다."
+          />
+        ) : null}
+
         <Card className={cn("rounded-2xl border border-border-strong bg-card shadow-none", motion.card)}>
           <CardContent className="grid gap-4 px-6 py-5">
             <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
@@ -254,15 +263,22 @@ function ResultIssuesPage() {
 
         <section ref={issuesSectionRef} className="grid gap-3">
           <p className="text-body-14-medium text-text-body">이슈목록</p>
-          <div className="grid gap-3">
-            {filteredIssues.map((issue) => (
-              <IssueCard
-                key={issue.id}
-                issue={issue}
-                onNavigateAiFix={() => navigate(`/result/${resolvedId}/ai${search}`)}
-              />
-            ))}
-          </div>
+          {filteredIssues.length > 0 ? (
+            <div className="grid gap-3">
+              {filteredIssues.map((issue) => (
+                <IssueCard
+                  key={issue.id}
+                  issue={issue}
+                  onNavigateAiFix={() => navigate(`/result/${resolvedId}/ai${search}`)}
+                />
+              ))}
+            </div>
+          ) : (
+            <EmptyState
+              title="표시할 이슈가 없습니다"
+              description="현재 필터 조건에 맞는 이슈가 없거나, 아직 분석 데이터가 연결되지 않았습니다."
+            />
+          )}
         </section>
       </div>
     </div>

@@ -1,11 +1,11 @@
 import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
 
-import type { ProgressDatum } from "@/mocks/data-visualization.mock"
 import { chartTooltipContentStyle } from "@/components/charts/chart-tooltip"
 import { EmptyState } from "@/components/sections/empty-state"
+import type { BarChartDatumViewModel } from "@/types/view-model/common/chart"
 
 interface HorizontalBarChartProps {
-  data: ProgressDatum[]
+  data: BarChartDatumViewModel[]
   heightClassName?: string
   barColor?: string
   mutedBarColor?: string

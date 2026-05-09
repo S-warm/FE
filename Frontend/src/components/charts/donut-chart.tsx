@@ -1,12 +1,12 @@
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts"
 
 import { cn } from "@/lib/utils"
-import type { DonutDatum } from "@/mocks/data-visualization.mock"
 import { chartTooltipContentStyle } from "@/components/charts/chart-tooltip"
 import { EmptyState } from "@/components/sections/empty-state"
+import type { DonutChartDatumViewModel } from "@/types/view-model/common/chart"
 
 interface DonutChartProps {
-  data: DonutDatum[]
+  data: DonutChartDatumViewModel[]
   heightClassName?: string
   emptyTitle?: string
   emptyDescription?: string

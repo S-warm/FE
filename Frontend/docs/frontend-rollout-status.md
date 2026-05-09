@@ -5,9 +5,9 @@
 
 ## 이번 단계의 목표
 
-- 앞에서 만든 `types / adapters / services / query / states` 계층이 코드베이스에 실제로 어느 정도 반영됐는지 점검한다.
-- 아직 `mock` 직접 참조가 남아 있는 페이지와 공용 컴포넌트를 식별한다.
-- 다음 실장 순서를 다시 고정해서, 이후 작업이 분석이 아니라 실제 교체 중심으로 진행되게 만든다.
+- 백엔드 통합 직전 상태로 마감하고, 실제 API 연결 시 프론트 수정 범위를 최소화한다.
+- 공용 컴포넌트와 store의 잔여 `mock` 직접 참조를 정리한다.
+- 실제 백엔드 연결 시 손댈 범위를 문서로 고정한다.
 
 ## 수정 대상 파일
 
@@ -40,9 +40,9 @@
    - `ErrorState`
    - `InlineError`
 
-### 아직 실제 교체가 안 된 영역
+### 실제 교체 완료 영역
 
-아래 파일은 여전히 `mock`를 직접 참조한다.
+아래 파일은 새 구조로 교체 완료됐다.
 
 #### simulation / layout
 
@@ -70,58 +70,38 @@
 ### 현재 구조 해석
 
 - 기반 계층은 준비 완료
-- 페이지 연결은 아직 미완료
-- 따라서 현재 상태는 “설계/골격 완료, 실제 소비처 교체 전” 단계다
+- 페이지 연결도 완료
+- 공용 컴포넌트와 store의 잔여 직접 참조도 정리 완료
+- 따라서 현재 상태는 “백엔드 통합 직전 점검 완료” 단계다
 
 ## 리스크
 
-### 1. 서비스와 쿼리는 준비됐지만 페이지가 아직 사용하지 않음
+### 1. 실제 백엔드 연결 전까지 HTTP 구현체는 미완성
 
-- `useSimulationListQuery`
-- `useSimulationHeaderQuery`
-- `useCreateSimulationMutation`
-- `useResultOverviewQuery`
-- `useResultIssuesQuery`
-- `useResultAiFixQuery`
-- `useResultHeatmapQuery`
-- `useResultWcagQuery`
+- `src/services/**/*.http.service.ts`
 
-위 hook들은 이미 생성됐지만, 현재 페이지에서 아직 소비하지 않는다.
+현재는 mock service가 동작하고, 실제 fetch 구현체는 이후 백엔드 완성 시 연결한다.
 
-### 2. result page selection이 여전히 mock page 목록에 묶여 있음
+### 2. WCAG / Heatmap은 adapter 정책 확인이 필요
 
-- `src/lib/result-page-param.ts`
+- WCAG는 simulation-level raw를 page-level context로 복제
+- Heatmap은 집계 point 기반 렌더링
 
-이 파일을 먼저 교체하지 않으면 result pages 전체가 새 구조로 넘어가기 어렵다.
+실제 API 응답이 확정되면 adapter에서 한 번 더 맞춰볼 필요가 있다.
 
-### 3. 공용 차트 컴포넌트가 mock 타입을 import 중
+### 3. process 페이지는 status polling API 연결이 남아 있음
 
-페이지만 바꿔도 chart/section 공용 컴포넌트가 mock 타입에 묶여 있어서 최종 분리가 완성되지 않는다.
-
-### 4. heatmap은 마지막 교체가 맞음
-
-기존 FE는 세션 로그 기반이고, 새 service/adapters는 집계 포인트 기반이라 구조 차이가 가장 크다.
+- 생성 응답 id 기반 진입은 완료
+- 이후 polling/query 연결은 status API가 준비되면 추가
 
 ## 다음 단계
 
-실제 실장 순서는 아래처럼 진행한다.
+실제 백엔드 연결 단계에서는 아래 순서로 보면 된다.
 
-1. `simulation list / sidebar` 교체
-   - `AuthLayout.tsx`
-   - `useSimulationListQuery`
-2. `simulation create` 교체
-   - `SimulationSetupPage.tsx`
-   - `useCreateSimulationMutation`
-3. `result header / page param` 교체
-   - `ResultLayoutPage.tsx`
-   - `result-page-param.ts`
-   - `useSimulationHeaderQuery`
-4. `overview` 교체
-5. `issues` 교체
-6. `ai-fix` 교체
-7. `wcag` 교체
-8. `heatmap` 교체
-9. 공용 chart/section 타입 정리
+1. `types/api` 최종 DTO 반영
+2. `http service` 구현
+3. `adapter` 세부 정책 조정
+4. `process status` polling 연결
 
 ## 단계별 완료 판정
 
@@ -137,18 +117,11 @@
 - Step 8. React Query 골격 연결
 - Step 9. 공통 상태 컴포넌트 추가
 
-### 미완료
+### 추가 완료
 
-- Step 10. 실제 페이지 단위 교체
-
-즉 Step 10은 아직 “진행 시작 전 점검 완료” 상태이며,
-다음부터는 문서/설계가 아니라 아래 순서로 바로 교체 작업에 들어간다.
-
-1. sidebar
-2. create
-3. result layout/header
-4. overview
-5. issues
-6. ai-fix
-7. wcag
-8. heatmap
+- Step 10. 실제 페이지 단위 교체 준비
+- Step 11. 공통 진입점 교체
+- Step 12. 생성 플로우 실연결
+- Step 13. 결과 탭 1차 교체
+- Step 14. 결과 탭 2차 교체
+- Step 15. 공용 컴포넌트 및 최종 점검

@@ -1,11 +1,11 @@
 import { useMemo, useState } from "react"
 import { useNavigate } from "react-router-dom"
 
-import { ChevronDown } from "lucide-react"
+import { ChevronDown, Loader2 } from "lucide-react"
 
 import { DonutChart } from "@/components/charts"
 import { RangeSlider, SelectionSelect } from "@/components/forms"
-import { InlineError } from "@/components/states"
+import { ErrorState, InlineError } from "@/components/states"
 import { Card, CardContent } from "@/components/ui/card"
 import { BrandingHeader } from "@/components/sections/auth/branding-header"
 import {
@@ -18,6 +18,9 @@ import { TextArea, TextField } from "@/components/atoms"
 import { AuthLayout } from "@/layouts/AuthLayout"
 import routes from "@/constants/routes"
 import { personaDeviceOptions, type PersonaDevice } from "@/constants/persona-device"
+import { mapSimulationFormToCreateRequest } from "@/adapters"
+import { useCreateSimulationMutation } from "@/queries"
+import { ApiServiceError } from "@/services"
 import { useSimulationDraftStore } from "@/store/simulation-draft.store"
 import { cn } from "@/lib/utils"
 import { motion } from "@/lib/motion"
@@ -71,7 +74,9 @@ function SimulationSetupPage() {
   const [ageGroupCounts, setAgeGroupCounts] = useState<AgeGroupCounts>(DEFAULT_AGE_GROUP_COUNTS)
   const [visionLoss, setVisionLoss] = useState(0)
   const [attentionLevel, setAttentionLevel] = useState(50)
+  const [submitError, setSubmitError] = useState<string | null>(null)
   const navigate = useNavigate()
+  const createSimulationMutation = useCreateSimulationMutation()
 
   const resetValidationErrors = () => {
     setErrors({})
@@ -130,7 +135,44 @@ function SimulationSetupPage() {
     Boolean(trimmedProjectTitle) &&
     Boolean(trimmedTargetUrl) &&
     Boolean(trimmedEndUrl) &&
-    Boolean(trimmedSuccessCondition)
+    Boolean(trimmedSuccessCondition) &&
+    !createSimulationMutation.isPending
+
+  const handleStartSimulation = async () => {
+    resetValidationErrors()
+    setSubmitError(null)
+
+    const nextErrors = validateSimulationSetupForm(formValues)
+    setErrors(nextErrors)
+
+    if (hasSimulationSetupValidationErrors(nextErrors)) return
+
+    const startedAtValue = startedAt || new Date().toISOString()
+    if (!startedAt) {
+      setStartedAt(startedAtValue)
+    }
+
+    try {
+      const requestBody = mapSimulationFormToCreateRequest(formValues)
+      const response = await createSimulationMutation.mutateAsync(requestBody)
+
+      navigate(routes.simulationProcess, {
+        state: {
+          simulationId: response.id,
+          title: requestBody.title,
+          createdAt: response.createdAt ?? startedAtValue,
+          status: response.status,
+        },
+      })
+    } catch (error) {
+      if (error instanceof ApiServiceError) {
+        setSubmitError(error.message)
+        return
+      }
+
+      setSubmitError("시뮬레이션 생성 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.")
+    }
+  }
 
   return (
     <AuthLayout
@@ -144,6 +186,16 @@ function SimulationSetupPage() {
         )}
       >
         <div className="grid gap-4">
+          {submitError ? (
+            <ErrorState
+              title="시뮬레이션을 시작하지 못했습니다"
+              description={submitError}
+              actionLabel="다시 시도"
+              onAction={() => setSubmitError(null)}
+              className="w-full max-w-[760px]"
+            />
+          ) : null}
+
           <section className="grid w-full max-w-[760px] gap-4">
             <div className="grid gap-3">
               <SetupSectionTitle title="프로젝트 제목" description="결과 리포트에 표시될 이름" />
@@ -478,24 +530,24 @@ function SimulationSetupPage() {
                 type="button"
                 disabled={!canStartSimulation}
                 className={cn(
-                  "flex h-[72px] w-full items-center justify-center px-4 text-subtitle-18-semibold transition-colors",
+                  "flex h-[72px] w-full items-center justify-center gap-2 px-4 text-subtitle-18-semibold transition-colors",
                   "rounded-b-2xl",
                   canStartSimulation
                     ? "bg-brand-subtle text-text-link hover:bg-brand-subtle-hover"
                     : "cursor-not-allowed bg-surface-muted text-text-muted"
                 )}
                 onClick={() => {
-                  resetValidationErrors()
-                  const nextErrors = validateSimulationSetupForm(formValues)
-                  setErrors(nextErrors)
-
-                  if (hasSimulationSetupValidationErrors(nextErrors)) return
-
-                  if (!startedAt) setStartedAt(new Date().toISOString())
-                  navigate(routes.simulationProcess)
+                  void handleStartSimulation()
                 }}
               >
-                시뮬레이션 시작
+                {createSimulationMutation.isPending ? (
+                  <>
+                    <Loader2 className="size-5 animate-spin" />
+                    시뮬레이션 생성 중
+                  </>
+                ) : (
+                  "시뮬레이션 시작"
+                )}
               </button>
             </Card>
           </div>

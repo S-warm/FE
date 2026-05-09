@@ -1,10 +1,9 @@
+import type { ResultUxIssueLinkViewModel } from "@/types/view-model/common/result-issue"
+import type { ResultAgeFilter } from "@/types/view-model/common/result-meta"
 import type { ResultPageSummaryViewModel } from "@/types/view-model/common/result-page"
 import type { SeverityTokenViewModel } from "@/types/view-model/common/severity"
 
-export type ResultAgeFilter = "all" | "10대" | "20대" | "30대" | "40대" | "50대" | "60대" | "70대"
-
-export interface ResultHeatmapPointViewModel {
-  issueId: string
+export interface ResultHeatmapPointViewModel extends ResultUxIssueLinkViewModel {
   x: number
   y: number
   count: number

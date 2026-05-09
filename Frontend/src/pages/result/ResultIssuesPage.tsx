@@ -1,6 +1,5 @@
 import { useMemo, useRef, useState } from "react"
 import { useLocation, useNavigate, useParams } from "react-router-dom"
-
 import { AlertTriangle, ArrowRight, Sparkles } from "lucide-react"
 
 import { CommonButton, IssueBadge } from "@/components/atoms"
@@ -8,18 +7,22 @@ import { DonutChart } from "@/components/charts"
 import { ChipTag } from "@/components/forms"
 import { EmptyState } from "@/components/sections"
 import { ResultPageSidePanel } from "@/components/sections/result/page-side-panel"
+import { ErrorState, ResultPageSkeleton } from "@/components/states"
 import { Card, CardContent } from "@/components/ui/card"
-import { cn } from "@/lib/utils"
-import type { IssueCategory, ResultIssue, ResultIssuePage } from "@/mocks/result-issues.mock"
-import { resultIssuePages } from "@/mocks/result-issues.mock"
-import { resultPagesMock } from "@/mocks/result-pages.mock"
 import { useResultPageParam } from "@/lib/result-page-param"
 import { useResultPageSidePanelState } from "@/lib/result-page-side-panel-state"
 import { motion } from "@/lib/motion"
+import { cn } from "@/lib/utils"
+import { useResultIssuesQuery } from "@/queries"
+import type {
+  ResultIssuesPageViewModel,
+  ResultIssueViewModel,
+} from "@/types/view-model/result/result-issues"
 
-const filterCategories: IssueCategory[] = ["접근성", "사용성", "시각요소", "기타"]
+const filterCategories = ["접근성", "사용성", "시각요소", "기타"] as const
+type IssueCategoryFilter = (typeof filterCategories)[number]
 
-const categoryColorMap: Record<IssueCategory, string> = {
+const categoryColorMap: Record<IssueCategoryFilter, string> = {
   접근성: "var(--color-category-accessibility)",
   시각요소: "var(--color-category-visual)",
   사용성: "var(--color-category-usability)",
@@ -30,11 +33,19 @@ function IssueCard({
   issue,
   onNavigateAiFix,
 }: {
-  issue: ResultIssue
+  issue: ResultIssueViewModel
   onNavigateAiFix: () => void
 }) {
+  const badgeVariant =
+    issue.severity.tone === "neutral" ? "info" : issue.severity.tone
+
   return (
-    <Card className={cn("rounded-2xl border border-border-strong bg-card shadow-none", motion.card)}>
+    <Card
+      className={cn(
+        "rounded-2xl border border-border-strong bg-card shadow-none",
+        motion.card,
+      )}
+    >
       <CardContent className="grid gap-4 px-5 py-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-start">
         <div className="grid gap-2">
           <div className="flex items-start gap-2">
@@ -44,7 +55,7 @@ function IssueCard({
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
                 <p className="text-body-14-medium text-text-body">{issue.title}</p>
-                <IssueBadge variant={issue.severity} size="sm">
+                <IssueBadge variant={badgeVariant} size="sm">
                   {issue.category}
                 </IssueBadge>
                 {issue.tags.map((tag) => (
@@ -57,7 +68,7 @@ function IssueCard({
                 ))}
               </div>
               <p className="mt-1 text-caption-12-regular text-text-subtle">
-                {issue.affectedUsers.count}명 사용자 영향 ({issue.affectedUsers.percent}%)
+                {issue.affectedUsersCount}명 사용자 영향 ({issue.affectedUsersPercent}%)
               </p>
             </div>
           </div>
@@ -73,9 +84,11 @@ function IssueCard({
         </div>
 
         <div className="flex flex-row flex-wrap items-center justify-end gap-2 md:self-center md:flex-col md:items-center md:justify-center">
-          <span className="inline-flex h-6 items-center rounded-full bg-brand-accent px-3 text-caption-12-medium text-white">
-            {issue.expectedBenefit.label} {issue.expectedBenefit.delta}
-          </span>
+          {issue.expectedBenefit ? (
+            <span className="inline-flex h-6 items-center rounded-full bg-brand-accent px-3 text-caption-12-medium text-white">
+              {issue.expectedBenefit.label} {issue.expectedBenefit.delta}
+            </span>
+          ) : null}
           <CommonButton
             size="sm"
             variant="secondary"
@@ -91,23 +104,27 @@ function IssueCard({
   )
 }
 
-function buildCategoryDonut(issues: ResultIssue[]) {
+function buildCategoryDonut(issues: ResultIssueViewModel[]) {
   const total = issues.length || 1
-  const counts = filterCategories.reduce<Record<IssueCategory, number>>(
+  const counts = filterCategories.reduce<Record<IssueCategoryFilter, number>>(
     (acc, category) => {
       acc[category] = 0
       return acc
     },
-    {} as Record<IssueCategory, number>
+    {} as Record<IssueCategoryFilter, number>,
   )
 
   for (const issue of issues) {
-    counts[issue.category] = (counts[issue.category] ?? 0) + 1
+    const category = issue.category as IssueCategoryFilter
+    if (category in counts) {
+      counts[category] = (counts[category] ?? 0) + 1
+    }
   }
 
   return filterCategories.map((category) => {
     const count = counts[category] ?? 0
     const percent = Math.round((count / total) * 100)
+
     return {
       name: category,
       count,
@@ -122,37 +139,79 @@ function ResultIssuesPage() {
   const { simulationId } = useParams()
   const navigate = useNavigate()
   const location = useLocation()
-  const { selectedPageId, setSelectedPageId } = useResultPageParam()
-  const { expandedPageIds, expandPage, togglePage } = useResultPageSidePanelState(selectedPageId)
-  const [activeFilters, setActiveFilters] = useState<IssueCategory[]>(["접근성", "사용성", "시각요소"])
-  const issuesSectionRef = useRef<HTMLDivElement>(null)
   const resolvedId = simulationId ?? "unknown"
   const search = location.search
+  const {
+    data,
+    isLoading,
+    isError,
+    refetch,
+  } = useResultIssuesQuery(resolvedId)
+  const pages = useMemo(() => data?.pages ?? [], [data])
+  const pageIds = pages.map((page) => page.pageId)
+  const { selectedPageId, setSelectedPageId } = useResultPageParam({
+    availablePageIds: pageIds,
+    defaultPageId: pageIds[0],
+  })
+  const { expandedPageIds, expandPage, togglePage } = useResultPageSidePanelState(
+    selectedPageId,
+  )
+  const [activeFilters, setActiveFilters] = useState<IssueCategoryFilter[]>([
+    "접근성",
+    "사용성",
+    "시각요소",
+  ])
+  const issuesSectionRef = useRef<HTMLDivElement>(null)
 
-  const selectedPage: ResultIssuePage | null =
-    resultIssuePages.find((page) => page.id === selectedPageId) ?? resultIssuePages[0] ?? null
+  const selectedPage: ResultIssuesPageViewModel | null =
+    pages.find((page) => page.pageId === selectedPageId) ?? pages[0] ?? null
 
   const sidePages = useMemo(
     () =>
-      resultPagesMock.map((page) => {
-        const issueCount = resultIssuePages.find((item) => item.id === page.id)?.issues.length ?? 0
-        return {
-          id: page.id,
-          name: page.name,
-          screenshotUrl: page.screenshotUrl,
-          metaText: `${issueCount}건 이슈`,
-        }
-      }),
-    []
+      pages.map((page) => ({
+        id: page.pageId,
+        name: page.pageName,
+        screenshotUrl: page.screenshotUrl ?? "",
+        metaText: page.metaText,
+      })),
+    [pages],
   )
 
   const filteredIssues = useMemo(() => {
     if (!selectedPage) return []
     if (!activeFilters.length) return selectedPage.issues
-    return selectedPage.issues.filter((issue) => activeFilters.includes(issue.category))
+    return selectedPage.issues.filter((issue) =>
+      activeFilters.includes(issue.category as IssueCategoryFilter),
+    )
   }, [activeFilters, selectedPage])
 
   const donut = useMemo(() => buildCategoryDonut(filteredIssues), [filteredIssues])
+
+  if (isLoading) {
+    return <ResultPageSkeleton />
+  }
+
+  if (isError) {
+    return (
+      <ErrorState
+        title="이슈 데이터를 불러오지 못했습니다"
+        description="잠시 후 다시 시도해주세요."
+        actionLabel="다시 시도"
+        onAction={() => {
+          void refetch()
+        }}
+      />
+    )
+  }
+
+  if (!pages.length) {
+    return (
+      <EmptyState
+        title="이슈 데이터가 없습니다"
+        description="선택한 시뮬레이션에 연결된 주요 이슈 데이터가 아직 없습니다."
+      />
+    )
+  }
 
   return (
     <div className="grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
@@ -175,7 +234,12 @@ function ResultIssuesPage() {
           />
         ) : null}
 
-        <Card className={cn("rounded-2xl border border-border-strong bg-card shadow-none", motion.card)}>
+        <Card
+          className={cn(
+            "rounded-2xl border border-border-strong bg-card shadow-none",
+            motion.card,
+          )}
+        >
           <CardContent className="grid gap-4 px-6 py-5">
             <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
               <div className="grid gap-2">
@@ -191,7 +255,9 @@ function ResultIssuesPage() {
                           className="h-7 px-2.5 text-[12px]"
                           onClick={() => {
                             setActiveFilters((prev) =>
-                              prev.includes(category) ? prev.filter((item) => item !== category) : [...prev, category]
+                              prev.includes(category)
+                                ? prev.filter((item) => item !== category)
+                                : [...prev, category],
                             )
                           }}
                         >
@@ -218,8 +284,11 @@ function ResultIssuesPage() {
                   variant="secondary"
                   className="rounded-xl border border-border-soft-2 bg-surface-muted text-text-secondary hover:bg-surface-muted-hover"
                   onClick={() => {
-                    setActiveFilters(filterCategories)
-                    issuesSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+                    setActiveFilters([...filterCategories])
+                    issuesSectionRef.current?.scrollIntoView({
+                      behavior: "smooth",
+                      block: "start",
+                    })
                   }}
                 >
                   이슈 전체보기
@@ -241,14 +310,19 @@ function ResultIssuesPage() {
                 />
                 <div className="grid gap-2">
                   {donut.map((item) => (
-                    <div key={item.name} className="flex items-center justify-between gap-3">
+                    <div
+                      key={item.name}
+                      className="flex items-center justify-between gap-3"
+                    >
                       <div className="flex items-center gap-2">
                         <span
                           className="size-2.5 rounded-full"
                           style={{ backgroundColor: item.color }}
                           aria-hidden="true"
                         />
-                        <p className="text-caption-12-regular text-text-muted">{item.name}</p>
+                        <p className="text-caption-12-regular text-text-muted">
+                          {item.name}
+                        </p>
                       </div>
                       <p className="text-caption-12-medium text-text-secondary">
                         {item.count}건 / {item.percent}%
@@ -267,7 +341,7 @@ function ResultIssuesPage() {
             <div className="grid gap-3">
               {filteredIssues.map((issue) => (
                 <IssueCard
-                  key={issue.id}
+                  key={issue.issueId}
                   issue={issue}
                   onNavigateAiFix={() => navigate(`/result/${resolvedId}/ai${search}`)}
                 />

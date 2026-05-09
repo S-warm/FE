@@ -1,10 +1,10 @@
 import { DonutChart } from "@/components/charts"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import type { DonutDatum } from "@/mocks/data-visualization.mock"
+import type { DonutChartDatumViewModel } from "@/types/view-model/common/chart"
 
 interface SummaryPanelProps {
   score: number
-  distribution: DonutDatum[]
+  distribution: DonutChartDatumViewModel[]
 }
 
 function SummaryPanel({ score, distribution }: SummaryPanelProps) {

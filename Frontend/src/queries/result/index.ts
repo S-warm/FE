@@ -1,0 +1,5 @@
+export { useResultAiFixQuery } from "@/queries/result/use-result-ai-fix-query"
+export { useResultHeatmapQuery } from "@/queries/result/use-result-heatmap-query"
+export { useResultIssuesQuery } from "@/queries/result/use-result-issues-query"
+export { useResultOverviewQuery } from "@/queries/result/use-result-overview-query"
+export { useResultWcagQuery } from "@/queries/result/use-result-wcag-query"

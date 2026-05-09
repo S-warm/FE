@@ -14,3 +14,8 @@ export interface LineChartDatumViewModel {
   label: string
   value: number
 }
+
+export interface HeatmapCellViewModel {
+  id: string
+  value: number
+}

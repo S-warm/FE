@@ -1,8 +1,8 @@
 import { cn } from "@/lib/utils"
-import type { HeatmapCell } from "@/mocks/data-visualization.mock"
+import type { HeatmapCellViewModel } from "@/types/view-model/common/chart"
 
 interface HeatmapGridProps {
-  data: HeatmapCell[]
+  data: HeatmapCellViewModel[]
   columns?: number
 }
 

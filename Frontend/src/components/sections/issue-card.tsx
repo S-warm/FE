@@ -1,9 +1,16 @@
 import { CommonButton, IssueBadge } from "@/components/atoms"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import type { IssueItem } from "@/mocks/data-visualization.mock"
+
+interface IssueCardViewModel {
+  id: string
+  severity: "error" | "warning" | "info"
+  title: string
+  description: string
+  suggestion: string
+}
 
 interface IssueCardProps {
-  issue: IssueItem
+  issue: IssueCardViewModel
 }
 
 function IssueCard({ issue }: IssueCardProps) {

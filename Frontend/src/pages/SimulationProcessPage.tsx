@@ -1,48 +1,65 @@
 import { useEffect, useMemo, useState } from "react"
-import { useNavigate } from "react-router-dom"
+import { useLocation, useNavigate } from "react-router-dom"
 
 import { CheckCircle2, Loader2 } from "lucide-react"
 
+import { CommonButton } from "@/components/atoms"
 import { BrandingHeader } from "@/components/sections/auth/branding-header"
+import { EmptyState } from "@/components/sections"
 import { Card, CardContent } from "@/components/ui/card"
 import { AuthLayout } from "@/layouts/AuthLayout"
-import { cn } from "@/lib/utils"
-import { defaultSimulationId } from "@/mocks/simulation.mock"
 import { buildResultOverviewPath } from "@/constants/routes"
 import { motion } from "@/lib/motion"
-
-const DUMMY_PROJECT = { title: "A - Mall 로그인 플로우", date: "2026-01-01" }
+import { cn } from "@/lib/utils"
+import { useSimulationDraftStore } from "@/store/simulation-draft.store"
 
 const steps = ["페이지 수집", "페르소나 생성", "시뮬레이션 실행", "결과 분석"] as const
 const REDIRECT_DELAY_MS = 1200
+
+interface SimulationProcessLocationState {
+  simulationId: string
+  title: string
+  createdAt: string
+  status?: string
+}
 
 function SimulationProcessPage() {
   const [tick, setTick] = useState(0)
   const maxTick = steps.length * 3 - 1
   const navigate = useNavigate()
+  const location = useLocation()
+  const draftProjectTitle = useSimulationDraftStore((state) => state.projectTitle)
+  const startedAt = useSimulationDraftStore((state) => state.startedAt)
+  const locationState = (location.state ?? null) as SimulationProcessLocationState | null
+  const simulationId = locationState?.simulationId ?? ""
+  const simulationTitle = locationState?.title ?? draftProjectTitle.trim()
+  const simulationCreatedAt = locationState?.createdAt ?? startedAt ?? ""
+  const hasProcessContext = Boolean(simulationId && simulationTitle && simulationCreatedAt)
 
   const activeStepIndex = useMemo(() => Math.min(steps.length - 1, Math.floor(tick / 3)), [tick])
   const progress = useMemo(() => Math.min(100, Math.round(((tick + 1) / (steps.length * 3)) * 100)), [tick])
 
   useEffect(() => {
+    if (!hasProcessContext) return
     if (tick >= maxTick) return
 
     const handle = window.setInterval(() => {
       setTick((prev) => Math.min(maxTick, prev + 1))
     }, 900)
     return () => window.clearInterval(handle)
-  }, [maxTick, tick])
+  }, [hasProcessContext, maxTick, tick])
 
   useEffect(() => {
+    if (!hasProcessContext) return
     if (tick < maxTick) {
       return
     }
 
     const handle = window.setTimeout(() => {
-      navigate(buildResultOverviewPath(defaultSimulationId))
+      navigate(buildResultOverviewPath(simulationId))
     }, REDIRECT_DELAY_MS)
     return () => window.clearTimeout(handle)
-  }, [maxTick, navigate, tick])
+  }, [hasProcessContext, maxTick, navigate, simulationId, tick])
 
   return (
     <AuthLayout
@@ -50,16 +67,26 @@ function SimulationProcessPage() {
       headerLeft={<BrandingHeader compact showTagline={false} align="left" className="origin-left scale-150" />}
     >
       <section className={cn("grid w-full gap-5 pt-2", motion.page)}>
+        {!hasProcessContext ? (
+          <EmptyState
+            title="진행할 시뮬레이션 정보가 없습니다"
+            description="시뮬레이션 생성 후 다시 진입해주세요."
+            actionLabel="생성 화면으로 이동"
+            onAction={() => navigate("/simulation/setup")}
+          />
+        ) : null}
+
+        {hasProcessContext ? (
         <Card className={cn("rounded-2xl border border-border-strong bg-card shadow-none", motion.card)}>
           <CardContent className="grid gap-4 px-6 py-5">
             <div className="grid gap-2 md:grid-cols-[auto_1fr_auto] md:items-center">
               <div className="grid gap-1">
                 <p className="text-caption-12-regular text-muted-foreground">시뮬레이션</p>
-                <p className="text-body-16-medium text-foreground">{DUMMY_PROJECT.title}</p>
+                <p className="text-body-16-medium text-foreground">{simulationTitle}</p>
               </div>
               <div className="grid gap-1">
                 <p className="text-caption-12-regular text-muted-foreground">생성일</p>
-                <p className="text-body-16-regular text-foreground">{DUMMY_PROJECT.date}</p>
+                <p className="text-body-16-regular text-foreground">{simulationCreatedAt}</p>
               </div>
               <div className="flex items-center justify-end gap-2 rounded-xl border border-border-soft-2 bg-surface-hover-2 px-4 py-2">
                 <Loader2 className="size-4 animate-spin text-[var(--color-primary-main)]" />
@@ -120,11 +147,24 @@ function SimulationProcessPage() {
               </div>
 
               <p className="text-caption-12-regular text-text-subtle">
-                결과 화면은 다음 단계에서 연결합니다. (현재는 과정 페이지 임시)
+                현재는 임시 진행 모델을 사용 중이며, 이후 status API/polling 연결 포인트로 교체할 예정입니다.
               </p>
+
+              <div className="flex justify-end">
+                <CommonButton
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  className="rounded-xl border border-border-soft-2 bg-card text-text-secondary hover:bg-surface-subtle"
+                  onClick={() => navigate(buildResultOverviewPath(simulationId))}
+                >
+                  결과 화면으로 이동
+                </CommonButton>
+              </div>
             </div>
           </CardContent>
         </Card>
+        ) : null}
       </section>
     </AuthLayout>
   )

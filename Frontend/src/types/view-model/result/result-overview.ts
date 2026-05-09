@@ -1,6 +1,5 @@
 import type { ResultPageBaseViewModel } from "@/types/view-model/common/result-page"
-
-export type ResultAgeBand = "10대" | "20대" | "30대" | "40대" | "50대" | "60대" | "70대"
+import type { ResultAgeBand } from "@/types/view-model/common/result-meta"
 
 export interface ResultOverviewMetricViewModel {
   taskSuccessRateLabel: string

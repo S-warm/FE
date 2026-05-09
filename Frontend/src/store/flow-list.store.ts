@@ -1,7 +1,5 @@
 import { create } from "zustand"
 
-import { flowMockItems } from "@/mocks/flow-list.mock"
-
 interface FlowItem {
   id: string
   name: string
@@ -21,6 +19,27 @@ interface FlowListState {
   moveFlowDown: (id: string) => void
 }
 
+const initialFlowItems: FlowItem[] = [
+  {
+    id: "flow-1",
+    name: "A-Mall 로그인 플로우",
+    status: "high",
+    steps: ["홈 진입", "로그인 버튼 클릭", "아이디 입력", "비밀번호 입력", "로그인 완료"],
+  },
+  {
+    id: "flow-2",
+    name: "장바구니 결제 플로우",
+    status: "medium",
+    steps: ["상품 선택", "장바구니 확인", "결제 수단 선택", "결제 완료"],
+  },
+  {
+    id: "flow-3",
+    name: "상품 검색 플로우",
+    status: "low",
+    steps: ["검색창 진입", "키워드 입력", "필터 적용", "상세 페이지 이동"],
+  },
+]
+
 function reorder(flows: FlowItem[], fromIndex: number, toIndex: number) {
   const next = [...flows]
   const [target] = next.splice(fromIndex, 1)
@@ -34,8 +53,8 @@ function reorder(flows: FlowItem[], fromIndex: number, toIndex: number) {
 }
 
 export const useFlowListStore = create<FlowListState>((set) => ({
-  flows: flowMockItems,
-  selectedFlowId: flowMockItems[0]?.id ?? "",
+  flows: initialFlowItems,
+  selectedFlowId: initialFlowItems[0]?.id ?? "",
   searchKeyword: "",
   setSearchKeyword: (value) => set({ searchKeyword: value }),
   selectFlow: (id) => set({ selectedFlowId: id }),

@@ -3,22 +3,33 @@ import { matchPath, useLocation, useNavigate } from "react-router-dom"
 
 import { Menu } from "lucide-react"
 
-import { cn } from "@/lib/utils"
+import { EmptyState } from "@/components/sections"
+import { ErrorState } from "@/components/states"
 import { ProfileMenu } from "@/components/layout/profile-menu"
-import { useAuthStore } from "@/store/auth.store"
 import { buildResultOverviewPath } from "@/constants/routes"
-import { recentSimulations } from "@/mocks/simulation.mock"
-import { formatRelativeTime } from "@/utils/format-relative-time"
+import { useSimulationListQuery } from "@/queries"
+import { useAuthStore } from "@/store/auth.store"
 import { useLayoutStore } from "@/store/layout.store"
+import type { SimulationListItemViewModel } from "@/types/view-model/simulation/simulation-list"
+import { formatRelativeTime } from "@/utils/format-relative-time"
+import { cn } from "@/lib/utils"
 
 function AuthSidebar({
   open,
   activeSimulationId,
+  simulations,
+  isLoading,
+  isError,
+  onRetry,
   onToggle,
   onSelectSimulation,
 }: {
   open: boolean
   activeSimulationId?: string
+  simulations: SimulationListItemViewModel[]
+  isLoading: boolean
+  isError: boolean
+  onRetry: () => void
   onToggle: () => void
   onSelectSimulation: (simulationId: string) => void
 }) {
@@ -32,7 +43,7 @@ function AuthSidebar({
       <div
         className={cn(
           "flex h-16 items-center",
-          open ? "justify-start px-3" : "justify-center px-0"
+          open ? "justify-start px-3" : "justify-center px-0",
         )}
       >
         <button
@@ -48,33 +59,66 @@ function AuthSidebar({
       <div
         className={[
           "flex h-[calc(100%-4rem)] flex-col px-4 pb-6 transition-[opacity,transform] duration-200",
-          open ? "opacity-100 translate-x-0" : "pointer-events-none opacity-0 -translate-x-2",
+          open ? "translate-x-0 opacity-100" : "pointer-events-none -translate-x-2 opacity-0",
         ].join(" ")}
       >
         <div className="min-h-0 flex-1">
           <p className="text-caption-12-regular text-text-muted">최근 프로젝트</p>
           <div className="mt-3 grid gap-3 overflow-y-auto pr-1">
-            {recentSimulations.map((item) => {
-              const isActive = item.id === activeSimulationId
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  className={cn(
-                    "rounded-xl border bg-card px-4 py-3 text-left transition-colors hover:bg-surface-hover-2",
-                    isActive
-                      ? "border-border-focus ring-2 ring-border-focus/40"
-                      : "border-border-soft-3"
-                  )}
-                  onClick={() => onSelectSimulation(item.id)}
-                >
-                  <p className="text-body-14-medium text-foreground">{item.siteName}</p>
-                  <p className="mt-1 text-caption-12-regular text-text-muted">
-                    {formatRelativeTime(item.createdAt)} · {item.createdAt}
-                  </p>
-                </button>
-              )
-            })}
+            {isLoading
+              ? Array.from({ length: 4 }).map((_, index) => (
+                  <div
+                    key={index}
+                    className="h-[72px] animate-pulse rounded-xl border border-border-soft-3 bg-surface-subtle"
+                    aria-hidden="true"
+                  />
+                ))
+              : null}
+
+            {!isLoading && isError ? (
+              <ErrorState
+                title="목록을 불러오지 못했습니다"
+                description="잠시 후 다시 시도해주세요."
+                actionLabel="다시 시도"
+                onAction={onRetry}
+                className="px-4 py-6"
+              />
+            ) : null}
+
+            {!isLoading && !isError && simulations.length === 0 ? (
+              <EmptyState
+                title="최근 프로젝트가 없습니다"
+                description="시뮬레이션을 시작하면 목록이 표시됩니다."
+                className="px-4 py-6"
+              />
+            ) : null}
+
+            {!isLoading && !isError
+              ? simulations.map((item) => {
+                  const isActive = item.simulationId === activeSimulationId
+
+                  return (
+                    <button
+                      key={item.simulationId}
+                      type="button"
+                      className={cn(
+                        "rounded-xl border bg-card px-4 py-3 text-left transition-colors hover:bg-surface-hover-2",
+                        isActive
+                          ? "border-border-focus ring-2 ring-border-focus/40"
+                          : "border-border-soft-3",
+                      )}
+                      onClick={() => onSelectSimulation(item.simulationId)}
+                    >
+                      <p className="text-body-14-medium text-foreground">
+                        {item.siteName ?? item.title}
+                      </p>
+                      <p className="mt-1 text-caption-12-regular text-text-muted">
+                        {formatRelativeTime(item.createdAt)} · {item.createdAt}
+                      </p>
+                    </button>
+                  )
+                })
+              : null}
           </div>
         </div>
       </div>
@@ -97,6 +141,12 @@ function AuthLayout({
   const initials = useAuthStore((state) => state.user?.initials ?? "CN")
   const navigate = useNavigate()
   const location = useLocation()
+  const {
+    data: simulations = [],
+    isLoading: isSimulationListLoading,
+    isError: isSimulationListError,
+    refetch: refetchSimulationList,
+  } = useSimulationListQuery()
   const resultMatch = matchPath("/result/:simulationId/*", location.pathname)
   const overviewMatch = matchPath("/result/:simulationId/overview", location.pathname)
   const activeSimulationId = resultMatch?.params?.simulationId
@@ -107,15 +157,23 @@ function AuthLayout({
       <AuthSidebar
         open={sidebarOpen}
         activeSimulationId={activeSimulationId}
+        simulations={simulations}
+        isLoading={isSimulationListLoading}
+        isError={isSimulationListError}
+        onRetry={() => {
+          void refetchSimulationList()
+        }}
         onToggle={toggleSidebar}
-        onSelectSimulation={(simulationId) => navigate(buildResultOverviewPath(simulationId))}
+        onSelectSimulation={(simulationId) =>
+          navigate(buildResultOverviewPath(simulationId))
+        }
       />
 
       <div
         className={cn(
           "flex min-h-screen flex-col",
           disablePaddingTransition ? "" : "transition-[padding-left] duration-300",
-          sidebarOpen ? "pl-72 sm:pl-80" : "pl-16 sm:pl-[4.5rem]"
+          sidebarOpen ? "pl-72 sm:pl-80" : "pl-16 sm:pl-[4.5rem]",
         )}
       >
         <header className="flex items-start justify-between gap-4 px-6 pb-3 pt-6">
@@ -134,7 +192,12 @@ function AuthLayout({
           )}
         </header>
 
-        <main className={cn("flex flex-1 justify-center px-4 pb-12 sm:px-6", mainClassName ?? "items-center")}>
+        <main
+          className={cn(
+            "flex flex-1 justify-center px-4 pb-12 sm:px-6",
+            mainClassName ?? "items-center",
+          )}
+        >
           <div className="w-full max-w-[1560px] 2xl:max-w-[1760px]">
             {children}
           </div>

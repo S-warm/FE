@@ -1,3 +1,4 @@
+import type { ResultWcagIssueLinkViewModel } from "@/types/view-model/common/result-issue"
 import type { ResultPageSummaryViewModel } from "@/types/view-model/common/result-page"
 import type { SeverityTokenViewModel } from "@/types/view-model/common/severity"
 
@@ -8,8 +9,7 @@ export interface ResultWcagDistributionItemViewModel {
   description: string
 }
 
-export interface ResultWcagIssueViewModel {
-  wcagIssueId: string
+export interface ResultWcagIssueViewModel extends ResultWcagIssueLinkViewModel {
   title: string
   severity: SeverityTokenViewModel
   description: string

@@ -1,3 +1,5 @@
+import type { ResultCountType } from "@/types/view-model/common/result-meta"
+
 export interface ResultPageBaseViewModel {
   simulationId: string
   pageId: string
@@ -9,6 +11,6 @@ export interface ResultPageBaseViewModel {
 
 export interface ResultPageSummaryViewModel extends ResultPageBaseViewModel {
   totalCount?: number
-  totalCountType?: "issues" | "fixes" | "errors" | "wcag-issues"
+  totalCountType?: ResultCountType
   metaText?: string
 }

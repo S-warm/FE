@@ -1,18 +1,29 @@
 import type { CSSProperties, ReactNode } from "react"
 import { NavLink, Outlet, useLocation, useParams } from "react-router-dom"
 
-import { AlertTriangle, Download, LayoutDashboard, Map, Share2, ShieldCheck, Sparkles } from "lucide-react"
+import {
+  AlertTriangle,
+  Download,
+  LayoutDashboard,
+  Map,
+  Share2,
+  ShieldCheck,
+  Sparkles,
+} from "lucide-react"
 
 import { CommonButton } from "@/components/atoms"
-import { Card, CardContent } from "@/components/ui/card"
 import { BrandingHeader } from "@/components/sections/auth/branding-header"
+import { EmptyState } from "@/components/sections"
+import { ErrorState, ResultPageSkeleton } from "@/components/states"
+import { Card, CardContent } from "@/components/ui/card"
 import { AuthLayout } from "@/layouts/AuthLayout"
-import { cn } from "@/lib/utils"
 import { motion } from "@/lib/motion"
-import { recentSimulations } from "@/mocks/simulation.mock"
+import { cn } from "@/lib/utils"
+import { useSimulationHeaderQuery } from "@/queries"
 import { formatRelativeTime } from "@/utils/format-relative-time"
 
-const RESULT_TAB_HOVER_BG = "color-mix(in srgb, var(--brand-accent) 28%, transparent)"
+const RESULT_TAB_HOVER_BG =
+  "color-mix(in srgb, var(--brand-accent) 28%, transparent)"
 
 const tabs = [
   {
@@ -47,7 +58,13 @@ const tabs = [
   },
 ] as const
 
-function MetaRow({ label, children }: { label: string; children: ReactNode }) {
+function MetaRow({
+  label,
+  children,
+}: {
+  label: string
+  children: ReactNode
+}) {
   return (
     <div className="grid grid-cols-[84px_minmax(0,1fr)] items-center gap-3">
       <p className="text-caption-12-regular text-text-subtle">{label}</p>
@@ -56,66 +73,128 @@ function MetaRow({ label, children }: { label: string; children: ReactNode }) {
   )
 }
 
+function ResultHeaderCard({
+  title,
+  createdAt,
+}: {
+  title: string
+  createdAt: string
+}) {
+  return (
+    <Card
+      className={cn(
+        "rounded-2xl border border-border-strong bg-card shadow-none",
+        motion.card,
+      )}
+    >
+      <CardContent className="grid gap-4 px-6 py-5">
+        <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
+          <div className="grid gap-2">
+            <MetaRow label="시뮬레이션">
+              <div className="flex min-w-0 items-center gap-2 rounded-xl bg-surface-subtle px-4 py-2">
+                <p className="truncate text-body-16-medium text-foreground">
+                  {title}
+                </p>
+              </div>
+            </MetaRow>
+            <MetaRow label="생성일">
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="text-body-16-medium text-text-secondary">
+                  {formatRelativeTime(createdAt)}
+                </p>
+                <span className="h-4 w-px bg-border-soft" aria-hidden="true" />
+                <p className="text-body-16-regular text-text-muted">{createdAt}</p>
+              </div>
+            </MetaRow>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <CommonButton
+              size="sm"
+              variant="secondary"
+              className="group rounded-xl border border-border-soft bg-card/60 text-text-muted transition-colors hover:border-border-soft-2 hover:bg-surface-subtle hover:text-text-secondary"
+            >
+              <Download className="size-4 transition-transform group-hover:translate-x-0.5" />
+              PDF 다운로드
+            </CommonButton>
+            <CommonButton
+              size="sm"
+              variant="secondary"
+              className="group rounded-xl border border-border-soft bg-card/60 text-text-muted transition-colors hover:border-border-soft-2 hover:bg-surface-subtle hover:text-text-secondary"
+            >
+              <Share2 className="size-4 transition-transform group-hover:translate-x-0.5" />
+              공유하기
+            </CommonButton>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
 function ResultLayoutPage() {
   const { simulationId } = useParams()
-  const simulation = recentSimulations.find((item) => item.id === simulationId) ?? recentSimulations[0]
-  const resolvedId = simulation?.id ?? simulationId ?? "unknown"
   const location = useLocation()
   const search = location.search
+  const resolvedId = simulationId ?? "unknown"
+  const {
+    data: simulationHeader,
+    isLoading,
+    isError,
+    refetch,
+  } = useSimulationHeaderQuery(resolvedId)
 
   return (
     <AuthLayout
       mainClassName="items-start justify-start pb-0"
-      headerLeft={<BrandingHeader compact showTagline={false} align="left" className="origin-left scale-150" />}
+      headerLeft={
+        <BrandingHeader
+          compact
+          showTagline={false}
+          align="left"
+          className="origin-left scale-150"
+        />
+      }
     >
       <section className={cn("grid w-full gap-4 pt-2", motion.page)}>
-        <Card className={cn("rounded-2xl border border-border-strong bg-card shadow-none", motion.card)}>
-          <CardContent className="grid gap-4 px-6 py-5">
-            <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
-              <div className="grid gap-2">
-                <MetaRow label="시뮬레이션">
-                  <div className="flex min-w-0 items-center gap-2 rounded-xl bg-surface-subtle px-4 py-2">
-                    <p className="truncate text-body-16-medium text-foreground">{simulation?.title ?? "-"}</p>
-                  </div>
-                </MetaRow>
-                <MetaRow label="생성일">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="text-body-16-medium text-text-secondary">
-                      {formatRelativeTime(simulation?.createdAt ?? "-")}
-                    </p>
-                    <span className="h-4 w-px bg-border-soft" aria-hidden="true" />
-                    <p className="text-body-16-regular text-text-muted">{simulation?.createdAt ?? "-"}</p>
-                  </div>
-                </MetaRow>
-              </div>
+        {isLoading ? <ResultPageSkeleton className="lg:grid-cols-1" /> : null}
 
-              <div className="flex flex-wrap items-center justify-end gap-2">
-                <CommonButton
-                  size="sm"
-                  variant="secondary"
-                  className="group rounded-xl border border-border-soft bg-card/60 text-text-muted transition-colors hover:border-border-soft-2 hover:bg-surface-subtle hover:text-text-secondary"
-                >
-                  <Download className="size-4 transition-transform group-hover:translate-x-0.5" />
-                  PDF 다운로드
-                </CommonButton>
-                <CommonButton
-                  size="sm"
-                  variant="secondary"
-                  className="group rounded-xl border border-border-soft bg-card/60 text-text-muted transition-colors hover:border-border-soft-2 hover:bg-surface-subtle hover:text-text-secondary"
-                >
-                  <Share2 className="size-4 transition-transform group-hover:translate-x-0.5" />
-                  공유하기
-                </CommonButton>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        {!isLoading && isError ? (
+          <ErrorState
+            title="결과 헤더를 불러오지 못했습니다"
+            description="시뮬레이션 정보를 다시 확인하거나 잠시 후 재시도해주세요."
+            actionLabel="다시 시도"
+            onAction={() => {
+              void refetch()
+            }}
+          />
+        ) : null}
 
-        <Card className={cn("rounded-2xl border border-border-strong bg-card shadow-none", motion.card)}>
+        {!isLoading && !isError && !simulationHeader ? (
+          <EmptyState
+            title="시뮬레이션 정보를 찾을 수 없습니다"
+            description="요청한 결과 정보가 아직 준비되지 않았거나 접근할 수 없습니다."
+          />
+        ) : null}
+
+        {!isLoading && !isError && simulationHeader ? (
+          <ResultHeaderCard
+            title={simulationHeader.title}
+            createdAt={simulationHeader.createdAt}
+          />
+        ) : null}
+
+        <Card
+          className={cn(
+            "rounded-2xl border border-border-strong bg-card shadow-none",
+            motion.card,
+          )}
+        >
           <CardContent className="px-6 py-2">
             <nav className="grid grid-cols-2 gap-2 md:grid-cols-5 md:gap-3">
               {tabs.map((tab) => {
                 const Icon = tab.icon
+
                 return (
                   <NavLink
                     key={tab.value}
@@ -130,7 +209,7 @@ function ResultLayoutPage() {
                         "relative flex h-11 items-center justify-center gap-2 rounded-xl border border-transparent px-4 text-body-14-medium transition-colors after:absolute after:inset-x-4 after:bottom-1 after:h-0.5 after:rounded-full after:bg-border-focus after:origin-left after:scale-x-0 after:transition-transform after:duration-200",
                         isActive
                           ? "text-text-strong after:scale-x-100 hover:bg-[var(--result-tab-hover-bg)]"
-                          : "text-text-muted hover:bg-[var(--result-tab-hover-bg)] hover:text-text-strong hover:after:scale-x-100"
+                          : "text-text-muted hover:bg-[var(--result-tab-hover-bg)] hover:text-text-strong hover:after:scale-x-100",
                       )
                     }
                   >

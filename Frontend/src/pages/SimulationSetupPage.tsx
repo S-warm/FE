@@ -1,10 +1,11 @@
 import { useMemo, useState } from "react"
 import { useNavigate } from "react-router-dom"
 
-import { ChevronDown } from "lucide-react"
+import { ChevronDown, Loader2 } from "lucide-react"
 
 import { DonutChart } from "@/components/charts"
 import { RangeSlider, SelectionSelect } from "@/components/forms"
+import { ErrorState, InlineError } from "@/components/states"
 import { Card, CardContent } from "@/components/ui/card"
 import { BrandingHeader } from "@/components/sections/auth/branding-header"
 import {
@@ -17,9 +18,18 @@ import { TextArea, TextField } from "@/components/atoms"
 import { AuthLayout } from "@/layouts/AuthLayout"
 import routes from "@/constants/routes"
 import { personaDeviceOptions, type PersonaDevice } from "@/constants/persona-device"
+import { mapSimulationFormToCreateRequest } from "@/adapters"
+import { useCreateSimulationMutation } from "@/queries"
+import { ApiServiceError } from "@/services"
 import { useSimulationDraftStore } from "@/store/simulation-draft.store"
 import { cn } from "@/lib/utils"
 import { motion } from "@/lib/motion"
+import type { SimulationFormViewModel } from "@/types/view-model/simulation/simulation-form"
+import {
+  hasSimulationSetupValidationErrors,
+  validateSimulationSetupForm,
+  type SimulationSetupValidationErrors,
+} from "@/validation/simulation-setup"
 
 const AGE_GROUP_CONFIG = [
   { key: "teens", label: "10대", color: "var(--color-persona-teen)" },
@@ -58,22 +68,30 @@ function SimulationSetupPage() {
 
   const [digitalLiteracy, setDigitalLiteracy] = useState<DigitalLiteracyLevel>("low")
   const [successCondition, setSuccessCondition] = useState("")
-  const [projectTitleError, setProjectTitleError] = useState("")
-  const [targetUrlError, setTargetUrlError] = useState("")
-  const [endUrlError, setEndUrlError] = useState("")
-  const [successConditionError, setSuccessConditionError] = useState("")
+  const [errors, setErrors] = useState<SimulationSetupValidationErrors>({})
   const [ageRatioOpen, setAgeRatioOpen] = useState(false)
   const [advancedSettingsOpen, setAdvancedSettingsOpen] = useState(true)
   const [ageGroupCounts, setAgeGroupCounts] = useState<AgeGroupCounts>(DEFAULT_AGE_GROUP_COUNTS)
   const [visionLoss, setVisionLoss] = useState(0)
   const [attentionLevel, setAttentionLevel] = useState(50)
+  const [submitError, setSubmitError] = useState<string | null>(null)
   const navigate = useNavigate()
+  const createSimulationMutation = useCreateSimulationMutation()
 
   const resetValidationErrors = () => {
-    setProjectTitleError("")
-    setTargetUrlError("")
-    setEndUrlError("")
-    setSuccessConditionError("")
+    setErrors({})
+  }
+
+  const formValues: SimulationFormViewModel = {
+    projectTitle,
+    targetUrl,
+    endUrl,
+    successCondition,
+    digitalLiteracy,
+    personaDevice,
+    ageCounts: ageGroupCounts,
+    visionImpairment: visionLoss,
+    attentionLevel,
   }
 
   const updateAgeGroupCount = (ageGroupKey: AgeGroupCountKey, rawValue: string) => {
@@ -117,7 +135,44 @@ function SimulationSetupPage() {
     Boolean(trimmedProjectTitle) &&
     Boolean(trimmedTargetUrl) &&
     Boolean(trimmedEndUrl) &&
-    Boolean(trimmedSuccessCondition)
+    Boolean(trimmedSuccessCondition) &&
+    !createSimulationMutation.isPending
+
+  const handleStartSimulation = async () => {
+    resetValidationErrors()
+    setSubmitError(null)
+
+    const nextErrors = validateSimulationSetupForm(formValues)
+    setErrors(nextErrors)
+
+    if (hasSimulationSetupValidationErrors(nextErrors)) return
+
+    const startedAtValue = startedAt || new Date().toISOString()
+    if (!startedAt) {
+      setStartedAt(startedAtValue)
+    }
+
+    try {
+      const requestBody = mapSimulationFormToCreateRequest(formValues)
+      const response = await createSimulationMutation.mutateAsync(requestBody)
+
+      navigate(routes.simulationProcess, {
+        state: {
+          simulationId: response.id,
+          title: requestBody.title,
+          createdAt: response.createdAt ?? startedAtValue,
+          status: response.status,
+        },
+      })
+    } catch (error) {
+      if (error instanceof ApiServiceError) {
+        setSubmitError(error.message)
+        return
+      }
+
+      setSubmitError("시뮬레이션 생성 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.")
+    }
+  }
 
   return (
     <AuthLayout
@@ -131,17 +186,27 @@ function SimulationSetupPage() {
         )}
       >
         <div className="grid gap-4">
+          {submitError ? (
+            <ErrorState
+              title="시뮬레이션을 시작하지 못했습니다"
+              description={submitError}
+              actionLabel="다시 시도"
+              onAction={() => setSubmitError(null)}
+              className="w-full max-w-[760px]"
+            />
+          ) : null}
+
           <section className="grid w-full max-w-[760px] gap-4">
             <div className="grid gap-3">
               <SetupSectionTitle title="프로젝트 제목" description="결과 리포트에 표시될 이름" />
               <TextField
                 placeholder="예: A - Mall 구매 플로우"
                 value={projectTitle}
-                state={projectTitleError ? "error" : "default"}
-                errorMessage={projectTitleError || undefined}
+                state={errors.projectTitle ? "error" : "default"}
+                errorMessage={errors.projectTitle || undefined}
                 onChange={(event) => {
                   setProjectTitle(event.target.value)
-                  setProjectTitleError("")
+                  setErrors((prev) => ({ ...prev, projectTitle: undefined }))
                 }}
                 variant="default"
                 size="lg"
@@ -156,11 +221,11 @@ function SimulationSetupPage() {
               <TextField
                 placeholder="시작 URL 링크를 입력하세요."
                 value={targetUrl}
-                state={targetUrlError ? "error" : "default"}
-                errorMessage={targetUrlError || undefined}
+                state={errors.targetUrl ? "error" : "default"}
+                errorMessage={errors.targetUrl || undefined}
                 onChange={(event) => {
                   setTargetUrl(event.target.value)
-                  setTargetUrlError("")
+                  setErrors((prev) => ({ ...prev, targetUrl: undefined }))
                 }}
                 variant="default"
                 size="lg"
@@ -172,11 +237,11 @@ function SimulationSetupPage() {
               <TextField
                 placeholder="종료 URL 링크를 입력하세요."
                 value={endUrl}
-                state={endUrlError ? "error" : "default"}
-                errorMessage={endUrlError || undefined}
+                state={errors.endUrl ? "error" : "default"}
+                errorMessage={errors.endUrl || undefined}
                 onChange={(event) => {
                   setEndUrl(event.target.value)
-                  setEndUrlError("")
+                  setErrors((prev) => ({ ...prev, endUrl: undefined }))
                 }}
                 variant="default"
                 size="lg"
@@ -190,11 +255,11 @@ function SimulationSetupPage() {
             <TextArea
               placeholder="예: 로그인 완료 후 /mypage 진입"
               value={successCondition}
-              state={successConditionError ? "error" : "default"}
-              errorMessage={successConditionError || undefined}
+              state={errors.successCondition ? "error" : "default"}
+              errorMessage={errors.successCondition || undefined}
               onChange={(event) => {
                 setSuccessCondition(event.target.value)
-                setSuccessConditionError("")
+                setErrors((prev) => ({ ...prev, successCondition: undefined }))
               }}
               variant="default"
               size="md"
@@ -330,6 +395,7 @@ function SimulationSetupPage() {
                 </div>
               </div>
             </div>
+            <InlineError message={errors.ageCounts} />
           </section>
 
           <section className="grid w-full max-w-[760px] gap-3">
@@ -362,10 +428,14 @@ function SimulationSetupPage() {
                     <SetupSectionTitle title="디지털 리터러시" description="디지털 정보를 다루는 힘" />
                     <DigitalLiteracySelector
                       value={digitalLiteracy}
-                      onChange={setDigitalLiteracy}
+                      onChange={(nextValue) => {
+                        setDigitalLiteracy(nextValue)
+                        setErrors((prev) => ({ ...prev, digitalLiteracy: undefined }))
+                      }}
                       className="h-[56px]"
                       showDetailTrigger={false}
                     />
+                    <InlineError message={errors.digitalLiteracy} />
                   </div>
 
                   <div className="grid gap-3 md:grid-cols-2">
@@ -383,8 +453,12 @@ function SimulationSetupPage() {
                           unit="%"
                           color="var(--color-border-soft-3)"
                           tooltipFormatter={(nextValue) => `${nextValue}%`}
-                          onChange={setVisionLoss}
+                          onChange={(nextValue) => {
+                            setVisionLoss(nextValue)
+                            setErrors((prev) => ({ ...prev, visionImpairment: undefined }))
+                          }}
                         />
+                        <InlineError message={errors.visionImpairment} />
                       </CardContent>
                     </Card>
 
@@ -403,8 +477,12 @@ function SimulationSetupPage() {
                           startLabel="낮음"
                           endLabel="높음"
                           tooltipFormatter={(nextValue) => `${nextValue}%`}
-                          onChange={setAttentionLevel}
+                          onChange={(nextValue) => {
+                            setAttentionLevel(nextValue)
+                            setErrors((prev) => ({ ...prev, attentionLevel: undefined }))
+                          }}
                         />
+                        <InlineError message={errors.attentionLevel} />
                       </CardContent>
                     </Card>
                   </div>
@@ -418,8 +496,13 @@ function SimulationSetupPage() {
                       <SelectionSelect
                         value={personaDevice}
                         options={[...personaDeviceOptions]}
-                        onChange={(nextDevice) => setPersonaDevice(nextDevice as PersonaDevice)}
+                        state={errors.personaDevice ? "error" : "default"}
+                        onChange={(nextDevice) => {
+                          setPersonaDevice(nextDevice as PersonaDevice)
+                          setErrors((prev) => ({ ...prev, personaDevice: undefined }))
+                        }}
                       />
+                      <InlineError message={errors.personaDevice} />
                     </CardContent>
                   </Card>
                 </div>
@@ -447,43 +530,24 @@ function SimulationSetupPage() {
                 type="button"
                 disabled={!canStartSimulation}
                 className={cn(
-                  "flex h-[72px] w-full items-center justify-center px-4 text-subtitle-18-semibold transition-colors",
+                  "flex h-[72px] w-full items-center justify-center gap-2 px-4 text-subtitle-18-semibold transition-colors",
                   "rounded-b-2xl",
                   canStartSimulation
                     ? "bg-brand-subtle text-text-link hover:bg-brand-subtle-hover"
                     : "cursor-not-allowed bg-surface-muted text-text-muted"
                 )}
                 onClick={() => {
-                  resetValidationErrors()
-                  let hasError = false
-
-                  if (!trimmedProjectTitle) {
-                    setProjectTitleError("프로젝트 제목을 입력해주세요.")
-                    hasError = true
-                  }
-
-                  if (!trimmedTargetUrl) {
-                    setTargetUrlError("시작 URL을 입력해주세요.")
-                    hasError = true
-                  }
-
-                  if (!trimmedEndUrl) {
-                    setEndUrlError("종료 URL을 입력해주세요.")
-                    hasError = true
-                  }
-
-                  if (!trimmedSuccessCondition) {
-                    setSuccessConditionError("성공 조건을 입력해주세요.")
-                    hasError = true
-                  }
-
-                  if (hasError) return
-
-                  if (!startedAt) setStartedAt(new Date().toISOString())
-                  navigate(routes.simulationProcess)
+                  void handleStartSimulation()
                 }}
               >
-                시뮬레이션 시작
+                {createSimulationMutation.isPending ? (
+                  <>
+                    <Loader2 className="size-5 animate-spin" />
+                    시뮬레이션 생성 중
+                  </>
+                ) : (
+                  "시뮬레이션 시작"
+                )}
               </button>
             </Card>
           </div>

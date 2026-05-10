@@ -3,6 +3,12 @@ import { adaptIssueSeverity } from "@/adapters/result/result-severity.adapter"
 import type { SimulationHeatmapResponseDto } from "@/types/api/simulation/simulation-heatmap.response"
 import type { ResultHeatmapViewModel } from "@/types/view-model/result/result-heatmap"
 
+function normalizeCoordinate(value: number): number {
+  if (!Number.isFinite(value)) return 0
+  const normalized = value > 1 ? value / 100 : value
+  return Math.max(0, Math.min(1, normalized))
+}
+
 export function adaptHeatmapResponseToViewModel(
   simulationId: string,
   raw: SimulationHeatmapResponseDto
@@ -23,8 +29,8 @@ export function adaptHeatmapResponseToViewModel(
       points: page.errorPoints.map((point) => ({
         issueType: "ux",
         issueId: point.issueId,
-        x: point.x,
-        y: point.y,
+        x: normalizeCoordinate(point.x),
+        y: normalizeCoordinate(point.y),
         count: point.count,
         severity: adaptIssueSeverity(point.severity),
         errorType: point.errorType,

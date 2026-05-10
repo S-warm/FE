@@ -1,6 +1,5 @@
 import { adaptOverviewResponseToViewModel } from "@/adapters/result"
 import { mockDelay } from "@/services/core/mock-delay"
-import { createNotImplementedServiceError } from "@/services/core/api-service-error"
 import type { ResultOverviewService } from "@/services/result/result-overview.service"
 import { ageOverviewData } from "@/mocks/data-visualization.mock"
 import { resultPagesMock } from "@/mocks/result-pages.mock"
@@ -56,11 +55,5 @@ export const resultOverviewMockService: ResultOverviewService = {
   async getOverview(simulationId) {
     await mockDelay()
     return adaptOverviewResponseToViewModel(simulationId, createOverviewMockResponse())
-  },
-}
-
-export const resultOverviewHttpService: ResultOverviewService = {
-  async getOverview() {
-    throw createNotImplementedServiceError("service://result-overview/http/get", "Overview HTTP 서비스는 아직 구현되지 않았습니다.")
   },
 }

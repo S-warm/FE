@@ -1,9 +1,9 @@
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts"
 
-import { cn } from "@/lib/utils"
 import { chartTooltipContentStyle } from "@/components/charts/chart-tooltip"
 import { EmptyState } from "@/components/sections/empty-state"
 import type { DonutChartDatumViewModel } from "@/types/view-model/common/chart"
+import { cn } from "@/lib/utils"
 
 interface DonutChartProps {
   data: DonutChartDatumViewModel[]
@@ -18,10 +18,16 @@ function DonutChart({
   emptyTitle,
   emptyDescription,
 }: DonutChartProps) {
-  if (!data.length) {
+  const chartData = data.filter((item) => item.value > 0)
+
+  if (!chartData.length) {
     return (
       <div className={cn(heightClassName, "w-full")}>
-        <EmptyState title={emptyTitle} description={emptyDescription} className="h-full" />
+        <EmptyState
+          title={emptyTitle}
+          description={emptyDescription}
+          className="h-full"
+        />
       </div>
     )
   }
@@ -31,7 +37,7 @@ function DonutChart({
       <ResponsiveContainer width="100%" height="100%">
         <PieChart>
           <Pie
-            data={data}
+            data={chartData}
             dataKey="value"
             nameKey="name"
             cx="50%"
@@ -39,17 +45,15 @@ function DonutChart({
             innerRadius="50%"
             outerRadius="92%"
             stroke="transparent"
-            paddingAngle={2}
+            paddingAngle={chartData.length > 1 ? 2 : 0}
             isAnimationActive
             animationDuration={450}
           >
-            {data.map((entry) => (
+            {chartData.map((entry) => (
               <Cell key={entry.name} fill={entry.color} />
             ))}
           </Pie>
-          <Tooltip
-            contentStyle={chartTooltipContentStyle}
-          />
+          <Tooltip contentStyle={chartTooltipContentStyle} />
         </PieChart>
       </ResponsiveContainer>
     </div>

@@ -269,7 +269,7 @@ function ResultWcagPage() {
         id: page.pageId,
         name: page.pageName,
         screenshotUrl: page.screenshotUrl,
-        metaText: page.metaText,
+        metaText: undefined,
       })),
     [pages],
   )

@@ -277,6 +277,7 @@ function ResultOverviewPage() {
             barColor="var(--color-chart-landing)"
             mutedBarColor="var(--color-primary-100)"
             highlightMode="min"
+            barSize={24}
             heightClassName="h-[250px]"
           />
         </ChartCard>
@@ -321,6 +322,7 @@ function ResultOverviewPage() {
             barColor="var(--color-persona-fifty)"
             mutedBarColor="var(--color-chart-failure-muted)"
             highlightMode="max"
+            barSize={22}
             heightClassName="h-[220px]"
           />
         </ChartCard>
@@ -362,6 +364,7 @@ function ResultOverviewPage() {
             barColor="var(--color-chart-validation)"
             mutedBarColor="var(--color-chart-declare-muted)"
             highlightMode="max"
+            barSize={22}
             heightClassName="h-[240px]"
           />
         </ChartCard>

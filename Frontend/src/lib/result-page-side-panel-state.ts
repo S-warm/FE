@@ -10,7 +10,9 @@ function useResultPageSidePanelState(selectedPageId: string, initialExpandedPage
   }
 
   const togglePage = (pageId: string) => {
-    setExpandedPageIds((prev) => (prev.includes(pageId) ? prev.filter((id) => id !== pageId) : [...prev, pageId]))
+    setExpandedPageIds((prev) =>
+      prev.includes(pageId) ? prev.filter((id) => id !== pageId) : [...prev, pageId]
+    )
   }
 
   return {

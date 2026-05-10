@@ -1,6 +1,5 @@
 import { adaptHeatmapResponseToViewModel } from "@/adapters/result"
 import { mockDelay } from "@/services/core/mock-delay"
-import { createNotImplementedServiceError } from "@/services/core/api-service-error"
 import type { ResultHeatmapService } from "@/services/result/result-heatmap.service"
 import { heatmapPagesMock } from "@/mocks/result-heatmap.mock"
 import type { ApiHeatmapAgeGroup, ApiHeatmapErrorType, ApiIssueSeverity } from "@/types/api/common/enums"
@@ -75,11 +74,5 @@ export const resultHeatmapMockService: ResultHeatmapService = {
       params.simulationId,
       createHeatmapMockResponse(params.ageGroup, params.page, params.size)
     )
-  },
-}
-
-export const resultHeatmapHttpService: ResultHeatmapService = {
-  async getHeatmap() {
-    throw createNotImplementedServiceError("service://result-heatmap/http/get", "Heatmap HTTP 서비스는 아직 구현되지 않았습니다.")
   },
 }

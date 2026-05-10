@@ -4,7 +4,8 @@ import { CommonButton, PasswordField, TextField } from "@/components/atoms"
 import routes from "@/constants/routes"
 
 import { GoogleStartButton } from "@/components/sections/auth/branding-header"
-import { useAuthStore } from "@/store/auth.store"
+import { useLoginMutation } from "@/queries/auth"
+import { ApiServiceError } from "@/services"
 import { useNavigate } from "react-router-dom"
 
 const LOGIN_TRANSITION_MS = 280
@@ -16,9 +17,9 @@ function LoginPanel({ onGoToSignUp }: { onGoToSignUp: () => void }) {
   const [passwordError, setPasswordError] = useState("")
   const [isTransitioning, setIsTransitioning] = useState(false)
   const transitionTimeoutRef = useRef<number | null>(null)
-  const canLogin = useAuthStore((state) => state.canLogin)
-  const login = useAuthStore((state) => state.login)
   const navigate = useNavigate()
+  const loginMutation = useLoginMutation()
+  const isSubmitting = loginMutation.isPending || isTransitioning
 
   useEffect(() => {
     return () => {
@@ -38,7 +39,7 @@ function LoginPanel({ onGoToSignUp }: { onGoToSignUp: () => void }) {
       className="grid w-full gap-5"
       onSubmit={(event) => {
         event.preventDefault()
-        if (isTransitioning) return
+        if (isSubmitting) return
         resetErrors()
 
         const trimmedEmail = email.trim()
@@ -56,18 +57,33 @@ function LoginPanel({ onGoToSignUp }: { onGoToSignUp: () => void }) {
 
         if (hasError) return
 
-        const ok = canLogin(trimmedEmail, password)
-        if (!ok) {
-          setEmailError("아이디를 확인해주세요. 테스트 계정은 admin 입니다.")
-          setPasswordError("비밀번호를 확인해주세요. 테스트 비밀번호는 123 입니다.")
-          return
-        }
+        loginMutation.mutate(
+          { username: trimmedEmail, password },
+          {
+            onSuccess: () => {
+              setIsTransitioning(true)
+              transitionTimeoutRef.current = window.setTimeout(() => {
+                navigate(routes.generate)
+              }, LOGIN_TRANSITION_MS)
+            },
+            onError: (error) => {
+              const fallback = "로그인에 실패했습니다. 잠시 후 다시 시도해주세요."
+              const status =
+                error instanceof ApiServiceError ? error.status : undefined
+              const message =
+                error instanceof ApiServiceError ? error.message : fallback
 
-        setIsTransitioning(true)
-        transitionTimeoutRef.current = window.setTimeout(() => {
-          login(trimmedEmail)
-          navigate(routes.generate)
-        }, LOGIN_TRANSITION_MS)
+              if (status === 401) {
+                setEmailError("아이디를 확인해주세요.")
+                setPasswordError(message || "비밀번호를 확인해주세요.")
+                return
+              }
+
+              setEmailError(" ")
+              setPasswordError(message || fallback)
+            },
+          },
+        )
       }}
     >
       <div className="grid gap-3">
@@ -77,7 +93,7 @@ function LoginPanel({ onGoToSignUp }: { onGoToSignUp: () => void }) {
           state={emailError ? "error" : "default"}
           errorMessage={emailError || undefined}
           onChange={(event) => {
-            if (isTransitioning) return
+            if (isSubmitting) return
             setEmail(event.target.value)
             setEmailError("")
           }}
@@ -92,7 +108,7 @@ function LoginPanel({ onGoToSignUp }: { onGoToSignUp: () => void }) {
           state={passwordError ? "error" : "default"}
           errorMessage={passwordError || undefined}
           onChange={(event) => {
-            if (isTransitioning) return
+            if (isSubmitting) return
             setPassword(event.target.value)
             setPasswordError("")
           }}
@@ -107,7 +123,7 @@ function LoginPanel({ onGoToSignUp }: { onGoToSignUp: () => void }) {
         size="lg"
         variant="secondary"
         className="h-12 w-full rounded-xl bg-accent text-primary hover:bg-accent/80"
-        state={isTransitioning ? "loading" : "default"}
+        state={isSubmitting ? "loading" : "default"}
         loadingText="로그인 중..."
       >
         <span className="underline underline-offset-4">로그인</span>
@@ -118,7 +134,7 @@ function LoginPanel({ onGoToSignUp }: { onGoToSignUp: () => void }) {
         size="lg"
         variant="secondary"
         className="mx-auto h-11 rounded-xl bg-muted px-5 text-foreground hover:bg-muted/80"
-        disabled={isTransitioning}
+        disabled={isSubmitting}
       >
         <GoogleStartButton />
       </CommonButton>
@@ -129,10 +145,10 @@ function LoginPanel({ onGoToSignUp }: { onGoToSignUp: () => void }) {
           type="button"
           className="rounded-lg px-2 py-1 text-body-14-medium text-text-link underline-offset-4 transition-colors hover:text-[var(--color-primary-800)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
           onClick={() => {
-            if (isTransitioning) return
+            if (isSubmitting) return
             onGoToSignUp()
           }}
-          disabled={isTransitioning}
+          disabled={isSubmitting}
         >
           회원가입
         </button>

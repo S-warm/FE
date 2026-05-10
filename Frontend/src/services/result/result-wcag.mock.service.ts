@@ -1,6 +1,5 @@
 import { adaptWcagResponseToViewModel, createResultPageBase } from "@/adapters/result"
 import { mockDelay } from "@/services/core/mock-delay"
-import { createNotImplementedServiceError } from "@/services/core/api-service-error"
 import type { ResultWcagService } from "@/services/result/result-wcag.service"
 import { wcagResultMock } from "@/mocks/result-wcag.mock"
 import type { ApiWcagSeverity } from "@/types/api/common/enums"
@@ -69,11 +68,5 @@ export const resultWcagMockService: ResultWcagService = {
     )
 
     return adaptWcagResponseToViewModel(simulationId, createWcagMockResponse(), pageContext)
-  },
-}
-
-export const resultWcagHttpService: ResultWcagService = {
-  async getWcag() {
-    throw createNotImplementedServiceError("service://result-wcag/http/get", "WCAG HTTP 서비스는 아직 구현되지 않았습니다.")
   },
 }

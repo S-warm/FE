@@ -80,8 +80,13 @@ async function parseErrorPayload(
   return {
     status: payload?.status ?? response.status,
     error: payload?.error ?? response.statusText ?? "Error",
-    message: payload?.message ?? "요청 처리 중 오류가 발생했습니다.",
+    message:
+      payload?.message ??
+      "\uc694\uccad \ucc98\ub9ac \uc911 \uc624\ub958\uac00 \ubc1c\uc0dd\ud588\uc2b5\ub2c8\ub2e4.",
     path: payload?.path ?? path,
+    fieldErrors: Array.isArray(payload?.fieldErrors)
+      ? payload.fieldErrors
+      : undefined,
   }
 }
 
@@ -98,7 +103,6 @@ async function parseSuccessBody<T>(response: Response): Promise<T> {
   try {
     return JSON.parse(text) as T
   } catch {
-    // JSON 이 아닌 응답은 raw text 로 반환한다 (PDF / CSV 다운로드 등 향후 확장 여지).
     return text as unknown as T
   }
 }
@@ -126,7 +130,7 @@ async function dispatch<T>(
       message:
         cause instanceof Error
           ? cause.message
-          : "네트워크 요청에 실패했습니다.",
+          : "\ub124\ud2b8\uc6cc\ud06c \uc694\uccad\uc5d0 \uc2e4\ud328\ud588\uc2b5\ub2c8\ub2e4.",
       path,
     })
   }
@@ -136,7 +140,7 @@ async function dispatch<T>(
       try {
         useAuthStore.getState().logout()
       } catch {
-        // logout 자체 실패가 원본 에러를 가리지 않도록 silent fail
+        // noop
       }
     }
 

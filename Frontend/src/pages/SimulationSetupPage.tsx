@@ -30,6 +30,7 @@ import {
   validateSimulationSetupForm,
   type SimulationSetupValidationErrors,
 } from "@/validation/simulation-setup"
+import { mapApiErrorToSimulationSetupErrors } from "@/validation/api-error-to-form"
 
 const AGE_GROUP_CONFIG = [
   { key: "teens", label: "10대", color: "var(--color-persona-teen)" },
@@ -166,11 +167,17 @@ function SimulationSetupPage() {
       })
     } catch (error) {
       if (error instanceof ApiServiceError) {
-        setSubmitError(error.message)
+        const mappedErrors = mapApiErrorToSimulationSetupErrors(error)
+        const { submitError: nextSubmitError, ...fieldErrors } = mappedErrors
+        setErrors(fieldErrors)
+        setSubmitError(nextSubmitError ?? null)
         return
       }
 
-      setSubmitError("시뮬레이션 생성 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.")
+      const mappedErrors = mapApiErrorToSimulationSetupErrors(error)
+      const { submitError: nextSubmitError, ...fieldErrors } = mappedErrors
+      setErrors(fieldErrors)
+      setSubmitError(nextSubmitError ?? null)
     }
   }
 

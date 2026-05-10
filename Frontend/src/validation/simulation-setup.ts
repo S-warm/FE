@@ -24,6 +24,7 @@ export interface SimulationSetupValidationErrors {
   ageCounts?: string
   visionImpairment?: string
   attentionLevel?: string
+  submitError?: string
 }
 
 function isValidHttpUrl(value: string) {
@@ -40,36 +41,36 @@ function isSafeInteger(value: number) {
 }
 
 export function validateSimulationSetupForm(
-  form: SimulationFormViewModel
+  form: SimulationFormViewModel,
 ): SimulationSetupValidationErrors {
   const errors: SimulationSetupValidationErrors = {}
 
   if (!form.projectTitle.trim()) {
-    errors.projectTitle = "프로젝트 제목을 입력해주세요."
+    errors.projectTitle = "\ud504\ub85c\uc81d\ud2b8 \uc81c\ubaa9\uc744 \uc785\ub825\ud574\uc8fc\uc138\uc694."
   }
 
   if (!form.targetUrl.trim()) {
-    errors.targetUrl = "시작 URL을 입력해주세요."
+    errors.targetUrl = "\uc2dc\uc791 URL\uc744 \uc785\ub825\ud574\uc8fc\uc138\uc694."
   } else if (!isValidHttpUrl(form.targetUrl.trim())) {
-    errors.targetUrl = "올바른 URL 형식으로 입력해주세요."
+    errors.targetUrl = "\uc62c\ubc14\ub978 URL \ud615\uc2dd\uc73c\ub85c \uc785\ub825\ud574\uc8fc\uc138\uc694."
   }
 
   if (!form.endUrl.trim()) {
-    errors.endUrl = "종료 URL을 입력해주세요."
+    errors.endUrl = "\uc885\ub8cc URL\uc744 \uc785\ub825\ud574\uc8fc\uc138\uc694."
   } else if (!isValidHttpUrl(form.endUrl.trim())) {
-    errors.endUrl = "올바른 URL 형식으로 입력해주세요."
+    errors.endUrl = "\uc62c\ubc14\ub978 URL \ud615\uc2dd\uc73c\ub85c \uc785\ub825\ud574\uc8fc\uc138\uc694."
   }
 
   if (!form.successCondition.trim()) {
-    errors.successCondition = "성공 조건을 입력해주세요."
+    errors.successCondition = "\uc131\uacf5 \uc870\uac74\uc744 \uc785\ub825\ud574\uc8fc\uc138\uc694."
   }
 
   if (!DIGITAL_LITERACY_VALUES.includes(form.digitalLiteracy)) {
-    errors.digitalLiteracy = "디지털 리터러시를 선택해주세요."
+    errors.digitalLiteracy = "\ub514\uc9c0\ud138 \ub9ac\ud130\ub7ec\uc2dc\ub97c \uc120\ud0dd\ud574\uc8fc\uc138\uc694."
   }
 
   if (!PERSONA_DEVICE_VALUES.includes(form.personaDevice)) {
-    errors.personaDevice = "디바이스를 선택해주세요."
+    errors.personaDevice = "\ub514\ubc14\uc774\uc2a4\ub97c \uc120\ud0dd\ud574\uc8fc\uc138\uc694."
   }
 
   const ageValues = Object.values(form.ageCounts)
@@ -77,22 +78,36 @@ export function validateSimulationSetupForm(
   const totalAgeCount = ageValues.reduce((sum, count) => sum + count, 0)
 
   if (hasInvalidAgeCount) {
-    errors.ageCounts = "연령대별 페르소나 수는 0 이상의 정수여야 합니다."
+    errors.ageCounts =
+      "\uc5f0\ub839\ub300\ubcc4 \ud398\ub974\uc18c\ub098 \uc218\ub294 0 \uc774\uc0c1\uc758 \uc815\uc218\uc5ec\uc57c \ud569\ub2c8\ub2e4."
   } else if (totalAgeCount <= 0) {
-    errors.ageCounts = "최소 1명 이상의 페르소나를 설정해주세요."
+    errors.ageCounts =
+      "\ucd5c\uc18c 1\uba85 \uc774\uc0c1\uc758 \ud398\ub974\uc18c\ub098\ub97c \uc124\uc815\ud574\uc8fc\uc138\uc694."
   }
 
-  if (!isSafeInteger(form.visionImpairment) || form.visionImpairment < 0 || form.visionImpairment > 100) {
-    errors.visionImpairment = "시력 저하 값은 0~100 사이여야 합니다."
+  if (
+    !isSafeInteger(form.visionImpairment) ||
+    form.visionImpairment < 0 ||
+    form.visionImpairment > 100
+  ) {
+    errors.visionImpairment =
+      "\uc2dc\ub825 \uc800\ud558 \uac12\uc740 0~100 \uc0ac\uc774\uc5ec\uc57c \ud569\ub2c8\ub2e4."
   }
 
-  if (!isSafeInteger(form.attentionLevel) || form.attentionLevel < 0 || form.attentionLevel > 100) {
-    errors.attentionLevel = "주의력 값은 0~100 사이여야 합니다."
+  if (
+    !isSafeInteger(form.attentionLevel) ||
+    form.attentionLevel < 0 ||
+    form.attentionLevel > 100
+  ) {
+    errors.attentionLevel =
+      "\uc8fc\uc758\ub825 \uac12\uc740 0~100 \uc0ac\uc774\uc5ec\uc57c \ud569\ub2c8\ub2e4."
   }
 
   return errors
 }
 
 export function hasSimulationSetupValidationErrors(errors: SimulationSetupValidationErrors) {
-  return Object.values(errors).some(Boolean)
+  return Object.entries(errors).some(
+    ([key, value]) => key !== "submitError" && Boolean(value),
+  )
 }

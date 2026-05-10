@@ -1,11 +1,13 @@
-import { createNotImplementedServiceError } from "@/services/core/api-service-error"
+import { adaptIssuesResponseToViewModel } from "@/adapters/result"
+import { httpClient } from "@/services/core/http-client"
 import type { ResultIssuesService } from "@/services/result/result-issues.service"
+import type { SimulationIssuesResponseDto } from "@/types/api/simulation/simulation-issues.response"
 
 export const resultIssuesHttpService: ResultIssuesService = {
-  async getIssues() {
-    throw createNotImplementedServiceError(
-      "service://result-issues/http/get",
-      "Issues HTTP 서비스는 아직 구현되지 않았습니다.",
+  async getIssues(simulationId) {
+    const response = await httpClient.get<SimulationIssuesResponseDto>(
+      `/simulations/${simulationId}/issues`,
     )
+    return adaptIssuesResponseToViewModel(simulationId, response)
   },
 }

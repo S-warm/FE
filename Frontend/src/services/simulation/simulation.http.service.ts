@@ -1,28 +1,54 @@
-import { createNotImplementedServiceError } from "@/services/core/api-service-error"
+import { httpClient } from "@/services/core/http-client"
 import type { SimulationService } from "@/services/simulation/simulation.service"
+import type { SimulationCreateRequestDto } from "@/types/api/simulation/simulation-create.request"
+import type { SimulationCreateResponseDto } from "@/types/api/simulation/simulation-create.response"
+import type { SimulationListItemDto } from "@/types/api/simulation/simulation-list.response"
+import type { ResultHeaderViewModel } from "@/types/view-model/common/result-header"
+import type { SimulationListItemViewModel } from "@/types/view-model/simulation/simulation-list"
 
-/**
- * BE 통합용 HTTP 구현체.
- * 이번 단계에서는 골격만 마련하고, 실제 fetch 호출은 다음 단계에서 채운다.
- * 모든 메서드는 createNotImplementedServiceError 를 throw 한다.
- */
+function adaptSimulationListItemToViewModel(
+  raw: SimulationListItemDto,
+): SimulationListItemViewModel {
+  return {
+    simulationId: raw.id,
+    title: raw.title,
+    status: raw.status,
+    createdAt: raw.createdAt,
+    relativeCreatedAtLabel: raw.createdAt,
+  }
+}
+
+function adaptSimulationHeaderToViewModel(
+  raw: SimulationCreateResponseDto,
+): ResultHeaderViewModel {
+  return {
+    simulationId: raw.id,
+    title: raw.title,
+    status: raw.status,
+    createdAt: raw.createdAt,
+  }
+}
+
 export const simulationHttpService: SimulationService = {
-  async createSimulation() {
-    throw createNotImplementedServiceError(
-      "service://simulation/http/create",
-      "시뮬레이션 HTTP 생성 서비스는 아직 구현되지 않았습니다.",
-    )
+  createSimulation(input: SimulationCreateRequestDto, userId: string) {
+    return httpClient.post<SimulationCreateResponseDto>("/simulations", input, {
+      headers: {
+        "X-User-Id": userId,
+      },
+    })
   },
-  async getSimulationList() {
-    throw createNotImplementedServiceError(
-      "service://simulation/http/list",
-      "시뮬레이션 HTTP 목록 서비스는 아직 구현되지 않았습니다.",
+
+  async getSimulationList(userId: string) {
+    const response = await httpClient.get<SimulationListItemDto[]>(
+      `/users/${userId}/simulations`,
     )
+    return response.map(adaptSimulationListItemToViewModel)
   },
-  async getSimulationHeader() {
-    throw createNotImplementedServiceError(
-      "service://simulation/http/header",
-      "시뮬레이션 HTTP 헤더 서비스는 아직 구현되지 않았습니다.",
+
+  async getSimulationHeader({ simulationId }) {
+    const response = await httpClient.get<SimulationCreateResponseDto>(
+      `/simulations/${simulationId}`,
     )
+    return adaptSimulationHeaderToViewModel(response)
   },
 }

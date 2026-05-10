@@ -1,11 +1,20 @@
-import { createNotImplementedServiceError } from "@/services/core/api-service-error"
+import { adaptHeatmapResponseToViewModel } from "@/adapters/result"
+import { httpClient } from "@/services/core/http-client"
 import type { ResultHeatmapService } from "@/services/result/result-heatmap.service"
+import type { SimulationHeatmapResponseDto } from "@/types/api/simulation/simulation-heatmap.response"
 
 export const resultHeatmapHttpService: ResultHeatmapService = {
-  async getHeatmap() {
-    throw createNotImplementedServiceError(
-      "service://result-heatmap/http/get",
-      "Heatmap HTTP 서비스는 아직 구현되지 않았습니다.",
+  async getHeatmap(params) {
+    const response = await httpClient.get<SimulationHeatmapResponseDto>(
+      `/simulations/${params.simulationId}/heatmap`,
+      {
+        query: {
+          ageGroup: params.ageGroup,
+          page: params.page,
+          size: params.size,
+        },
+      },
     )
+    return adaptHeatmapResponseToViewModel(params.simulationId, response)
   },
 }

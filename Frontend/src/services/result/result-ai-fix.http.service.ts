@@ -1,11 +1,13 @@
-import { createNotImplementedServiceError } from "@/services/core/api-service-error"
+import { adaptAiFixResponseToViewModel } from "@/adapters/result"
+import { httpClient } from "@/services/core/http-client"
 import type { ResultAiFixService } from "@/services/result/result-ai-fix.service"
+import type { SimulationAiFixResponseDto } from "@/types/api/simulation/simulation-ai-fix.response"
 
 export const resultAiFixHttpService: ResultAiFixService = {
-  async getAiFix() {
-    throw createNotImplementedServiceError(
-      "service://result-ai-fix/http/get",
-      "AI Fix HTTP 서비스는 아직 구현되지 않았습니다.",
+  async getAiFix(simulationId) {
+    const response = await httpClient.get<SimulationAiFixResponseDto>(
+      `/simulations/${simulationId}/ai-fix`,
     )
+    return adaptAiFixResponseToViewModel(simulationId, response)
   },
 }

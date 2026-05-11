@@ -72,7 +72,7 @@ function SimulationSummaryCard({
         <SummaryRow title="종료 URL" value={endUrl.trim() || "종료 URL을 입력하세요"} />
         <SummaryRow title="페르소나 횟수" value={`총 ${personaCount.toLocaleString()}회 시뮬레이션`} />
         <div className="h-px bg-border-subtle" />
-        <SummaryRow title="연령대별 횟수" value={ageGroupSummary} scrollable />
+        <SummaryRow title="연령대별 횟수" value={ageGroupSummary} />
         <div className="h-px bg-border-subtle" />
         <SummaryRow title="디바이스" value={personaDeviceLabelMap[personaDevice]} />
         <div className="h-px bg-border-subtle" />

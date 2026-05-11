@@ -53,24 +53,13 @@ function HeatmapCanvas({
   selectedPointId: string | null
   onSelectPoint: (issueId: string) => void
 }) {
-  const [failedScreenshotUrl, setFailedScreenshotUrl] = useState<string | null>(null)
-
   return (
     <div className="relative overflow-hidden rounded-2xl border border-border-strong bg-card">
-      {page.screenshotUrl && failedScreenshotUrl !== page.screenshotUrl ? (
-        <img
-          src={page.screenshotUrl}
-          alt={page.pageName}
-          className="aspect-[16/10] w-full object-cover"
-          onError={() => setFailedScreenshotUrl(page.screenshotUrl ?? null)}
-        />
-      ) : (
-        <div className="grid aspect-[16/10] place-items-center bg-surface-subtle">
-          <p className="text-caption-12-regular text-text-muted">
-            스크린샷이 없습니다
-          </p>
-        </div>
-      )}
+      <div className="grid aspect-[16/10] place-items-center bg-surface-subtle">
+        <p className="text-caption-12-regular text-text-muted">
+          스크린샷이 없습니다.
+        </p>
+      </div>
 
       <div className="pointer-events-none absolute inset-0">
         {page.points.map((point) => {
@@ -108,8 +97,8 @@ function PointDetail({
   if (!point) {
     return (
       <EmptyState
-        title="선택된 오류 포인트가 없습니다"
-        description="스크린샷의 마커 또는 아래 목록에서 오류 포인트를 선택해주세요."
+        title="선택한 오류 사인이 없습니다"
+        description="스크린샷의 마커 또는 아래 목록에서 오류 사인을 선택해 주세요."
       />
     )
   }
@@ -246,7 +235,7 @@ function ResultHeatmapPage() {
     return (
       <ErrorState
         title="히트맵 데이터를 불러오지 못했습니다"
-        description="잠시 후 다시 시도해주세요."
+        description="잠시 후 다시 시도해 주세요."
         actionLabel="다시 시도"
         onAction={() => {
           void refetch()
@@ -290,11 +279,11 @@ function ResultHeatmapPage() {
               <div className="grid gap-1">
                 <p className="text-body-14-medium text-text-body">히트맵 필터</p>
                 <p className="text-caption-12-regular text-text-muted">
-                  연령대와 페이지네이션 기준으로 집계된 오류 포인트를 확인합니다.
+                  연령대와 페이지 데이터를 기준으로 집계된 오류 사인을 확인합니다.
                 </p>
               </div>
               <div className="rounded-xl bg-surface-subtle px-3 py-2 text-caption-12-medium text-text-secondary">
-                {selectedPage?.metaText ?? "오류 포인트"}
+                {selectedPage?.metaText ?? "오류 사인"}
               </div>
             </div>
 
@@ -349,7 +338,7 @@ function ResultHeatmapPage() {
               <CardContent className="grid gap-4 px-6 py-5">
                 <div className="flex items-center gap-2">
                   <Info className="size-4 text-text-muted" />
-                  <p className="text-body-14-medium text-text-body">오류 포인트 목록</p>
+                  <p className="text-body-14-medium text-text-body">오류 사인 목록</p>
                 </div>
 
                 {selectedPage.points.length > 0 ? (
@@ -391,8 +380,8 @@ function ResultHeatmapPage() {
                   </div>
                 ) : (
                   <EmptyState
-                    title="표시할 오류 포인트가 없습니다"
-                    description="현재 필터 조건에 맞는 히트맵 포인트가 없습니다."
+                    title="표시할 오류 사인이 없습니다"
+                    description="현재 필터 조건에 맞는 히트맵 사인이 없습니다."
                   />
                 )}
 

@@ -1,7 +1,7 @@
 import { adaptHeatmapResponseToViewModel } from "@/adapters/result"
+import { heatmapPagesMock } from "@/mocks/result-heatmap.mock"
 import { mockDelay } from "@/services/core/mock-delay"
 import type { ResultHeatmapService } from "@/services/result/result-heatmap.service"
-import { heatmapPagesMock } from "@/mocks/result-heatmap.mock"
 import type { ApiHeatmapAgeGroup, ApiHeatmapErrorType, ApiIssueSeverity } from "@/types/api/common/enums"
 import type { SimulationHeatmapResponseDto } from "@/types/api/simulation/simulation-heatmap.response"
 
@@ -13,7 +13,22 @@ function toApiAgeGroup(ageGroup: string): ApiHeatmapAgeGroup {
 }
 
 function markerSeverityToApi(severity: "critical" | "warning"): ApiIssueSeverity {
-  return severity === "critical" ? "CRITICAL" : "MEDIUM"
+  return severity === "critical" ? "CRITICAL" : "HIGH"
+}
+
+function parseMarkerMetadata(markerId: string) {
+  const [issueId, ageBand, count, blockRate, repeatCount] = markerId.split("|")
+  return {
+    issueId,
+    ageBand: toApiAgeGroup(ageBand ?? "all"),
+    count: Number(count ?? 0),
+    blockRate: Number(blockRate ?? 0),
+    repeatCount: Number(repeatCount ?? 0),
+  }
+}
+
+function toErrorType(severity: "critical" | "warning"): ApiHeatmapErrorType {
+  return severity === "critical" ? "Timeout" : "Console"
 }
 
 function createHeatmapMockResponse(ageGroup: string, page: number, size: number): SimulationHeatmapResponseDto {
@@ -21,46 +36,52 @@ function createHeatmapMockResponse(ageGroup: string, page: number, size: number)
     pages: heatmapPagesMock.map((heatmapPage, index) => {
       const errorPoints = heatmapPage.markers.map((marker, markerIndex) => {
         const defect = heatmapPage.defects[markerIndex]
-        const count = marker.severity === "critical" ? 18 : 6
+        const metadata = parseMarkerMetadata(marker.id)
         const severity = markerSeverityToApi(marker.severity)
-        const errorType: ApiHeatmapErrorType = marker.severity === "critical" ? "Timeout" : "Console"
+        const errorType = toErrorType(marker.severity)
         const isTimeout = errorType === "Timeout"
+
         return {
-          x: Number((marker.x / 100).toFixed(2)),
-          y: Number((marker.y / 100).toFixed(2)),
-          count,
+          x: Number((marker.x / 100).toFixed(3)),
+          y: Number((marker.y / 100).toFixed(3)),
+          count: Math.max(5, Math.min(50, metadata.count || Number(defect?.code ?? 0) || 6)),
           severity,
           errorType,
           affectedUsersCount: defect?.impactedUsers ?? 0,
-          blockRate: marker.severity === "critical" ? 100 : 55,
-          repeatCount: marker.severity === "critical" ? 4.5 : 2.1,
-          description: defect?.description ?? `${heatmapPage.name} 오류 집중 구간`,
+          blockRate: metadata.blockRate || (marker.severity === "critical" ? 80 : 48),
+          repeatCount: metadata.repeatCount || (marker.severity === "critical" ? 3.2 : 2.1),
+          description: defect?.description ?? `${heatmapPage.name} 오류 클러스터`,
           errorBreakdown: {
             timeout: isTimeout ? 2 : 0,
-            network: 0,
+            network: marker.severity === "critical" ? 1 : 0,
             console: !isTimeout ? 1 : 0,
           },
-          issueId: defect?.id ?? marker.id,
-          ageBand: toApiAgeGroup(ageGroup),
+          issueId: metadata.issueId || defect?.id || marker.id,
+          ageBand: metadata.ageBand || toApiAgeGroup(ageGroup),
         }
       })
 
+      const resolvedPoints =
+        ageGroup === "all"
+          ? errorPoints
+          : errorPoints.filter((point) => point.ageBand === toApiAgeGroup(ageGroup))
+
       const start = page * size
-      const pagedPoints = errorPoints.slice(start, start + size)
+      const pagedPoints = resolvedPoints.slice(start, start + size)
 
       return {
         order: index + 1,
         pageName: heatmapPage.name,
         pageUrl: `https://mock.swarm.local/${heatmapPage.id}`,
         screenshotUrl: heatmapPage.screenshotUrl,
-        totalErrorCount: errorPoints.length,
+        totalErrorCount: resolvedPoints.length,
         currentAgeGroup: toApiAgeGroup(ageGroup),
         errorPoints: pagedPoints,
         pagination: {
-          totalCount: errorPoints.length,
+          totalCount: resolvedPoints.length,
           currentPage: page,
           pageSize: size,
-          hasMore: start + size < errorPoints.length,
+          hasMore: start + size < resolvedPoints.length,
         },
       }
     }),

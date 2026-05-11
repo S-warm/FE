@@ -1,4 +1,4 @@
-import { resultPageScreenshotUrl } from "@/mocks/mock-assets"
+import { getMasterIssuesByPage, resultMasterPages } from "@/mocks/result-master.mock"
 
 export type HeatmapMode = "click" | "move" | "scroll" | "attention"
 
@@ -46,133 +46,100 @@ export interface HeatmapPageMock {
 
 export const heatmapAgeBands: HeatmapAgeBand[] = ["10대", "20대", "30대", "40대", "50대", "60대", "70대", "80대"]
 
-function points(seed: number): HeatmapPoint[] {
-  const base: Array<[number, number, number]> = [
-    [18, 18, 0.65],
-    [34, 22, 0.55],
-    [60, 18, 0.35],
-    [72, 32, 0.45],
-    [50, 44, 0.6],
-    [28, 58, 0.35],
-    [62, 62, 0.52],
-    [84, 46, 0.25],
+const TARGET_REGIONS: Record<string, HeatmapTargetRegion> = {
+  login: { x: 40, y: 35, width: 20, height: 30 },
+  main: { x: 20, y: 45, width: 65, height: 35 },
+  signup: { x: 40, y: 55, width: 20, height: 20 },
+  payment: { x: 10, y: 80, width: 50, height: 12 },
+}
+
+function clampPercent(value: number) {
+  return Math.max(0, Math.min(100, Number((value * 100).toFixed(1))))
+}
+
+function createPoints(seed: string, x: number, y: number, baseIntensity: number): HeatmapPoint[] {
+  const offsets: Array<[number, number, number]> = [
+    [0, 0, 0],
+    [-4.5, 3.2, -0.08],
+    [3.8, -2.6, -0.05],
+    [6.1, 4.4, -0.12],
+    [-6.4, -3.7, -0.14],
   ]
 
-  return base.map(([x, y, intensity], index) => ({
-    id: `p-${seed}-${index}`,
-    x,
-    y,
-    intensity: Math.min(1, Math.max(0.1, intensity + (seed % 5) * 0.03)),
+  return offsets.map(([offsetX, offsetY, delta], index) => ({
+    id: `${seed}-p-${index + 1}`,
+    x: clampPercent(x + offsetX / 100),
+    y: clampPercent(y + offsetY / 100),
+    intensity: Number(Math.max(0.18, Math.min(0.98, baseIntensity + delta)).toFixed(2)),
   }))
 }
 
-export const heatmapPagesMock: HeatmapPageMock[] = [
-  {
-    id: "login",
-    name: "로그인 페이지",
-    screenshotUrl: resultPageScreenshotUrl,
-    targetRegion: { x: 30, y: 20, width: 58, height: 42 },
-    pointsByMode: {
-      click: points(1),
-      move: points(2),
-      scroll: points(3),
-      attention: points(4),
-    },
-    markers: [
-      { id: "m-1", x: 48, y: 28, label: "1", severity: "critical" },
-      { id: "m-2", x: 74, y: 62, label: "2", severity: "warning" },
-      { id: "m-3", x: 36, y: 48, label: "3", severity: "warning" },
-    ],
-    defects: [
-      {
-        id: "d-1",
-        code: "\"1\"",
-        title: "에러 복구 불가",
-        description: "폼 입력 오류 후 메시지가 불분명함",
-        impactedUsers: 3200,
-      },
-      {
-        id: "d-2",
-        code: "\"2\"",
-        title: "시각적 제약",
-        description: "CTA 버튼의 대비가 낮아 인지하기 어려움",
-        impactedUsers: 2800,
-      },
-      {
-        id: "d-3",
-        code: "\"3\"",
-        title: "인지 과부하",
-        description: "복잡한 네비게이션 구조로 인한 혼란",
-        impactedUsers: 1600,
-      },
-    ],
-  },
-  {
-    id: "main",
-    name: "메인 페이지",
-    screenshotUrl: resultPageScreenshotUrl,
-    targetRegion: { x: 26, y: 18, width: 62, height: 46 },
-    pointsByMode: {
-      click: points(6),
-      move: points(7),
-      scroll: points(8),
-      attention: points(9),
-    },
-    markers: [{ id: "m-4", x: 22, y: 30, label: "1", severity: "warning" }],
-    defects: [
-      {
-        id: "d-4",
-        code: "\"1\"",
-        title: "CTA 인지 어려움",
-        description: "주요 CTA가 콘텐츠 대비 약함",
-        impactedUsers: 2100,
-      },
-    ],
-  },
-  {
-    id: "signup",
-    name: "회원가입 페이지",
-    screenshotUrl: resultPageScreenshotUrl,
-    targetRegion: { x: 28, y: 22, width: 60, height: 44 },
-    pointsByMode: {
-      click: points(11),
-      move: points(12),
-      scroll: points(13),
-      attention: points(14),
-    },
-    markers: [{ id: "m-5", x: 58, y: 34, label: "1", severity: "critical" }],
-    defects: [
-      {
-        id: "d-5",
-        code: "\"1\"",
-        title: "필수 입력 안내 부족",
-        description: "필수 항목이 시각적으로만 표시됨",
-        impactedUsers: 1900,
-      },
-    ],
-  },
-  {
-    id: "payment",
-    name: "결제 페이지",
-    screenshotUrl: resultPageScreenshotUrl,
-    targetRegion: { x: 30, y: 26, width: 58, height: 44 },
-    pointsByMode: {
-      click: points(16),
-      move: points(17),
-      scroll: points(18),
-      attention: points(19),
-    },
-    markers: [{ id: "m-6", x: 70, y: 56, label: "1", severity: "warning" }],
-    defects: [
-      {
-        id: "d-6",
-        code: "\"1\"",
-        title: "금액 정보 강조 약함",
-        description: "최종 결제 금액이 눈에 띄지 않음",
-        impactedUsers: 1750,
-      },
-    ],
-  },
-]
+function buildPointsByMode(pageId: string) {
+  const issues = getMasterIssuesByPage(pageId as "login" | "main" | "signup" | "payment")
+  const clusterPoints = issues.flatMap((issue, issueIndex) =>
+    issue.heatmapClusters.flatMap((cluster, clusterIndex) =>
+      createPoints(
+        `${issue.id}-${clusterIndex + 1}`,
+        cluster.x,
+        cluster.y,
+        0.42 + issueIndex * 0.05 + clusterIndex * 0.08
+      )
+    )
+  )
+
+  return {
+    click: clusterPoints,
+    move: clusterPoints.map((point, index) => ({
+      ...point,
+      id: `${point.id}-move`,
+      intensity: Number(Math.min(0.99, point.intensity + 0.05).toFixed(2)),
+      x: clampPercent(point.x / 100 + ((index % 3) - 1) * 0.012),
+    })),
+    scroll: clusterPoints.map((point, index) => ({
+      ...point,
+      id: `${point.id}-scroll`,
+      intensity: Number(Math.max(0.16, point.intensity - 0.06).toFixed(2)),
+      y: clampPercent(point.y / 100 + (index % 2 === 0 ? 0.018 : -0.014)),
+    })),
+    attention: clusterPoints.map((point) => ({
+      ...point,
+      id: `${point.id}-attention`,
+      intensity: Number(Math.min(1, point.intensity + 0.09).toFixed(2)),
+    })),
+  }
+}
+
+export const heatmapPagesMock: HeatmapPageMock[] = resultMasterPages.map((page) => {
+  const issues = getMasterIssuesByPage(page.id)
+  const entries = issues.flatMap((issue) =>
+    issue.heatmapClusters.map((cluster, clusterIndex) => ({
+      issue,
+      cluster,
+      clusterIndex,
+    }))
+  )
+
+  return {
+    id: page.id,
+    name: page.name,
+    screenshotUrl: page.screenshotUrl,
+    targetRegion: TARGET_REGIONS[page.id],
+    pointsByMode: buildPointsByMode(page.id),
+    markers: entries.map(({ issue, cluster }, index) => ({
+      id: `${issue.id}|${cluster.ageBand}|${cluster.count}|${cluster.blockRate}|${cluster.repeatCount}`,
+      x: clampPercent(cluster.x),
+      y: clampPercent(cluster.y),
+      label: String(index + 1),
+      severity: issue.severity === "critical" ? "critical" : "warning",
+    })),
+    defects: entries.map(({ issue, cluster }) => ({
+      id: issue.id,
+      code: String(cluster.count),
+      title: issue.title,
+      description: `${issue.subCategory} 영역에서 ${cluster.ageBand} 사용자 반응이 집중된 클러스터입니다.`,
+      impactedUsers: Math.min(issue.failCount, cluster.count * 7),
+    })),
+  }
+})
 
 export const defaultHeatmapPageId = heatmapPagesMock[0]?.id ?? "login"

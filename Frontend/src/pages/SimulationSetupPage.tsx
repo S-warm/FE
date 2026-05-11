@@ -71,7 +71,7 @@ function SimulationSetupPage() {
   const [successCondition, setSuccessCondition] = useState("")
   const [errors, setErrors] = useState<SimulationSetupValidationErrors>({})
   const [ageRatioOpen, setAgeRatioOpen] = useState(false)
-  const [advancedSettingsOpen, setAdvancedSettingsOpen] = useState(true)
+  const [advancedSettingsOpen, setAdvancedSettingsOpen] = useState(false)
   const [ageGroupCounts, setAgeGroupCounts] = useState<AgeGroupCounts>(DEFAULT_AGE_GROUP_COUNTS)
   const [visionLoss, setVisionLoss] = useState(0)
   const [attentionLevel, setAttentionLevel] = useState(50)

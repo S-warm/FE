@@ -1,72 +1,57 @@
-import { adaptWcagResponseToViewModel, createResultPageBase } from "@/adapters/result"
+import { createResultPageSummary } from "@/adapters/result/result-page.adapter"
+import { adaptWcagSeverity } from "@/adapters/result/result-severity.adapter"
+import { wcagResultMock } from "@/mocks/result-wcag.mock"
 import { mockDelay } from "@/services/core/mock-delay"
 import type { ResultWcagService } from "@/services/result/result-wcag.service"
-import { wcagResultMock } from "@/mocks/result-wcag.mock"
-import type { ApiWcagSeverity } from "@/types/api/common/enums"
-import type { SimulationWcagResponseDto } from "@/types/api/simulation/simulation-wcag.response"
-
-function mapWcagSeverity(severity: "critical" | "moderate" | "minor"): ApiWcagSeverity {
-  if (severity === "critical") return "Critical"
-  if (severity === "moderate") return "Moderate"
-  return "Minor"
-}
-
-function createWcagMockResponse(): SimulationWcagResponseDto {
-  const pageResults = wcagResultMock.pageResults
-  const totalTests = pageResults.reduce((sum, item) => sum + item.totalTests, 0)
-  const passedTests = pageResults.reduce((sum, item) => sum + item.passedTests, 0)
-  const foundIssues = pageResults.reduce((sum, item) => sum + item.foundIssues, 0)
-  const critical = pageResults.reduce(
-    (sum, item) => sum + (item.distribution.find((distributionItem) => distributionItem.severity === "critical")?.count ?? 0),
-    0
-  )
-  const moderate = pageResults.reduce(
-    (sum, item) => sum + (item.distribution.find((distributionItem) => distributionItem.severity === "moderate")?.count ?? 0),
-    0
-  )
-  const minor = pageResults.reduce(
-    (sum, item) => sum + (item.distribution.find((distributionItem) => distributionItem.severity === "minor")?.count ?? 0),
-    0
-  )
-
-  const issues = pageResults.flatMap((page) =>
-    page.details.map((detail) => ({
-      wcagIssueId: detail.id,
-      title: detail.title,
-      severity: mapWcagSeverity(detail.severity),
-      description: detail.description,
-    }))
-  )
-
-  return {
-    summary: {
-      complianceScore: Number(((passedTests / Math.max(totalTests, 1)) * 100).toFixed(1)),
-      wcagLabel: pageResults[0]?.wcagLabel ?? "AA",
-      totalTests,
-      passedTests,
-      foundIssues,
-    },
-    distribution: {
-      critical,
-      moderate,
-      minor,
-    },
-    issues,
-  }
-}
 
 export const resultWcagMockService: ResultWcagService = {
   async getWcag(simulationId) {
     await mockDelay()
-    const pageContext = wcagResultMock.pageResults.map((page, index) =>
-      createResultPageBase({
-        simulationId,
-        order: index + 1,
-        pageName: page.pageName,
-        pageUrl: `https://mock.swarm.local/${page.pageId}`,
-      })
-    )
 
-    return adaptWcagResponseToViewModel(simulationId, createWcagMockResponse(), pageContext)
+    return {
+      pages: wcagResultMock.pageResults.map((page, index) => ({
+        ...createResultPageSummary({
+          simulationId,
+          order: index + 1,
+          pageName: page.pageName,
+          pageUrl: `https://mock.swarm.local/${page.pageId}`,
+          totalCount: page.foundIssues,
+          totalCountType: "wcag-issues",
+          metaText: `${page.foundIssues}건 WCAG 이슈`,
+        }),
+        summary: {
+          complianceScore: page.complianceScore,
+          wcagLabel: page.wcagLabel,
+          totalTests: page.totalTests,
+          passedTests: page.passedTests,
+          foundIssues: page.foundIssues,
+        },
+        distribution: page.distribution.map((item) => ({
+          severity: adaptWcagSeverity(
+            item.severity === "critical"
+              ? "Critical"
+              : item.severity === "moderate"
+                ? "Moderate"
+                : "Minor",
+          ),
+          count: item.count,
+          label: item.label,
+          description: item.description,
+        })),
+        issues: page.details.map((detail) => ({
+          issueType: "wcag" as const,
+          wcagIssueId: detail.id,
+          title: detail.title,
+          severity: adaptWcagSeverity(
+            detail.severity === "critical"
+              ? "Critical"
+              : detail.severity === "moderate"
+                ? "Moderate"
+                : "Minor",
+          ),
+          description: detail.description,
+        })),
+      })),
+    }
   },
 }

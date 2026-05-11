@@ -1,4 +1,4 @@
-import { resultPageScreenshotUrl } from "@/mocks/mock-assets"
+import { resultMasterPages } from "@/mocks/result-master.mock"
 
 export interface ResultPageSummary {
   id: string
@@ -6,11 +6,10 @@ export interface ResultPageSummary {
   screenshotUrl: string
 }
 
-export const resultPagesMock: ResultPageSummary[] = [
-  { id: "login", name: "로그인 페이지", screenshotUrl: resultPageScreenshotUrl },
-  { id: "main", name: "메인 페이지", screenshotUrl: resultPageScreenshotUrl },
-  { id: "signup", name: "회원가입 페이지", screenshotUrl: resultPageScreenshotUrl },
-  { id: "payment", name: "결제 페이지", screenshotUrl: resultPageScreenshotUrl },
-]
+export const resultPagesMock: ResultPageSummary[] = resultMasterPages.map((page) => ({
+  id: page.id,
+  name: page.name,
+  screenshotUrl: page.screenshotUrl,
+}))
 
 export const defaultResultPageId = resultPagesMock[0]?.id ?? "login"

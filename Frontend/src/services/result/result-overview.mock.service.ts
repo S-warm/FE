@@ -1,8 +1,8 @@
 import { adaptOverviewResponseToViewModel } from "@/adapters/result"
-import { mockDelay } from "@/services/core/mock-delay"
-import type { ResultOverviewService } from "@/services/result/result-overview.service"
 import { ageOverviewData } from "@/mocks/data-visualization.mock"
 import { resultPagesMock } from "@/mocks/result-pages.mock"
+import { mockDelay } from "@/services/core/mock-delay"
+import type { ResultOverviewService } from "@/services/result/result-overview.service"
 import type {
   SimulationOverviewAgeBand,
   SimulationOverviewResponseDto,
@@ -54,6 +54,18 @@ function createOverviewMockResponse(): SimulationOverviewResponseDto {
 export const resultOverviewMockService: ResultOverviewService = {
   async getOverview(simulationId) {
     await mockDelay()
-    return adaptOverviewResponseToViewModel(simulationId, createOverviewMockResponse())
+    const viewModel = adaptOverviewResponseToViewModel(simulationId, createOverviewMockResponse())
+
+    return {
+      ...viewModel,
+      ageStats: viewModel.ageStats.map((item) => {
+        const datum = findAgeDatum(item.ageBand)
+        return {
+          ...item,
+          avgDurationMinutes: datum?.avgDurationMinutes ?? item.avgDurationMinutes,
+          avgActions: datum?.avgActions ?? item.avgActions,
+        }
+      }),
+    }
   },
 }

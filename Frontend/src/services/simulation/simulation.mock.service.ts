@@ -8,7 +8,7 @@ import type { SimulationListItemViewModel } from "@/types/view-model/simulation/
 import type { ResultHeaderViewModel } from "@/types/view-model/common/result-header"
 
 const mockStatusCallCounts = new Map<string, number>()
-
+const mockCreatedHeaders = new Map<string, ResultHeaderViewModel>()
 const MOCK_STATUS_SEQUENCE: SimulationStatusViewModel[] = [
   { status: "pending", progress: 12, activeStepIndex: 0 },
   { status: "pending", progress: 28, activeStepIndex: 0 },
@@ -40,13 +40,20 @@ function mapSimulationSummaryToHeader(simulation: (typeof recentSimulations)[num
 
 function createMockSimulationResponse(input: SimulationCreateRequestDto): SimulationCreateResponseDto {
   const id = `mock-${Date.now()}`
+  const createdAt = new Date().toISOString()
   mockStatusCallCounts.set(id, 0)
+  mockCreatedHeaders.set(id, {
+    simulationId: id,
+    title: input.title,
+    status: "completed",
+    createdAt,
+  })
 
   return {
     id,
     title: input.title,
     status: "pending",
-    createdAt: new Date().toISOString(),
+    createdAt,
   }
 }
 
@@ -61,6 +68,10 @@ export const simulationMockService: SimulationService = {
   },
   async getSimulationHeader({ simulationId }) {
     await mockDelay()
+    const createdHeader = mockCreatedHeaders.get(simulationId)
+    if (createdHeader) {
+      return createdHeader
+    }
     const target = recentSimulations.find((simulation) => simulation.id === simulationId)
     return target ? mapSimulationSummaryToHeader(target) : null
   },

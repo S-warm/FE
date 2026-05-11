@@ -24,8 +24,8 @@ type IssueCategoryFilter = (typeof filterCategories)[number]
 
 const categoryColorMap: Record<IssueCategoryFilter, string> = {
   접근성: "var(--color-category-accessibility)",
-  시각요소: "var(--color-category-visual)",
   사용성: "var(--color-category-usability)",
+  시각요소: "var(--color-category-visual)",
   기타: "var(--color-category-etc)",
 }
 

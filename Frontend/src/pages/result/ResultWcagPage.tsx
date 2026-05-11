@@ -53,7 +53,7 @@ function getSeverityStyle(severity: SeverityTokenViewModel) {
         text: "text-text-muted",
         icon: ShieldCheck,
       }
-  }
+    }
 }
 
 function MetricCard({

@@ -97,9 +97,7 @@ function ResultPageSidePanel({
                       type="button"
                       className="grid size-8 shrink-0 place-items-center rounded-xl text-text-muted transition-colors hover:bg-surface-hover hover:text-text-strong"
                       onClick={() => onTogglePage(page.id)}
-                      aria-label={
-                        expanded ? `${page.name} 닫기` : `${page.name} 펼치기`
-                      }
+                      aria-label={expanded ? `${page.name} 닫기` : `${page.name} 펼치기`}
                       aria-expanded={expanded}
                     >
                       <ChevronDown

@@ -1,8 +1,8 @@
 import { adaptIssuesResponseToViewModel } from "@/adapters/result"
-import { mockDelay } from "@/services/core/mock-delay"
-import type { ResultIssuesService } from "@/services/result/result-issues.service"
 import { resultIssuePages } from "@/mocks/result-issues.mock"
 import { resultPagesMock } from "@/mocks/result-pages.mock"
+import { mockDelay } from "@/services/core/mock-delay"
+import type { ResultIssuesService } from "@/services/result/result-issues.service"
 import type { ApiIssueSeverity } from "@/types/api/common/enums"
 import type { SimulationIssuesResponseDto } from "@/types/api/simulation/simulation-issues.response"
 
@@ -10,6 +10,13 @@ function mapIssueSeverity(severity: "error" | "warning" | "info"): ApiIssueSever
   if (severity === "error") return "CRITICAL"
   if (severity === "warning") return "HIGH"
   return "LOW"
+}
+
+function mapIssueCategory(category: string) {
+  if (category === "접근성") return "Accessibility"
+  if (category === "사용성") return "Usability"
+  if (category === "시각요소") return "Visual"
+  return "Other"
 }
 
 function createIssuesMockResponse(): SimulationIssuesResponseDto {
@@ -25,14 +32,7 @@ function createIssuesMockResponse(): SimulationIssuesResponseDto {
         issues: page.issues.map((issue) => ({
           issueId: issue.id,
           title: issue.title,
-          category:
-            issue.category === "접근성"
-              ? "Accessibility"
-              : issue.category === "사용성"
-                ? "Usability"
-                : issue.category === "시각요소"
-                  ? "Visual"
-                  : "Other",
+          category: mapIssueCategory(issue.category),
           severity: mapIssueSeverity(issue.severity),
           affectedUsersCount: issue.affectedUsers.count,
           affectedUsersPercent: issue.affectedUsers.percent,

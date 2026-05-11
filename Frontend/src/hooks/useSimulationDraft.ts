@@ -1,4 +1,4 @@
-import { useShallow } from "zustand/react"
+import { useShallow } from "zustand/react/shallow"
 import { useSimulationDraftStore } from "@/store/simulation-draft.store"
 
 /**
@@ -11,7 +11,7 @@ import { useSimulationDraftStore } from "@/store/simulation-draft.store"
  */
 export function useSimulationDraft() {
   return useSimulationDraftStore(
-    useShallow((state) => ({
+    useShallow((state: ReturnType<typeof useSimulationDraftStore.getState>) => ({
       targetUrl: state.targetUrl,
       setTargetUrl: state.setTargetUrl,
       endUrl: state.endUrl,

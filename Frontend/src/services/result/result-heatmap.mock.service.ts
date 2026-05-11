@@ -1,80 +1,90 @@
-import { adaptHeatmapResponseToViewModel } from "@/adapters/result"
+import { createResultPageSummary } from "@/adapters/result/result-page.adapter"
+import { adaptIssueSeverity } from "@/adapters/result/result-severity.adapter"
+import { demoHeatmapPoints, demoIssues, demoResultPages } from "@/mocks/uxswarm-demo.mock"
 import { mockDelay } from "@/services/core/mock-delay"
 import { createNotImplementedServiceError } from "@/services/core/api-service-error"
 import type { ResultHeatmapService } from "@/services/result/result-heatmap.service"
-import { heatmapPagesMock } from "@/mocks/result-heatmap.mock"
-import type { ApiHeatmapAgeGroup, ApiHeatmapErrorType, ApiIssueSeverity } from "@/types/api/common/enums"
-import type { SimulationHeatmapResponseDto } from "@/types/api/simulation/simulation-heatmap.response"
+import type { ApiHeatmapAgeGroup, ApiHeatmapErrorType } from "@/types/api/common/enums"
 
-function toApiAgeGroup(ageGroup: string): ApiHeatmapAgeGroup {
+function toErrorType(label: string): ApiHeatmapErrorType {
+  if (label.includes("접근성")) return "Console"
+  if (label.includes("시각요소")) return "Timeout"
+  return "Network"
+}
+
+function toAgeBand(ageGroup: string): ApiHeatmapAgeGroup {
   if (ageGroup === "10대" || ageGroup === "20대" || ageGroup === "30대" || ageGroup === "40대" || ageGroup === "50대" || ageGroup === "60대" || ageGroup === "70대") {
     return ageGroup
   }
   return "all"
 }
 
-function markerSeverityToApi(severity: "critical" | "warning"): ApiIssueSeverity {
-  return severity === "critical" ? "CRITICAL" : "MEDIUM"
+function findIssue(issueId: string) {
+  return demoIssues.find((issue) => issue.issueId === issueId)
 }
 
-function createHeatmapMockResponse(ageGroup: string, page: number, size: number): SimulationHeatmapResponseDto {
-  return {
-    pages: heatmapPagesMock.map((heatmapPage, index) => {
-      const errorPoints = heatmapPage.markers.map((marker, markerIndex) => {
-        const defect = heatmapPage.defects[markerIndex]
-        const count = marker.severity === "critical" ? 18 : 6
-        const severity = markerSeverityToApi(marker.severity)
-        const errorType: ApiHeatmapErrorType = marker.severity === "critical" ? "Timeout" : "Console"
-        const isTimeout = errorType === "Timeout"
-        return {
-          x: Number((marker.x / 100).toFixed(2)),
-          y: Number((marker.y / 100).toFixed(2)),
-          count,
-          severity,
-          errorType,
-          affectedUsersCount: defect?.impactedUsers ?? 0,
-          blockRate: marker.severity === "critical" ? 100 : 55,
-          repeatCount: marker.severity === "critical" ? 4.5 : 2.1,
-          description: defect?.description ?? `${heatmapPage.name} 오류 집중 구간`,
-          errorBreakdown: {
-            timeout: isTimeout ? 2 : 0,
-            network: 0,
-            console: !isTimeout ? 1 : 0,
-          },
-          issueId: defect?.id ?? marker.id,
-          ageBand: toApiAgeGroup(ageGroup),
-        }
-      })
-
-      const start = page * size
-      const pagedPoints = errorPoints.slice(start, start + size)
-
-      return {
-        order: index + 1,
-        pageName: heatmapPage.name,
-        pageUrl: `https://mock.swarm.local/${heatmapPage.id}`,
-        screenshotUrl: heatmapPage.screenshotUrl,
-        totalErrorCount: errorPoints.length,
-        currentAgeGroup: toApiAgeGroup(ageGroup),
-        errorPoints: pagedPoints,
-        pagination: {
-          totalCount: errorPoints.length,
-          currentPage: page,
-          pageSize: size,
-          hasMore: start + size < errorPoints.length,
-        },
-      }
-    }),
-  }
+function buildBreakdown(errorType: ApiHeatmapErrorType) {
+  if (errorType === "Timeout") return { timeout: 3, network: 0, console: 0 }
+  if (errorType === "Network") return { timeout: 0, network: 2, console: 0 }
+  return { timeout: 0, network: 0, console: 2 }
 }
 
 export const resultHeatmapMockService: ResultHeatmapService = {
   async getHeatmap(params) {
     await mockDelay()
-    return adaptHeatmapResponseToViewModel(
-      params.simulationId,
-      createHeatmapMockResponse(params.ageGroup, params.page, params.size)
-    )
+
+    return {
+      pages: demoResultPages.map((page, index) => {
+        const filteredPoints = demoHeatmapPoints.filter((point) => {
+          if (point.url !== page.url) return false
+          if (params.ageGroup === "all") return true
+          return point.ageBand === params.ageGroup
+        })
+
+        const start = params.page * params.size
+        const pagedPoints = filteredPoints.slice(start, start + params.size)
+
+        return {
+          ...createResultPageSummary({
+            simulationId: params.simulationId,
+            order: index + 1,
+            pageName: page.name,
+            pageUrl: page.url,
+            screenshotUrl: page.screenshotUrl,
+            totalCount: filteredPoints.length,
+            totalCountType: "errors",
+            metaText: `${filteredPoints.length}건 오류`,
+          }),
+          currentAgeGroup: toAgeBand(params.ageGroup),
+          points: pagedPoints.map((point) => {
+            const linkedIssue = findIssue(point.issueId)
+            const errorType = toErrorType(point.label)
+
+            return {
+              issueType: "ux" as const,
+              issueId: point.issueId,
+              x: point.x,
+              y: point.y,
+              count: point.count,
+              severity: adaptIssueSeverity(point.severity),
+              errorType,
+              affectedUsersCount: linkedIssue?.affectedUsersCount ?? point.count,
+              blockRate: Math.min(100, Math.round(((linkedIssue?.affectedUsersPercent ?? point.count) / 50) * 100)),
+              repeatCount: Number((point.count / 4).toFixed(1)),
+              description: linkedIssue?.description ?? point.label,
+              ageBand: point.ageBand,
+              errorBreakdown: buildBreakdown(errorType),
+            }
+          }),
+          pagination: {
+            totalCount: filteredPoints.length,
+            currentPage: params.page,
+            pageSize: params.size,
+            hasMore: start + params.size < filteredPoints.length,
+          },
+        }
+      }),
+    }
   },
 }
 

@@ -1,47 +1,44 @@
-import { adaptAiFixResponseToViewModel } from "@/adapters/result"
+import { createResultPageSummary } from "@/adapters/result/result-page.adapter"
+import { adaptIssueSeverity } from "@/adapters/result/result-severity.adapter"
+import { demoFixesByUrl, demoResultPages } from "@/mocks/uxswarm-demo.mock"
 import { mockDelay } from "@/services/core/mock-delay"
 import { createNotImplementedServiceError } from "@/services/core/api-service-error"
 import type { ResultAiFixService } from "@/services/result/result-ai-fix.service"
-import { aiFixPagesMock } from "@/mocks/result-ai-fix.mock"
-import { resultPagesMock } from "@/mocks/result-pages.mock"
-import type { ApiIssueSeverity } from "@/types/api/common/enums"
-import type { SimulationAiFixResponseDto } from "@/types/api/simulation/simulation-ai-fix.response"
-
-function mapAiFixSeverity(severity: "high" | "medium" | "low"): ApiIssueSeverity {
-  if (severity === "high") return "HIGH"
-  if (severity === "medium") return "MEDIUM"
-  return "LOW"
-}
-
-function createAiFixMockResponse(): SimulationAiFixResponseDto {
-  return {
-    pages: aiFixPagesMock.map((page, index) => {
-      const pageMeta = resultPagesMock.find((item) => item.id === page.id)
-      return {
-        order: index + 1,
-        pageName: page.name,
-        pageUrl: `https://mock.swarm.local/${page.id}`,
-        screenshotUrl: pageMeta?.screenshotUrl ?? "",
-        totalFixCount: page.fixes.length,
-        fixes: page.fixes.map((fix) => ({
-          issueId: fix.id,
-          title: fix.title,
-          severity: mapAiFixSeverity(fix.severity),
-          affectedUsersCount: fix.impactedUsers.count,
-          beforeCode: fix.beforeCode,
-          afterCode: fix.afterCode,
-          impactDescription: fix.impactSummary,
-          changeDescription: fix.changeSummaryBody,
-        })),
-      }
-    }),
-  }
-}
 
 export const resultAiFixMockService: ResultAiFixService = {
   async getAiFix(simulationId) {
     await mockDelay()
-    return adaptAiFixResponseToViewModel(simulationId, createAiFixMockResponse())
+
+    return {
+      pages: demoResultPages.map((page, index) => {
+        const fixes = demoFixesByUrl[page.url] ?? []
+
+        return {
+          ...createResultPageSummary({
+            simulationId,
+            order: index + 1,
+            pageName: page.name,
+            pageUrl: page.url,
+            screenshotUrl: page.screenshotUrl,
+            totalCount: fixes.length,
+            totalCountType: "fixes",
+            metaText: `${fixes.length}건 수정안`,
+          }),
+          fixes: fixes.map((fix, fixIndex) => ({
+            issueType: "ux" as const,
+            issueId: `fix-${page.id}-${fixIndex + 1}`,
+            title: fix.title,
+            severity: adaptIssueSeverity(fix.severity),
+            impactedUsersCount: fix.affectedUsersCount,
+            beforeCode: fix.beforeCode,
+            afterCode: fix.afterCode,
+            impactSummary: fix.impactDescription,
+            changeSummaryTitle: "무엇이 변경되었나요?",
+            changeSummaryBody: fix.changeDescription,
+          })),
+        }
+      }),
+    }
   },
 }
 

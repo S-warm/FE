@@ -1,55 +1,56 @@
-import { adaptIssuesResponseToViewModel } from "@/adapters/result"
+import { createResultPageSummary } from "@/adapters/result/result-page.adapter"
+import { adaptIssueSeverity } from "@/adapters/result/result-severity.adapter"
+import { demoIssues, demoResultPages } from "@/mocks/uxswarm-demo.mock"
 import { mockDelay } from "@/services/core/mock-delay"
 import { createNotImplementedServiceError } from "@/services/core/api-service-error"
 import type { ResultIssuesService } from "@/services/result/result-issues.service"
-import { resultIssuePages } from "@/mocks/result-issues.mock"
-import { resultPagesMock } from "@/mocks/result-pages.mock"
-import type { ApiIssueSeverity } from "@/types/api/common/enums"
-import type { SimulationIssuesResponseDto } from "@/types/api/simulation/simulation-issues.response"
 
-function mapIssueSeverity(severity: "error" | "warning" | "info"): ApiIssueSeverity {
-  if (severity === "error") return "CRITICAL"
-  if (severity === "warning") return "HIGH"
-  return "LOW"
+function mapCategory(category: string) {
+  if (category === "접근성") return "Accessibility"
+  if (category === "사용성") return "Usability"
+  if (category === "시각요소") return "Visual"
+  return "Other"
 }
 
-function createIssuesMockResponse(): SimulationIssuesResponseDto {
-  return {
-    pages: resultIssuePages.map((page, index) => {
-      const pageMeta = resultPagesMock.find((item) => item.id === page.id)
-      return {
-        order: index + 1,
-        pageName: page.name,
-        pageUrl: `https://mock.swarm.local/${page.id}`,
-        screenshotUrl: pageMeta?.screenshotUrl ?? "",
-        totalIssueCount: page.issues.length,
-        issues: page.issues.map((issue) => ({
-          issueId: issue.id,
-          title: issue.title,
-          category:
-            issue.category === "접근성"
-              ? "Accessibility"
-              : issue.category === "사용성"
-                ? "Usability"
-                : issue.category === "시각요소"
-                  ? "Visual"
-                  : "Other",
-          severity: mapIssueSeverity(issue.severity),
-          affectedUsersCount: issue.affectedUsers.count,
-          affectedUsersPercent: issue.affectedUsers.percent,
-          description: issue.description,
-          targetHtml: issue.selector,
-          tags: issue.tags,
-        })),
-      }
-    }),
-  }
+function groupIssuesByUrl(url: string) {
+  return demoIssues.filter((issue) => issue.url === url)
 }
 
 export const resultIssuesMockService: ResultIssuesService = {
   async getIssues(simulationId) {
     await mockDelay()
-    return adaptIssuesResponseToViewModel(simulationId, createIssuesMockResponse())
+
+    return {
+      pages: demoResultPages.map((page, index) => {
+        const issues = groupIssuesByUrl(page.url)
+
+        return {
+          ...createResultPageSummary({
+            simulationId,
+            order: index + 1,
+            pageName: page.name,
+            pageUrl: page.url,
+            screenshotUrl: page.screenshotUrl,
+            totalCount: issues.length,
+            totalCountType: "issues",
+            metaText: `${issues.length}건 이슈`,
+          }),
+          issues: issues.map((issue) => ({
+            issueType: "ux" as const,
+            issueId: issue.issueId,
+            title: issue.title,
+            category: mapCategory(issue.category),
+            severity: adaptIssueSeverity(issue.severity),
+            affectedUsersCount: issue.affectedUsersCount,
+            affectedUsersPercent: issue.affectedUsersPercent,
+            description: issue.description,
+            selector: issue.targetHtml,
+            tags: [...issue.tags],
+            expectedBenefit: null,
+          })),
+        }
+      }),
+    }
   },
 }
 

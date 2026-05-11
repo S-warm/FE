@@ -1,61 +1,51 @@
-import { adaptOverviewResponseToViewModel } from "@/adapters/result"
+import { createResultPageBase } from "@/adapters/result/result-page.adapter"
+import { demoOverview, demoResultPages } from "@/mocks/uxswarm-demo.mock"
 import { mockDelay } from "@/services/core/mock-delay"
 import { createNotImplementedServiceError } from "@/services/core/api-service-error"
 import type { ResultOverviewService } from "@/services/result/result-overview.service"
-import { ageOverviewData } from "@/mocks/data-visualization.mock"
-import { resultPagesMock } from "@/mocks/result-pages.mock"
-import type {
-  SimulationOverviewAgeBand,
-  SimulationOverviewResponseDto,
-} from "@/types/api/simulation/simulation-overview.response"
 
-const OVERVIEW_AGE_BANDS: SimulationOverviewAgeBand[] = ["10대", "20대", "30대", "40대", "50대", "60대", "70대"]
-
-function findAgeDatum(ageBand: SimulationOverviewAgeBand) {
-  return ageOverviewData.find((item) => item.label === ageBand)
+function formatNumberLabel(value: number) {
+  return value.toLocaleString("ko-KR")
 }
 
-function createOverviewMockResponse(): SimulationOverviewResponseDto {
-  return {
-    summary: {
-      taskSuccessRate: 28,
-      totalAgents: 1000,
-      avgCompletionSeconds: 252,
-      dropOffAgents: 720,
-    },
-    funnelPanels: resultPagesMock.map((page, index) => ({
-      order: index + 1,
-      pageName: page.name,
-      pageUrl: `https://mock.swarm.local/${page.id}`,
-      totalEntered: 1000,
-      totalPassed: 280,
-      panelSuccessRate: 28,
-      avgTimeSeconds: 63,
-      agentsByAge: Object.fromEntries(
-        OVERVIEW_AGE_BANDS.map((ageBand) => {
-          const datum = findAgeDatum(ageBand)
-          const entered = datum ? 100 : 0
-          const passed = datum ? Math.round((datum.successRate / 100) * entered) : 0
-          const dropOff = Math.max(0, entered - passed)
-          return [
-            ageBand,
-            {
-              entered,
-              passed,
-              dropOff,
-              successRate: datum?.successRate ?? 0,
-            },
-          ]
-        })
-      ) as SimulationOverviewResponseDto["funnelPanels"][number]["agentsByAge"],
-    })),
-  }
+function formatDurationLabel(seconds: number) {
+  const minutes = Math.floor(seconds / 60)
+  const remainingSeconds = seconds % 60
+
+  if (minutes <= 0) return `${remainingSeconds}초`
+  if (remainingSeconds <= 0) return `${minutes}분`
+  return `${minutes}분 ${remainingSeconds}초`
 }
 
 export const resultOverviewMockService: ResultOverviewService = {
   async getOverview(simulationId) {
     await mockDelay()
-    return adaptOverviewResponseToViewModel(simulationId, createOverviewMockResponse())
+
+    return {
+      summary: {
+        taskSuccessRateLabel: `${demoOverview.summary.successRate}%`,
+        totalAgentsLabel: `${formatNumberLabel(demoOverview.summary.totalSessions)}명`,
+        avgCompletionTimeLabel: formatDurationLabel(demoOverview.summary.avgDurationSeconds),
+        dropOffAgentsLabel: `${formatNumberLabel(demoOverview.summary.totalSessions - demoOverview.summary.successCount)}명`,
+      },
+      pages: demoResultPages.map((page, index) =>
+        createResultPageBase({
+          simulationId,
+          order: index + 1,
+          pageName: page.name,
+          pageUrl: page.url,
+          screenshotUrl: page.screenshotUrl,
+        })
+      ),
+      ageStats: demoOverview.ageStats.map((item) => ({
+        ageBand: item.ageBand,
+        successRate: item.successRate,
+        failureRate: item.failureRate,
+        dropOffRate: item.failureRate,
+        avgDurationMinutes: item.avgDurationMinutes,
+        avgActions: item.avgActions,
+      })),
+    }
   },
 }
 

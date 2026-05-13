@@ -80,7 +80,6 @@ function ResultAiFixPage() {
   })
   const { expandedPageIds, expandPage, togglePage } = useResultPageSidePanelState(
     selectedPageId,
-    pageIds[0] ? [pageIds[0]] : [],
   )
   const selectedPage: ResultAiFixPageViewModel | null =
     pages.find((page) => page.pageId === selectedPageId) ?? pages[0] ?? null
@@ -98,8 +97,7 @@ function ResultAiFixPage() {
       pages.map((page) => ({
         id: page.pageId,
         name: page.pageName,
-        screenshotUrl: page.screenshotUrl ?? "",
-        metaText: page.metaText,
+        screenshotUrl: page.screenshotUrl || "/mock-images/img-example-site.png",
       })),
     [pages],
   )

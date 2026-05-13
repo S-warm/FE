@@ -232,8 +232,7 @@ function ResultHeatmapPage() {
       pages.map((page) => ({
         id: page.pageId,
         name: page.pageName,
-        screenshotUrl: page.screenshotUrl,
-        metaText: page.metaText,
+        screenshotUrl: page.screenshotUrl || "/mock-images/img-example-site.png",
       })),
     [pages],
   )

@@ -13,6 +13,7 @@ import {
   type DigitalLiteracyLevel,
   SetupSectionTitle,
   SimulationSummaryCard,
+  UrlParamsInput,
 } from "@/components/sections/simulation-setup"
 import { TextArea, TextField } from "@/components/atoms"
 import { AuthLayout } from "@/layouts/AuthLayout"
@@ -22,6 +23,7 @@ import { mapSimulationFormToCreateRequest } from "@/adapters"
 import { useCreateSimulationMutation } from "@/queries"
 import { ApiServiceError } from "@/services"
 import { useSimulationDraftStore } from "@/store/simulation-draft.store"
+import { useSimulationSettingsStore } from "@/store/simulation-settings.store"
 import { cn } from "@/lib/utils"
 import { motion } from "@/lib/motion"
 import type { SimulationFormViewModel } from "@/types/view-model/simulation/simulation-form"
@@ -66,10 +68,12 @@ function SimulationSetupPage() {
   const personaDevice = useSimulationDraftStore((state) => state.personaDevice)
   const setPersonaDevice = useSimulationDraftStore((state) => state.setPersonaDevice)
 
+  const urlParams = useSimulationSettingsStore((state) => state.urlParams)
+
   const [digitalLiteracy, setDigitalLiteracy] = useState<DigitalLiteracyLevel>("low")
   const [successCondition, setSuccessCondition] = useState("")
   const [errors, setErrors] = useState<SimulationSetupValidationErrors>({})
-  const [ageRatioOpen, setAgeRatioOpen] = useState(false)
+  const [ageRatioOpen, setAgeRatioOpen] = useState(true)
   const [advancedSettingsOpen, setAdvancedSettingsOpen] = useState(true)
   const [ageGroupCounts, setAgeGroupCounts] = useState<AgeGroupCounts>(DEFAULT_AGE_GROUP_COUNTS)
   const [visionLoss, setVisionLoss] = useState(0)
@@ -248,6 +252,14 @@ function SimulationSetupPage() {
                 className="h-11 rounded-xl border-border-soft-2 bg-card px-4 text-text-secondary placeholder:text-text-muted"
               />
             </div>
+          </section>
+
+          <section className="grid w-full max-w-[760px] gap-3">
+            <UrlParamsInput
+              title="URL 파라미터"
+              description="도메인 뒤에 붙는 쿼리 파라미터를 입력하세요"
+              placeholder="param1=value1&param2=value2"
+            />
           </section>
 
           <section className="grid w-full max-w-[760px] gap-3">
@@ -518,6 +530,7 @@ function SimulationSetupPage() {
               projectTitle={projectTitle}
               targetUrl={targetUrl}
               endUrl={endUrl}
+              urlParams={urlParams}
               personaCount={personaCount}
               ageGroupSummary={ageGroupSummary}
               personaDevice={personaDevice}

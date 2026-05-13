@@ -9,3 +9,4 @@ export type {
 export { PersonaRangeSlider } from "@/components/sections/simulation-setup/persona-range-slider"
 export { SetupSectionTitle } from "@/components/sections/simulation-setup/setup-section-title"
 export { SimulationSummaryCard } from "@/components/sections/simulation-setup/simulation-summary-card"
+export { UrlParamsInput } from "@/components/sections/simulation-setup/url-params-input"

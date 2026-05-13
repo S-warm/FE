@@ -14,6 +14,7 @@ interface SimulationSettingsSnapshot {
   includeLowContrast: boolean
   includeWarnings: boolean
   tags: string[]
+  urlParams: string
 }
 
 interface SimulationSettingsState {
@@ -26,6 +27,7 @@ interface SimulationSettingsState {
   includeLowContrast: boolean
   includeWarnings: boolean
   tags: string[]
+  urlParams: string
   setSearchKeyword: (value: string) => void
   setThreshold: (value: number) => void
   setDevice: (value: DeviceType) => void
@@ -36,6 +38,7 @@ interface SimulationSettingsState {
   setIncludeWarnings: (value: boolean) => void
   removeTag: (value: string) => void
   addTag: (value: string) => void
+  setUrlParams: (value: string) => void
   applySettings: (snapshot: SimulationSettingsSnapshot) => void
   reset: () => void
 }
@@ -50,6 +53,7 @@ const initialState: SimulationSettingsSnapshot = {
   includeLowContrast: true,
   includeWarnings: true,
   tags: ["로그인", "장바구니"],
+  urlParams: "",
 }
 
 export const useSimulationSettingsStore = create<SimulationSettingsState>((set) => ({
@@ -75,6 +79,7 @@ export const useSimulationSettingsStore = create<SimulationSettingsState>((set) 
     set((state) => ({
       tags: state.tags.includes(value) ? state.tags : [...state.tags, value],
     })),
+  setUrlParams: (value) => set({ urlParams: value }),
   applySettings: (snapshot) =>
     set({
       ...snapshot,

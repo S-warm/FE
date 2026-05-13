@@ -66,6 +66,7 @@ export function adaptWcagResponseToViewModel(
     title: issue.title,
     severity: adaptWcagSeverity(issue.severity),
     description: issue.description,
+    htmlElement: issue.selector,
   }))
 
   return {

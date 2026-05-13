@@ -1,11 +1,11 @@
 import { useMemo, useRef, useState } from "react"
 import { useLocation, useNavigate, useParams } from "react-router-dom"
-import { AlertTriangle, ArrowRight, Sparkles } from "lucide-react"
+import { ArrowRight } from "lucide-react"
 
-import { CommonButton, IssueBadge } from "@/components/atoms"
+import { CommonButton } from "@/components/atoms"
 import { DonutChart } from "@/components/charts"
 import { ChipTag } from "@/components/forms"
-import { EmptyState } from "@/components/sections"
+import { EmptyState, IssueListSection } from "@/components/sections"
 import { ResultPageSidePanel } from "@/components/sections/result/page-side-panel"
 import { ErrorState, ResultPageSkeleton } from "@/components/states"
 import { Card, CardContent } from "@/components/ui/card"
@@ -29,80 +29,6 @@ const categoryColorMap: Record<IssueCategoryFilter, string> = {
   기타: "var(--color-category-etc)",
 }
 
-function IssueCard({
-  issue,
-  onNavigateAiFix,
-}: {
-  issue: ResultIssueViewModel
-  onNavigateAiFix: () => void
-}) {
-  const badgeVariant =
-    issue.severity.tone === "neutral" ? "info" : issue.severity.tone
-
-  return (
-    <Card
-      className={cn(
-        "rounded-2xl border border-border-strong bg-card shadow-none",
-        motion.card,
-      )}
-    >
-      <CardContent className="grid gap-4 px-5 py-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-start">
-        <div className="grid gap-2">
-          <div className="flex items-start gap-2">
-            <span className="mt-0.5 grid size-7 shrink-0 place-items-center rounded-xl bg-danger-surface text-danger-text">
-              <AlertTriangle className="size-4" />
-            </span>
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <p className="text-body-14-medium text-text-body">{issue.title}</p>
-                <IssueBadge variant={badgeVariant} size="sm">
-                  {issue.category}
-                </IssueBadge>
-                {issue.tags.map((tag) => (
-                  <span
-                    key={tag}
-                    className="inline-flex h-5 items-center rounded-full border border-border-soft bg-surface-subtle px-2 text-[11px] font-medium text-text-secondary"
-                  >
-                    {tag}
-                  </span>
-                ))}
-              </div>
-              <p className="mt-1 text-caption-12-regular text-text-subtle">
-                {issue.affectedUsersCount}명 사용자 영향 ({issue.affectedUsersPercent}%)
-              </p>
-            </div>
-          </div>
-
-          <p className="text-caption-12-regular text-text-muted">{issue.description}</p>
-
-          <div className="grid gap-1">
-            <p className="text-caption-12-medium text-text-subtle">영향받는 요소</p>
-            <code className="w-fit rounded-xl bg-surface-muted px-3 py-2 text-[12px] text-text-body">
-              {issue.selector}
-            </code>
-          </div>
-        </div>
-
-        <div className="flex flex-row flex-wrap items-center justify-end gap-2 md:self-center md:flex-col md:items-center md:justify-center">
-          {issue.expectedBenefit ? (
-            <span className="inline-flex h-6 items-center rounded-full bg-brand-accent px-3 text-caption-12-medium text-white">
-              {issue.expectedBenefit.label} {issue.expectedBenefit.delta}
-            </span>
-          ) : null}
-          <CommonButton
-            size="sm"
-            variant="secondary"
-            className="rounded-xl border border-border-soft-2 bg-brand-subtle text-text-link hover:bg-brand-subtle-hover"
-            onClick={onNavigateAiFix}
-          >
-            <Sparkles className="size-4" />
-            AI 수정 받기
-          </CommonButton>
-        </div>
-      </CardContent>
-    </Card>
-  )
-}
 
 function buildCategoryDonut(issues: ResultIssueViewModel[]) {
   const total = issues.length || 1
@@ -334,18 +260,12 @@ function ResultIssuesPage() {
           </CardContent>
         </Card>
 
-        <section ref={issuesSectionRef} className="grid gap-3">
-          <p className="text-body-14-medium text-text-body">이슈목록</p>
+        <section ref={issuesSectionRef}>
           {filteredIssues.length > 0 ? (
-            <div className="grid gap-3">
-              {filteredIssues.map((issue) => (
-                <IssueCard
-                  key={issue.issueId}
-                  issue={issue}
-                  onNavigateAiFix={() => navigate(`/result/${resolvedId}/ai${search}`)}
-                />
-              ))}
-            </div>
+            <IssueListSection
+              issues={filteredIssues}
+              title="이슈목록"
+            />
           ) : (
             <EmptyState
               title="표시할 이슈가 없습니다"

@@ -19,6 +19,7 @@ export interface SimulationWcagIssueDto {
   title: string
   severity: ApiWcagSeverity
   description: string
+  selector?: string
 }
 
 export interface SimulationWcagResponseDto {

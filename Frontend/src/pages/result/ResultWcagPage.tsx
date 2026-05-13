@@ -200,6 +200,11 @@ function DetailIssueRow({
                 <p className="truncate text-body-14-medium text-text-body">
                   {issue.title}
                 </p>
+                {issue.htmlElement && (
+                  <code className="w-fit rounded-xl bg-surface-muted px-3 py-2 text-[12px] text-text-body">
+                    {issue.htmlElement}
+                  </code>
+                )}
               </div>
             </div>
           </div>

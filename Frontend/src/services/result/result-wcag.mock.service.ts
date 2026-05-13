@@ -36,6 +36,7 @@ function createWcagMockResponse(): SimulationWcagResponseDto {
       title: detail.title,
       severity: mapWcagSeverity(detail.severity),
       description: detail.description,
+      selector: detail.selector,
     }))
   )
 

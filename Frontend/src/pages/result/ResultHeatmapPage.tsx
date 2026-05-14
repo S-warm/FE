@@ -49,14 +49,17 @@ function HeatmapCanvas({
   page,
   selectedPointId,
   onSelectPoint,
+  hoveredPointId,
+  onHoverPoint,
 }: {
   page: ResultHeatmapPageViewModel
   selectedPointId: string | null
   onSelectPoint: (issueId: string) => void
+  hoveredPointId: string | null
+  onHoverPoint: (issueId: string | null) => void
 }) {
   const [failedScreenshotUrl, setFailedScreenshotUrl] = useState<string | null>(null)
   const [imgDimensions, setImgDimensions] = useState<{ width: number; height: number } | null>(null)
-  const [hoveredPointId, setHoveredPointId] = useState<string | null>(null)
 
   const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
     const img = e.currentTarget
@@ -81,8 +84,6 @@ function HeatmapCanvas({
     }
   }
 
-  const isHoveringAnyPoint = hoveredPointId !== null
-
   return (
     <div className="relative rounded-2xl border border-border-strong bg-card overflow-y-auto" style={{ maxHeight: '80vh' }}>
       {page.screenshotUrl && failedScreenshotUrl !== page.screenshotUrl ? (
@@ -103,7 +104,7 @@ function HeatmapCanvas({
       )}
 
       {/* 스포트라이트 어두운 오버레이 */}
-      {isHoveringAnyPoint && (
+      {hoveredPointId && (
         <div className="pointer-events-none absolute inset-0 bg-black/60 rounded-2xl" />
       )}
 
@@ -121,14 +122,14 @@ function HeatmapCanvas({
               key={uniqueKey}
               type="button"
               onClick={() => onSelectPoint(point.issueId)}
-              onMouseEnter={() => setHoveredPointId(point.issueId)}
-              onMouseLeave={() => setHoveredPointId(null)}
+              onMouseEnter={() => onHoverPoint(point.issueId)}
+              onMouseLeave={() => onHoverPoint(null)}
               className={cn(
                 "pointer-events-auto absolute grid size-7 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border-2 border-white text-[11px] font-semibold text-white shadow-lg transition-all",
                 getMarkerColor(point),
                 isSelected ? "ring-4 ring-white/70" : "",
                 isHovered ? "scale-125 ring-4 ring-white/90 shadow-xl" : "hover:scale-105",
-                isHoveringAnyPoint && !isHovered ? "opacity-40" : "",
+                hoveredPointId && !isHovered ? "opacity-40" : "",
               )}
               style={{
                 left: position.left,
@@ -243,6 +244,7 @@ function ResultHeatmapPage() {
   const [ageFilter, setAgeFilter] = useState<ResultAgeFilter>("all")
   const [currentPageIndex, setCurrentPageIndex] = useState(0)
   const [selectedPointId, setSelectedPointId] = useState<string | null>(null)
+  const [hoveredPointId, setHoveredPointId] = useState<string | null>(null)
   const {
     data,
     isLoading,
@@ -269,11 +271,18 @@ function ResultHeatmapPage() {
     [pages, selectedPageId],
   )
   const selectedPoint = useMemo(
-    () =>
-      selectedPage?.points.find((point) => point.issueId === selectedPointId) ??
-      selectedPage?.points[0] ??
-      null,
-    [selectedPage, selectedPointId],
+    () => {
+      // 호버된 포인트가 있으면 호버된 포인트 표시, 없으면 선택된 포인트 표시
+      if (hoveredPointId) {
+        return selectedPage?.points.find((point) => point.issueId === hoveredPointId) ?? null
+      }
+      return (
+        selectedPage?.points.find((point) => point.issueId === selectedPointId) ??
+        selectedPage?.points[0] ??
+        null
+      )
+    },
+    [selectedPage, selectedPointId, hoveredPointId],
   )
 
   const sidePages = useMemo(
@@ -313,7 +322,12 @@ function ResultHeatmapPage() {
   }
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
+    <div className="relative grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
+      {/* 전체 스포트라이트 오버레이 */}
+      {hoveredPointId && (
+        <div className="pointer-events-none fixed inset-0 bg-black/40 z-40" />
+      )}
+
       <ResultPageSidePanel
         pages={sidePages}
         selectedPageId={selectedPageId}
@@ -384,6 +398,8 @@ function ResultHeatmapPage() {
               page={selectedPage}
               selectedPointId={selectedPoint?.issueId ?? null}
               onSelectPoint={setSelectedPointId}
+              hoveredPointId={hoveredPointId}
+              onHoverPoint={setHoveredPointId}
             />
 
             <PointDetail point={selectedPoint} />

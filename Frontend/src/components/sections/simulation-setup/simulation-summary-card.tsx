@@ -67,7 +67,7 @@ function SimulationSummaryCard({
       )}
     >
       <CardContent className="flex flex-col gap-2.5 py-0 text-left">
-        <SummaryRow title="프로젝트 제목" value={projectTitle.trim() || "프로젝트 제목을 입력하세요"} />
+        <SummaryRow title="프로젝트 제목" value={projectTitle.trim() || "네이버 장바구니 시나리오"} />
         <div className="h-px bg-border-subtle" />
         <SummaryRow title="시작 URL" value={targetUrl.trim() || "타겟 URL을 입력하세요"} />
         <div className="h-px bg-border-subtle" />

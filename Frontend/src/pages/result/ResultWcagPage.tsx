@@ -232,10 +232,21 @@ function DetailIssueRow({
           )}
         >
           <div className="min-h-0 overflow-hidden">
-            <div className="mt-4 rounded-2xl border border-border-subtle bg-surface-subtle px-4 py-3">
-              <p className="text-caption-12-regular leading-relaxed text-text-body">
-                {issue.description}
-              </p>
+            <div className="mt-4 grid gap-3">
+              <div className="rounded-2xl border border-border-subtle bg-surface-subtle px-4 py-3">
+                <p className="text-caption-12-medium text-text-secondary mb-2">설명</p>
+                <p className="text-caption-12-regular leading-relaxed text-text-body">
+                  {issue.description}
+                </p>
+              </div>
+              {issue.htmlElement && (
+                <div className="rounded-2xl border border-border-subtle bg-surface-subtle px-4 py-3">
+                  <p className="text-caption-12-medium text-text-secondary mb-2">관련 HTML 요소</p>
+                  <code className="block w-full overflow-x-auto rounded-xl bg-code-surface p-3 text-[12px] text-white leading-relaxed whitespace-pre-wrap break-words">
+                    {issue.htmlElement}
+                  </code>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -333,7 +344,7 @@ function ResultWcagPage() {
         <section className="grid gap-3 md:grid-cols-3">
           <MetricCard
             title="웹 접근성 점수"
-            value={`${selectedPage?.summary.complianceScore ?? 0}점`}
+            value={`${Math.round(selectedPage?.summary.complianceScore ?? 0)}점`}
             subtitle=""
             icon={<ShieldCheck className="size-4" />}
           />
@@ -352,7 +363,7 @@ function ResultWcagPage() {
             <CardContent className="grid gap-3 px-5 py-4 min-h-[120px]">
               <div className="flex items-start justify-between gap-3 text-text-subtle">
                 <div className="flex items-center gap-2">
-                  <span className="grid size-7 place-items-center rounded-xl bg-surface-muted text-text-muted">
+                  <span className="grid size-7 place-items-center rounded-xl border-2 border-danger-text bg-transparent text-danger-text">
                     <TriangleAlert className="size-4" />
                   </span>
                   <p className="text-caption-12-medium">발견된 이슈</p>

@@ -30,12 +30,12 @@ function CodePanel({
   return (
     <Card
       className={cn(
-        "rounded-2xl border bg-card shadow-none",
+        "rounded-2xl border bg-card shadow-none overflow-hidden flex flex-col",
         motion.card,
         active ? "border-border-focus" : "border-border-strong",
       )}
     >
-      <CardContent className="grid gap-3 px-5 py-4">
+      <CardContent className="grid gap-3 px-5 py-4 flex-1 flex flex-col">
         <p
           className={cn(
             "text-body-14-medium",
@@ -44,9 +44,11 @@ function CodePanel({
         >
           {title}
         </p>
-        <pre className="min-h-[220px] overflow-auto rounded-2xl bg-code-surface p-5 text-[13px] leading-relaxed text-white">
-          <code>{code}</code>
-        </pre>
+        <div className="overflow-x-auto overflow-y-auto rounded-2xl bg-code-surface flex-1">
+          <pre className="p-5 text-[13px] leading-relaxed text-white whitespace-pre-wrap break-words h-full">
+            <code>{code}</code>
+          </pre>
+        </div>
       </CardContent>
     </Card>
   )

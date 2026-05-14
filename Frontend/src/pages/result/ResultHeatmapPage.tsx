@@ -89,7 +89,7 @@ function HeatmapCanvas({
       window.removeEventListener('scroll', updateRect)
       window.removeEventListener('resize', updateRect)
     }
-  }, [])
+  }, [page.pageId]) // 페이지 변경 감지
 
   // 이미지가 object-contain으로 표시될 때 실제 위치 계산
   const getPointPosition = (pointX: number, pointY: number) => {
@@ -107,7 +107,14 @@ function HeatmapCanvas({
   }
 
   return (
-    <div ref={containerRef} className="relative rounded-2xl border border-border-strong bg-card overflow-y-auto" style={{ maxHeight: '80vh' }}>
+    <div
+      ref={containerRef}
+      className={cn(
+        "relative rounded-2xl border border-border-strong bg-card overflow-y-auto",
+        hoveredPointId ? "overflow-y-hidden" : ""
+      )}
+      style={{ maxHeight: '80vh' }}
+    >
       {page.screenshotUrl && failedScreenshotUrl !== page.screenshotUrl ? (
         <img
           src={page.screenshotUrl}
@@ -125,10 +132,10 @@ function HeatmapCanvas({
         </div>
       )}
 
-      {/* 스포트라이트 어두운 오버레이 - fixed로 전환 */}
-      {hoveredPointId && containerRect && (
+      {/* 스포트라이트 어두운 오버레이 - fixed로 전환 + 부드러운 fade-in/out */}
+      {containerRect && (
         <div
-          className="pointer-events-none fixed bg-black/60"
+          className="pointer-events-none fixed bg-black/60 transition-opacity duration-300 ease-in-out"
           style={{
             left: `${containerRect.left}px`,
             top: `${containerRect.top}px`,
@@ -136,6 +143,10 @@ function HeatmapCanvas({
             height: `${containerRect.height}px`,
             borderRadius: '1rem',
             zIndex: 50,
+            maxHeight: `${containerRect.height}px`,
+            overflow: 'hidden',
+            opacity: hoveredPointId ? 1 : 0,
+            pointerEvents: hoveredPointId ? 'none' : 'none',
           }}
         />
       )}
@@ -165,11 +176,11 @@ function HeatmapCanvas({
                 onMouseEnter={() => onHoverPoint(point.issueId)}
                 onMouseLeave={() => onHoverPoint(null)}
                 className={cn(
-                  "pointer-events-auto absolute grid size-7 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border-2 border-white text-[11px] font-semibold text-white shadow-lg transition-all",
+                  "pointer-events-auto absolute grid size-7 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border-2 border-white text-[11px] font-semibold text-white shadow-lg transition-all duration-300",
                   getMarkerColor(point),
                   isSelected ? "ring-4 ring-white/70" : "",
-                  isHovered ? "scale-125 ring-4 ring-white/90 shadow-xl" : "hover:scale-105",
-                  hoveredPointId && !isHovered ? "opacity-40" : "",
+                  isHovered ? "scale-150 ring-4 ring-white/100 shadow-2xl brightness-150" : "hover:scale-105",
+                  hoveredPointId && !isHovered ? "opacity-30 brightness-75" : "opacity-100",
                 )}
                 style={{
                   left: position.left,
@@ -203,12 +214,53 @@ function MarkerTooltip({
   point: ResultHeatmapPointViewModel
   position: { x: number; y: number }
 }) {
+  const [tooltipRect, setTooltipRect] = useState<DOMRect | null>(null)
+  const tooltipRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (tooltipRef.current) {
+      setTooltipRect(tooltipRef.current.getBoundingClientRect())
+    }
+  }, [point.issueId])
+
+  // 기본 위치: 마커 우측 12px, 위쪽 50px
+  let left = position.x + 12
+  let top = position.y - 50
+
+  // Tooltip 크기 (대략적인 예상값)
+  const tooltipWidth = tooltipRect?.width ?? 280
+  const tooltipHeight = tooltipRect?.height ?? 100
+  const viewportWidth = window.innerWidth
+  const viewportHeight = window.innerHeight
+  const padding = 16
+
+  // 우측 범위 초과 확인 (우측 끝)
+  if (left + tooltipWidth > viewportWidth - padding) {
+    left = position.x - tooltipWidth - 12 // 마커 좌측으로 변경
+  }
+
+  // 상단 범위 초과 확인 (상단 끝)
+  if (top < padding) {
+    top = position.y + 12 // 마커 하단으로 변경
+  }
+
+  // 하단 범위 초과 확인 (하단 끝)
+  if (top + tooltipHeight > viewportHeight - padding) {
+    top = position.y - tooltipHeight - 12 // 마커 상단으로 조정
+  }
+
+  // 좌측 범위 초과 확인 (좌측 끝)
+  if (left < padding) {
+    left = position.x + 12 // 마커 우측으로 되돌림
+  }
+
   return (
     <div
+      ref={tooltipRef}
       className="pointer-events-none fixed bg-white border border-border-strong rounded-xl shadow-lg p-3 z-70 max-w-xs"
       style={{
-        left: `${position.x + 12}px`,
-        top: `${position.y - 50}px`,
+        left: `${left}px`,
+        top: `${top}px`,
       }}
     >
       <div className="grid gap-2">
@@ -257,23 +309,25 @@ function PointDetail({
           </div>
         </div>
 
-        <div className="flex items-start justify-between gap-3">
-          <div className="grid gap-1">
-            <div className="flex flex-wrap items-center gap-2">
+        <div className="grid gap-3">
+          <div>
+            <div className="flex items-center gap-2 mb-2">
               <IssueBadge variant={getPointBadgeVariant(point)} size="sm">
                 {point.errorType}
               </IssueBadge>
               <p className="text-body-14-medium text-text-body">{point.issueId}</p>
             </div>
-            <p className="text-caption-12-regular text-text-muted">
+            <p className="text-caption-12-regular text-text-muted mb-2">
               {point.description}
             </p>
-            <p className="text-caption-12-medium text-text-secondary">
-              위배 연령대 {point.ageBand === "all" ? "전체" : point.ageBand}
-            </p>
-          </div>
-          <div className="rounded-xl bg-surface-subtle px-3 py-2 text-caption-12-medium text-text-secondary">
-            영향 사용자 {point.affectedUsersCount}명
+            <div className="flex items-center justify-between">
+              <p className="text-caption-12-medium text-text-secondary">
+                위배 연령대 {point.ageBand === "all" ? "전체" : point.ageBand}
+              </p>
+              <div className="rounded-xl bg-surface-subtle px-3 py-2 text-caption-12-medium text-text-secondary whitespace-nowrap">
+                영향 사용자 {point.affectedUsersCount}명
+              </div>
+            </div>
           </div>
         </div>
 

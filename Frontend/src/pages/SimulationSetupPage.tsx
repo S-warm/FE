@@ -209,7 +209,7 @@ function SimulationSetupPage() {
             <div className="grid gap-3">
               <SetupSectionTitle title="프로젝트 제목" description="결과 리포트에 표시될 이름" />
               <TextField
-                placeholder="예: A - Mall 구매 플로우"
+                placeholder="예: 네이버 장바구니 시나리오"
                 value={projectTitle}
                 state={errors.projectTitle ? "error" : "default"}
                 errorMessage={errors.projectTitle || undefined}

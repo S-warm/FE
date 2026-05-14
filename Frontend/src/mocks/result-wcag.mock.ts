@@ -503,3 +503,118 @@ export const wcagMockData: WcagData = {
     },
   }
 }
+
+// ============================================================================
+// v2 호환성 변환 (result-wcag.mock.service 호환)
+// ============================================================================
+
+export type WcagSeverityV2 = "critical" | "moderate" | "minor"
+
+export interface WcagIssueDistribution {
+  severity: WcagSeverityV2
+  label: string
+  description: string
+  count: number
+}
+
+export interface WcagDetailIssue {
+  id: string
+  issueNo: number
+  title: string
+  severity: WcagSeverityV2
+  summary: string
+  description: string
+  guidance: string
+  selector: string
+  criterion: string
+}
+
+export interface WcagPageResult {
+  pageId: string
+  pageName: string
+  complianceScore: number
+  scoreInterpretation: string
+  wcagLabel: WcagLabel
+  passedTests: number
+  totalTests: number
+  foundIssues: number
+  distribution: WcagIssueDistribution[]
+  details: WcagDetailIssue[]
+}
+
+export interface WcagResultMockV2 {
+  pageResults: WcagPageResult[]
+}
+
+// 백엔드 데이터를 v2 형식으로 변환
+const convertToV2Format = (): WcagResultMockV2 => {
+  const pageUrlMap: Record<string, { pageId: string; pageName: string }> = {
+    "https://a-mall.com/login": { pageId: "login", pageName: "로그인 페이지" },
+    "https://a-mall.com/signup": { pageId: "signup", pageName: "회원가입 페이지" },
+    "https://a-mall.com/main": { pageId: "main", pageName: "메인 페이지" },
+    "https://a-mall.com/product/12847": { pageId: "product", pageName: "상품 상세 페이지" },
+    "https://a-mall.com/cart": { pageId: "cart", pageName: "장바구니 페이지" },
+    "https://a-mall.com/checkout": { pageId: "checkout", pageName: "배송지 페이지" },
+    "https://a-mall.com/payment": { pageId: "payment", pageName: "결제 페이지" },
+    "https://a-mall.com/mypage": { pageId: "mypage", pageName: "마이페이지" },
+  }
+
+  return {
+    pageResults: Object.entries(wcagMockData.urls).map(([url, data], index) => {
+      const pageInfo = pageUrlMap[url] || { pageId: `page-${index}`, pageName: url }
+      const violations = data.violations
+      const totalTests = violations.length * 5 // 임의의 테스트 수
+      const passedTests = Math.round(totalTests * (data.score / 100))
+
+      return {
+        pageId: pageInfo.pageId,
+        pageName: pageInfo.pageName,
+        complianceScore: data.score,
+        scoreInterpretation: `준수점수 ${data.score}% - ${data.wcagLabel}`,
+        wcagLabel: data.wcagLabel,
+        passedTests,
+        totalTests,
+        foundIssues: violations.length,
+        distribution: [
+          {
+            severity: "critical" as const,
+            label: "Critical",
+            description: "즉각 조치 필요",
+            count: data.distribution.Critical,
+          },
+          {
+            severity: "moderate" as const,
+            label: "Moderate",
+            description: "우선순위 높음",
+            count: data.distribution.Moderate,
+          },
+          {
+            severity: "minor" as const,
+            label: "Minor",
+            description: "권장 수정 사항",
+            count: data.distribution.Minor,
+          },
+        ],
+        details: violations.map((violation, vIndex) => ({
+          id: violation.wcagIssueId,
+          issueNo: vIndex + 1,
+          title: violation.title,
+          severity: (
+            violation.severity === "Critical"
+              ? "critical"
+              : violation.severity === "Moderate"
+                ? "moderate"
+                : "minor"
+          ) as WcagSeverityV2,
+          summary: violation.description,
+          description: violation.description,
+          guidance: `WCAG 기준 ${violation.wcag_criteria} 준수 필요`,
+          selector: violation.html,
+          criterion: violation.wcag_criteria,
+        })),
+      }
+    }),
+  }
+}
+
+export const wcagResultMock = convertToV2Format()

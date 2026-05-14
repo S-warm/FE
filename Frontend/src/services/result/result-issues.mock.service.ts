@@ -1,6 +1,7 @@
 import { adaptIssuesResponseToViewModel } from "@/adapters/result/result-issues.adapter"
 import { createResultPageSummary } from "@/adapters/result/result-page.adapter"
 import { adaptIssueSeverity } from "@/adapters/result/result-severity.adapter"
+import { searchResultIssuesMock } from "@/mocks/result-search.mock"
 import { demoIssues, demoResultPages } from "@/mocks/uxswarm-demo.mock"
 import { mockDelay } from "@/services/core/mock-delay"
 import { requestJsonWithFallback } from "@/services/core/http-client"
@@ -17,10 +18,39 @@ function mapCategory(category: string) {
 }
 
 function groupIssuesByUrl(url: string) {
-  return demoIssues.filter((issue) => issue.url === url)
+  const issues = demoIssues.filter((issue) => issue.url === url)
+  if (issues.length > 0) return issues
+
+  if (url === "https://a-mall.com/search") {
+    return searchResultIssuesMock.map((issue) => ({
+      issueId: issue.issueId,
+      category: issue.category,
+      severity:
+        issue.severity === "critical"
+          ? "CRITICAL"
+          : issue.severity === "high"
+            ? "HIGH"
+            : issue.severity === "medium"
+              ? "MEDIUM"
+              : "LOW",
+      title: issue.title,
+      description: issue.description,
+      targetHtml: issue.targetHtml,
+      tags: [...issue.tags],
+      url: issue.url,
+      affectedUsersCount: issue.affectedUsersCount,
+      affectedUsersPercent: issue.affectedUsersPercent,
+    }))
+  }
+
+  return issues
 }
 
 function toApiIssueSeverity(severity: string): ApiIssueSeverity {
+  if (severity === "CRITICAL") return "CRITICAL"
+  if (severity === "HIGH") return "HIGH"
+  if (severity === "MEDIUM") return "MEDIUM"
+  if (severity === "LOW") return "LOW"
   if (severity === "critical") return "CRITICAL"
   if (severity === "high") return "HIGH"
   if (severity === "medium") return "MEDIUM"

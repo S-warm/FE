@@ -1,4 +1,5 @@
 import { adaptWcagResponseToViewModel, createResultPageBase } from "@/adapters/result"
+import { getResultPageScreenshotUrl } from "@/mocks/mock-assets"
 import { mockDelay } from "@/services/core/mock-delay"
 import { requestJsonWithFallback } from "@/services/core/http-client"
 import type { ResultWcagService } from "@/services/result/result-wcag.service"
@@ -67,6 +68,7 @@ export const resultWcagMockService: ResultWcagService = {
         order: index + 1,
         pageName: page.pageName,
         pageUrl: `https://a-mall.com/${page.pageId}`,
+        screenshotUrl: getResultPageScreenshotUrl(page.pageId),
       })
     )
 

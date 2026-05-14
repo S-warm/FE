@@ -1,6 +1,7 @@
 import { adaptAiFixResponseToViewModel } from "@/adapters/result/result-ai-fix.adapter"
 import { createResultPageSummary } from "@/adapters/result/result-page.adapter"
 import { adaptIssueSeverity } from "@/adapters/result/result-severity.adapter"
+import { searchAiFixesMock } from "@/mocks/result-search.mock"
 import { demoFixesByUrl, demoResultPages } from "@/mocks/uxswarm-demo.mock"
 import { mockDelay } from "@/services/core/mock-delay"
 import { requestJsonWithFallback } from "@/services/core/http-client"
@@ -21,7 +22,12 @@ export const resultAiFixMockService: ResultAiFixService = {
 
     return {
       pages: demoResultPages.map((page, index) => {
-        const fixes = demoFixesByUrl[page.url] ?? []
+        const fixes =
+          demoFixesByUrl[page.url]?.length
+            ? demoFixesByUrl[page.url]
+            : page.url === "https://a-mall.com/search"
+              ? searchAiFixesMock
+              : []
 
         return {
           ...createResultPageSummary({

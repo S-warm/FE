@@ -109,10 +109,7 @@ function HeatmapCanvas({
   return (
     <div
       ref={containerRef}
-      className={cn(
-        "relative rounded-2xl border border-border-strong bg-card overflow-y-auto",
-        hoveredPointId ? "overflow-y-hidden" : ""
-      )}
+      className="relative rounded-2xl border border-border-strong bg-card overflow-y-auto"
       style={{ maxHeight: '80vh' }}
     >
       {page.screenshotUrl && failedScreenshotUrl !== page.screenshotUrl ? (
@@ -176,10 +173,10 @@ function HeatmapCanvas({
                 onMouseEnter={() => onHoverPoint(point.issueId)}
                 onMouseLeave={() => onHoverPoint(null)}
                 className={cn(
-                  "pointer-events-auto absolute grid size-7 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border-2 border-white text-[11px] font-semibold text-white shadow-lg transition-all duration-300",
+                  "pointer-events-auto absolute grid size-10 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border-2 border-white text-[12px] font-semibold text-white shadow-lg transition-all duration-300",
                   getMarkerColor(point),
                   isSelected ? "ring-4 ring-white/70" : "",
-                  isHovered ? "scale-150 ring-4 ring-white/100 shadow-2xl brightness-150" : "hover:scale-105",
+                  isHovered ? "ring-4 ring-white/100 shadow-2xl brightness-150" : "hover:scale-105",
                   hoveredPointId && !isHovered ? "opacity-30 brightness-75" : "opacity-100",
                 )}
                 style={{

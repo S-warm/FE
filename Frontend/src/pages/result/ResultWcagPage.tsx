@@ -205,11 +205,6 @@ function DetailIssueRow({
                 <p className="truncate text-body-14-medium text-text-body">
                   {issue.title}
                 </p>
-                {issue.htmlElement && (
-                  <code className="w-fit rounded-xl bg-surface-muted px-3 py-2 text-[12px] text-text-body">
-                    {issue.htmlElement}
-                  </code>
-                )}
               </div>
             </div>
           </div>
@@ -350,7 +345,7 @@ function ResultWcagPage() {
           />
           <MetricCard
             title="통과된 테스트"
-            value={`${selectedPage?.summary.passedTests ?? 0}`}
+            value={`${selectedPage?.summary.passedTests ?? 0}개`}
             subtitle=""
             icon={<ClipboardCheck className="size-4" />}
           />
@@ -363,7 +358,7 @@ function ResultWcagPage() {
             <CardContent className="grid gap-3 px-5 py-4 min-h-[120px]">
               <div className="flex items-start justify-between gap-3 text-text-subtle">
                 <div className="flex items-center gap-2">
-                  <span className="grid size-7 place-items-center rounded-xl border-2 border-danger-text bg-transparent text-danger-text">
+                  <span className="grid size-7 place-items-center rounded-xl bg-surface-muted text-text-muted">
                     <TriangleAlert className="size-4" />
                   </span>
                   <p className="text-caption-12-medium">발견된 이슈</p>
@@ -378,7 +373,7 @@ function ResultWcagPage() {
               </div>
               <div className="grid gap-1">
                 <p className="text-title-24-bold text-text-strong">
-                  {selectedPage?.summary.foundIssues ?? 0}
+                  {`${selectedPage?.summary.foundIssues ?? 0}개`}
                 </p>
                 <div className="h-5" />
               </div>

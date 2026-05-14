@@ -4,6 +4,7 @@ export const resultPageScreenshotUrls = {
   login: "/mock-images/page-login.png",
   signup: "/mock-images/page-signup.png",
   main: "/mock-images/page-main.png",
+  search: "/mock-images/page-search.png",
   product: "/mock-images/page-product-detail.png",
   cart: "/mock-images/page-cart.png",
   checkout: resultPageScreenshotUrl,

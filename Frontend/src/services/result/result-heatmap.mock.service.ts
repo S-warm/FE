@@ -1,6 +1,7 @@
 import { adaptHeatmapResponseToViewModel } from "@/adapters/result/result-heatmap.adapter"
 import { createResultPageSummary } from "@/adapters/result/result-page.adapter"
 import { adaptIssueSeverity } from "@/adapters/result/result-severity.adapter"
+import { searchHeatmapPointsMock, searchResultIssuesMock } from "@/mocks/result-search.mock"
 import { demoHeatmapPoints, demoIssues, demoResultPages } from "@/mocks/uxswarm-demo.mock"
 import { mockDelay } from "@/services/core/mock-delay"
 import { requestJsonWithFallback } from "@/services/core/http-client"
@@ -47,11 +48,21 @@ function toMockAgeGroup(ageGroup: ResultAgeFilter) {
 }
 
 function findIssue(issueId: string) {
-  return demoIssues.find((issue) => issue.issueId === issueId)
+  return (
+    demoIssues.find((issue) => issue.issueId === issueId) ??
+    searchResultIssuesMock.find((issue) => issue.issueId === issueId)
+  )
 }
 
 function getPageIssues(pageUrl: string) {
-  return demoIssues.filter((issue) => issue.url === pageUrl)
+  const issues = demoIssues.filter((issue) => issue.url === pageUrl)
+  if (issues.length > 0) return issues
+
+  if (pageUrl === "https://a-mall.com/search") {
+    return searchResultIssuesMock
+  }
+
+  return issues
 }
 
 function buildBreakdown(errorType: ApiHeatmapErrorType) {
@@ -119,8 +130,15 @@ export const resultHeatmapMockService: ResultHeatmapService = {
           if (params.ageGroup === "all") return true
           return point.ageBand === toMockAgeGroup(params.ageGroup)
         })
+        const searchFallbackPoints =
+          filteredPoints.length === 0 && page.url === "https://a-mall.com/search"
+            ? searchHeatmapPointsMock.filter((point) => {
+                if (params.ageGroup === "all") return true
+                return point.ageBand === toMockAgeGroup(params.ageGroup)
+              })
+            : []
         const pageIssues = getPageIssues(page.url)
-        const normalizedPoints = filteredPoints.map((point) => {
+        const normalizedPoints = [...filteredPoints, ...searchFallbackPoints].map((point) => {
           const linkedIssue = findIssue(point.issueId)
           const errorType = toErrorType(point.errorType)
 

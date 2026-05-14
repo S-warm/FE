@@ -1,278 +1,505 @@
-export type WcagSeverity = "critical" | "moderate" | "minor"
+export type WcagSeverity = "Critical" | "Moderate" | "Minor"
+export type WcagLabel = "AAA" | "AA" | "A" | "미달"
 
-export interface WcagIssueDistribution {
-  severity: WcagSeverity
-  label: string
-  description: string
-  count: number
-}
-
-export interface WcagDetailIssue {
-  id: string
-  issueNo: number
+export interface WcagViolation {
+  wcagIssueId: string
   title: string
   severity: WcagSeverity
-  summary: string
   description: string
-  guidance: string
-  selector: string
-  criterion: string
+  html: string
+  wcag_criteria: string
 }
 
-export interface WcagPageResult {
-  pageId: string
-  pageName: string
-  complianceScore: number
-  scoreInterpretation: string
-  wcagLabel: string
-  passedTests: number
-  totalTests: number
-  foundIssues: number
-  distribution: WcagIssueDistribution[]
-  details: WcagDetailIssue[]
+export interface WcagUrlResult {
+  score: number
+  wcagLabel: WcagLabel
+  distribution: {
+    Critical: number
+    Moderate: number
+    Minor: number
+  }
+  violations: WcagViolation[]
 }
 
-export interface WcagResultMock {
-  pageResults: WcagPageResult[]
+export interface WcagData {
+  urls: {
+    [url: string]: WcagUrlResult
+  }
 }
 
-export const wcagResultMock: WcagResultMock = {
-  pageResults: [
-    {
-      pageId: "login",
-      pageName: "로그인 페이지",
-      complianceScore: 38,
-      scoreInterpretation: "텍스트 대비와 폼 구조에서 기준 미달이 많아 실제 사용성이 낮은 상태입니다.",
-      wcagLabel: "AA 준수",
-      passedTests: 3,
-      totalTests: 10,
-      foundIssues: 4,
-      distribution: [
-        { severity: "critical", label: "Critical", description: "즉각 조치 필요", count: 2 },
-        { severity: "moderate", label: "Moderate", description: "우선순위 높음", count: 1 },
-        { severity: "minor", label: "Minor", description: "권장 수정 사항", count: 1 },
-      ],
-      details: [
+export const wcagMockData: WcagData = {
+  urls: {
+    "https://a-mall.com/login": {
+      score: 50,
+      wcagLabel: "미달",
+      distribution: {
+        Critical: 2,
+        Moderate: 2,
+        Minor: 1,
+      },
+      violations: [
         {
-          id: "login-wcag-1",
-          issueNo: 1,
+          wcagIssueId: "ea323eb9-a74b-92de-43d6-3cf79beece6e",
           title: "텍스트 대비율 미달",
-          severity: "critical",
-          summary: "보조 설명과 레이블 텍스트가 저시력 사용자에게 충분히 읽히지 않습니다.",
-          description:
-            "텍스트와 배경의 밝기 차이가 약해서 글씨가 흐릿하게 보입니다.",
-          guidance: "레이블과 보조 텍스트 색상을 올리고 배경 명도를 조정해 최소 대비율을 만족시키세요.",
-          selector: "label.form-label, p.helper-text",
-          criterion: "1.4.3 Contrast (Minimum)",
+          severity: "Critical" as const,
+          description: "로그인 버튼의 전경(#5B6B8A)과 배경(#E8EEF7) 대비비가 1.18:1로 WCAG 2.1 AA 정상 텍스트 기준 4.5:1을 미달합니다.",
+          html: "<button class=\"login-submit\">로그인</button>",
+          wcag_criteria: "1.4.3",
         },
         {
-          id: "login-wcag-2",
-          issueNo: 2,
+          wcagIssueId: "274d183c-7583-5ef5-5473-f6a8714e1353",
           title: "필수 입력 구조 전달 부족",
-          severity: "critical",
-          summary: "필수 입력 여부가 시각적으로만 보여 스크린리더 사용자가 맥락을 잃을 수 있습니다.",
-          description:
-            "필수 입력 항목이 시각적 표시에만 의존하고 있어 보조기기 사용자가 필수 여부를 제대로 파악하지 못합니다.",
-          guidance: "aria-required와 명시적 레이블 연결을 추가해 필수 입력 구조를 전달하세요.",
-          selector: "input[required], label.required",
-          criterion: "1.3.1 Info and Relationships",
+          severity: "Critical" as const,
+          description: "입력 필드에 aria-required 속성이 없어 스크린리더가 필수 여부를 안내하지 못합니다.",
+          html: "<input type=\"text\" placeholder=\"아이디\" />",
+          wcag_criteria: "1.3.1",
         },
         {
-          id: "login-wcag-3",
-          issueNo: 3,
+          wcagIssueId: "5e526b9b-994b-e1fe-03cb-d307dddc5860",
           title: "오류 메시지 위치 분리",
-          severity: "moderate",
-          summary: "오류 안내가 입력 컨텍스트에서 떨어져 보여 수정 지점을 바로 찾기 어렵습니다.",
-          description:
-            "포커스 및 오류 메시지의 노출 위치가 입력 컨텍스트와 멀리 떨어져 있어 사용자가 변경점을 놓칠 수 있습니다.",
-          guidance: "각 입력 필드 하단에 오류 메시지를 고정하고, aria-describedby로 연결하세요.",
-          selector: "div.error-message",
-          criterion: "3.3.1 Error Identification",
+          severity: "Moderate" as const,
+          description: "로그인 실패 시 오류 메시지가 폼 상단에만 표시되어 입력 필드와 시각·구조적으로 분리되어 있습니다.",
+          html: "<div class=\"error-banner\" role=\"alert\">아이디 또는 비밀번호가 일치하지 않습니다</div>",
+          wcag_criteria: "3.3.1",
         },
         {
-          id: "login-wcag-4",
-          issueNo: 4,
+          wcagIssueId: "0fdf920d-4c12-b2d6-0d9e-beabeae2603d",
+          title: "Placeholder 텍스트 대비 부족",
+          severity: "Moderate" as const,
+          description: "Placeholder 텍스트(#CBD5E1)와 배경(#FFFFFF) 대비비가 2.1:1로 비텍스트 기준 3:1을 미달합니다.",
+          html: "<input placeholder=\"아이디를 입력하세요\" />",
+          wcag_criteria: "1.4.11",
+        },
+        {
+          wcagIssueId: "684936b6-846c-5aae-23b1-6aeb6a5941f5",
           title: "비밀번호 보기 버튼 포커스 약함",
-          severity: "minor",
-          summary: "포커스 이동은 가능하지만 현재 위치를 인지하기 어렵습니다.",
-          description:
-            "비밀번호 보기 버튼의 포커스 표시가 약해 키보드 사용자가 현재 상호작용 위치를 놓칠 수 있습니다.",
-          guidance: "버튼 포커스 링과 배경 강조를 추가해 현재 위치를 또렷하게 보여주세요.",
-          selector: "button[data-testid='toggle-password']",
-          criterion: "2.4.7 Focus Visible",
+          severity: "Minor" as const,
+          description: "비밀번호 표시 토글 버튼의 키보드 포커스 outline이 dotted 1px로 시각적 대비가 낮습니다.",
+          html: "<button class=\"password-toggle\">",
+          wcag_criteria: "2.4.7",
         },
       ],
     },
-    {
-      pageId: "main",
-      pageName: "메인 페이지",
-      complianceScore: 57,
-      scoreInterpretation: "주요 CTA는 보이지만 시각 계층과 대체 텍스트 구성이 아쉬워 탐색성이 흔들리는 상태입니다.",
-      wcagLabel: "AA 준수",
-      passedTests: 5,
-      totalTests: 10,
-      foundIssues: 3,
-      distribution: [
-        { severity: "critical", label: "Critical", description: "즉각 조치 필요", count: 1 },
-        { severity: "moderate", label: "Moderate", description: "우선순위 높음", count: 1 },
-        { severity: "minor", label: "Minor", description: "권장 수정 사항", count: 1 },
-      ],
-      details: [
+    "https://a-mall.com/signup": {
+      score: 30,
+      wcagLabel: "미달",
+      distribution: {
+        Critical: 2,
+        Moderate: 3,
+        Minor: 2,
+      },
+      violations: [
         {
-          id: "main-wcag-1",
-          issueNo: 1,
-          title: "히어로 CTA 대비 부족",
-          severity: "critical",
-          summary: "첫 화면 핵심 행동 버튼이 배경과 충분히 분리되지 않습니다.",
-          description:
-            "히어로 영역의 CTA가 배경과 명도 차이가 낮아 핵심 행동이 즉시 인지되지 않을 수 있습니다.",
-          guidance: "CTA 버튼 배경/텍스트 대비를 높이고 주변 장식 요소의 시각 강도를 낮추세요.",
-          selector: "a[data-cta='primary']",
-          criterion: "1.4.3 Contrast (Minimum)",
-        },
-        {
-          id: "main-wcag-2",
-          issueNo: 2,
-          title: "프로젝트 카드 보조 정보 가독성 약함",
-          severity: "moderate",
-          summary: "최근 프로젝트 메타 텍스트가 작고 연해 정보 구분이 어렵습니다.",
-          description:
-            "카드 보조 정보가 작은 글자 크기와 낮은 대비로 표시되어 날짜/상태 정보를 빠르게 읽기 어렵습니다.",
-          guidance: "보조 정보 글자 크기와 색 대비를 한 단계 올려 정보 계층을 분명히 하세요.",
-          selector: "aside .project-card-meta",
-          criterion: "1.4.4 Resize Text",
-        },
-        {
-          id: "main-wcag-3",
-          issueNo: 3,
-          title: "장식 이미지 대체 설명 불충분",
-          severity: "minor",
-          summary: "시각 장식과 의미 이미지의 구분이 모호해 대체 텍스트 전략이 약합니다.",
-          description:
-            "일부 이미지가 장식인지 의미 전달용인지 구분되지 않아 보조기기 사용 시 맥락 전달이 약해질 수 있습니다.",
-          guidance: "장식 이미지는 빈 alt를 사용하고, 의미 이미지는 목적 중심 alt로 정리하세요.",
-          selector: "img.hero, img.project-preview",
-          criterion: "1.1.1 Non-text Content",
-        },
-      ],
-    },
-    {
-      pageId: "signup",
-      pageName: "회원가입 페이지",
-      complianceScore: 46,
-      scoreInterpretation: "입력 가이드와 오류 피드백이 늦게 드러나 회원가입 흐름의 이해 가능성이 떨어지는 상태입니다.",
-      wcagLabel: "AA 준수",
-      passedTests: 4,
-      totalTests: 10,
-      foundIssues: 3,
-      distribution: [
-        { severity: "critical", label: "Critical", description: "즉각 조치 필요", count: 1 },
-        { severity: "moderate", label: "Moderate", description: "우선순위 높음", count: 2 },
-        { severity: "minor", label: "Minor", description: "권장 수정 사항", count: 0 },
-      ],
-      details: [
-        {
-          id: "signup-wcag-1",
-          issueNo: 1,
+          wcagIssueId: "05bd2fe5-1757-311e-45f3-ab81dc55b0b2",
           title: "필수 입력 정보 구조 미전달",
-          severity: "critical",
-          summary: "필수 항목 여부를 보조기기가 정확히 파악하지 못합니다.",
-          description:
-            "필수 입력 여부가 시각적으로만 구분되어 스크린리더 환경에서 폼 구조 이해가 어려워집니다.",
-          guidance: "필수 항목을 aria-required와 연결 레이블로 명시하고, 그룹 설명을 추가하세요.",
-          selector: "form .required",
-          criterion: "1.3.1 Info and Relationships",
+          severity: "Critical" as const,
+          description: "필수 항목이 빨간 asterisk만으로 구분되며 aria-required 및 텍스트 라벨이 없습니다.",
+          html: "<label>이메일 <span style=\"color:red\">*</span></label>",
+          wcag_criteria: "1.3.1, 1.4.1",
         },
         {
-          id: "signup-wcag-2",
-          issueNo: 2,
-          title: "비밀번호 조건 안내 노출 지연",
-          severity: "moderate",
-          summary: "조건 안내가 늦어 반복 입력을 유도하고 오류 복구를 늦춥니다.",
-          description:
-            "비밀번호 규칙 안내가 제출 시점에만 노출되어 사용자가 사전에 조건을 알기 어렵습니다.",
-          guidance: "입력 시작 시점에 비밀번호 규칙을 노출하고 조건 충족 여부를 실시간 표시하세요.",
-          selector: "p.password-hint",
-          criterion: "3.3.2 Labels or Instructions",
-        },
-        {
-          id: "signup-wcag-3",
-          issueNo: 3,
+          wcagIssueId: "793121f2-82fd-04a3-0ccb-9a7b4b15f04c",
           title: "인증번호 흐름 포커스 이동 불안정",
-          severity: "moderate",
-          summary: "입력 칸 이동 흐름이 끊겨 인증 완료 시간이 늘어납니다.",
-          description:
-            "OTP 입력 시 자동 포커스 이동이 안정적이지 않아 사용자가 입력 상태를 다시 확인해야 합니다.",
-          guidance: "한 자리 입력 후 다음 칸으로 포커스를 이동하고, 삭제 시 이전 칸 복귀를 지원하세요.",
-          selector: "input[data-otp]",
-          criterion: "2.4.3 Focus Order",
+          severity: "Critical" as const,
+          description: "분할된 인증번호 입력 박스에서 자동 포커스 이동이 일부 환경에서 동작하지 않습니다.",
+          html: "<input class=\"otp-digit\" maxlength=\"1\" />",
+          wcag_criteria: "2.4.3",
+        },
+        {
+          wcagIssueId: "4a4e1bda-53f4-4a44-1c92-9f42c8d57666",
+          title: "비밀번호 조건 안내 노출 지연",
+          severity: "Moderate" as const,
+          description: "비밀번호 규칙이 포커스 시에만 표시되어 입력 전 사전 인지가 불가능합니다.",
+          html: "<div class=\"password-hint\" data-show-on=\"focus\">",
+          wcag_criteria: "3.3.2",
+        },
+        {
+          wcagIssueId: "d9b19290-d4a7-7b6d-5f2a-cc2c8d0b6831",
+          title: "약관 체크박스 라벨 클릭 영역 부재",
+          severity: "Moderate" as const,
+          description: "체크박스와 인접 텍스트가 단일 클릭 영역으로 묶이지 않아 접근성이 저하됩니다.",
+          html: "<input type=\"checkbox\" id=\"agree-marketing\" />",
+          wcag_criteria: "2.5.5",
+        },
+        {
+          wcagIssueId: "a3c0559e-b10b-8a6a-50c7-86d244a0157f",
+          title: "실시간 검증 부재",
+          severity: "Moderate" as const,
+          description: "이메일 형식 오류가 blur 시점이 아닌 제출 후에만 표시됩니다.",
+          html: "<input type=\"email\" name=\"email\" />",
+          wcag_criteria: "3.3.1",
+        },
+        {
+          wcagIssueId: "f430c737-60b9-339d-4f43-29e4f8975080",
+          title: "생년월일 형식 안내 부족",
+          severity: "Minor" as const,
+          description: "Placeholder만으로 형식을 안내하여 화면 외부에서는 형식을 알 수 없습니다.",
+          html: "<input name=\"birth\" placeholder=\"1990-01-01\" />",
+          wcag_criteria: "3.3.2",
+        },
+        {
+          wcagIssueId: "37996703-7b44-af3e-a134-46f42badc675",
+          title: "기본 체크 옵션 명시성 부족",
+          severity: "Minor" as const,
+          description: "마케팅 동의 등 선택 항목의 기본 체크 여부가 시각적으로 명확하지 않습니다.",
+          html: "<input type=\"checkbox\" id=\"agree-marketing\" />",
+          wcag_criteria: "3.3.4",
         },
       ],
     },
-    {
-      pageId: "payment",
-      pageName: "결제 페이지",
-      complianceScore: 51,
-      scoreInterpretation: "상태 피드백과 정보 강조가 부족해 결제 직전 단계에서 확신을 주지 못하는 상태입니다.",
-      wcagLabel: "AA 준수",
-      passedTests: 5,
-      totalTests: 10,
-      foundIssues: 4,
-      distribution: [
-        { severity: "critical", label: "Critical", description: "즉각 조치 필요", count: 1 },
-        { severity: "moderate", label: "Moderate", description: "우선순위 높음", count: 2 },
-        { severity: "minor", label: "Minor", description: "권장 수정 사항", count: 1 },
-      ],
-      details: [
+    "https://a-mall.com/main": {
+      score: 40,
+      wcagLabel: "미달",
+      distribution: {
+        Critical: 2,
+        Moderate: 3,
+        Minor: 1,
+      },
+      violations: [
         {
-          id: "payment-wcag-1",
-          issueNo: 1,
-          title: "비활성 버튼 이유 미표시",
-          severity: "critical",
-          summary: "진행이 막힌 이유를 알 수 없어 결제 이탈을 바로 유발할 수 있습니다.",
-          description:
-            "쿠폰 적용 버튼이 비활성 상태일 때 원인 설명이 없어 사용자가 다음 행동을 판단하지 못합니다.",
-          guidance: "비활성 조건을 버튼 인접 영역에 텍스트로 노출하고, 충족 시점 변화를 즉시 알려주세요.",
-          selector: "button#apply-coupon",
-          criterion: "3.3.1 Error Identification",
+          wcagIssueId: "dd384543-2506-6db5-0c4e-125472dc4493",
+          title: "히어로 CTA 대비 부족",
+          severity: "Critical" as const,
+          description: "히어로 영역 CTA 전경(#475569)과 배경(#E5E7EB) 대비비가 3.20:1로 텍스트 기준 4.5:1을 미달합니다.",
+          html: "<a data-cta=\"primary\" class=\"hero-cta\">쇼핑 시작하기</a>",
+          wcag_criteria: "1.4.3",
         },
         {
-          id: "payment-wcag-2",
-          issueNo: 2,
+          wcagIssueId: "5dfb6b6d-d227-85d2-297e-b6b24e3f4f37",
+          title: "카테고리 메뉴 호버 의존",
+          severity: "Critical" as const,
+          description: "메인 카테고리 메뉴가 마우스 호버로만 열려 키보드·터치 사용자가 접근할 수 없습니다.",
+          html: "<nav class=\"category-menu\" data-trigger=\"hover\">",
+          wcag_criteria: "2.1.1",
+        },
+        {
+          wcagIssueId: "250dd124-09e9-e094-e7a3-90ed86fb7c0f",
+          title: "상품 카드 보조 정보 가독성 약함",
+          severity: "Moderate" as const,
+          description: "상품 카드의 가격·리뷰가 14px·#94A3B8로 표기되어 가독 기준에 못 미칩니다.",
+          html: "<span class=\"product-price\">29,800원</span>",
+          wcag_criteria: "1.4.4",
+        },
+        {
+          wcagIssueId: "039031ed-4fcc-6011-f562-609a1289a1a2",
+          title: "배너 슬라이드 일시 정지 미지원",
+          severity: "Moderate" as const,
+          description: "히어로 슬라이드가 3초 간격 자동 전환되며 일시 정지 컨트롤이 없습니다.",
+          html: "<div class=\"hero-slider\" data-interval=\"3000\">",
+          wcag_criteria: "2.2.2",
+        },
+        {
+          wcagIssueId: "8ef176e6-84c2-579a-abb6-c1d35b4313ed",
+          title: "검색창 접근 단계 다중화",
+          severity: "Moderate" as const,
+          description: "검색이 아이콘 토글로만 노출되어 1차 시선에서 접근이 어렵습니다.",
+          html: "<button class=\"header-search-toggle\">",
+          wcag_criteria: "2.4.5",
+        },
+        {
+          wcagIssueId: "e1962e1a-f757-4fb5-b18e-abba0bbc6877",
+          title: "장식 이미지 대체 설명 불충분",
+          severity: "Minor" as const,
+          description: "히어로 배너 이미지에 빈 alt 속성이 있으나 인접 텍스트로 의미가 전달되지 않습니다.",
+          html: "<img src=\"/banner.jpg\" alt=\"\" />",
+          wcag_criteria: "1.1.1",
+        },
+      ],
+    },
+    "https://a-mall.com/product/12847": {
+      score: 40,
+      wcagLabel: "미달",
+      distribution: {
+        Critical: 1,
+        Moderate: 3,
+        Minor: 2,
+      },
+      violations: [
+        {
+          wcagIssueId: "98213dc6-7caa-35b3-c786-c5c71f46f294",
+          title: "장바구니 담기 버튼 위치 비표준",
+          severity: "Critical" as const,
+          description: "주요 행동 버튼이 페이지 하단에 위치하여 콘텐츠 순서·키보드 탐색 순서가 비논리적입니다.",
+          html: "<button class=\"add-to-cart bottom-floating\">장바구니 담기</button>",
+          wcag_criteria: "1.3.2",
+        },
+        {
+          wcagIssueId: "b6a10c07-c682-80ca-f2bf-377db58a8446",
+          title: "옵션 선택 드롭다운 터치 영역 부족",
+          severity: "Moderate" as const,
+          description: "사이즈·색상 선택 드롭다운이 28x28px로 WCAG 권장 44x44px 미달입니다.",
+          html: "<select class=\"option-selector\" name=\"size\">",
+          wcag_criteria: "2.5.5",
+        },
+        {
+          wcagIssueId: "dc4ee346-9aa7-735c-66e1-18f4f4e51947",
+          title: "리뷰 별점 색상 의존",
+          severity: "Moderate" as const,
+          description: "리뷰 별점이 노란·회색만으로 구분되며 텍스트 점수가 인접 표기되지 않습니다.",
+          html: "<div class=\"star-rating\" data-score=\"4.2\">",
+          wcag_criteria: "1.4.1",
+        },
+        {
+          wcagIssueId: "79ddc719-cab1-d120-663b-4809756ae8c8",
+          title: "이미지 확대 버튼 인지 어려움",
+          severity: "Moderate" as const,
+          description: "확대 버튼이 14x14px 모서리 배치로 발견이 어렵고 키보드 포커스 표시도 약합니다.",
+          html: "<button class=\"image-zoom\" aria-label=\"확대\">",
+          wcag_criteria: "2.4.7",
+        },
+        {
+          wcagIssueId: "6ad2ca96-64ff-cf66-5f75-d389782aa436",
+          title: "재고 표시 가독성 부족",
+          severity: "Minor" as const,
+          description: "'재고 N개 남음' 문구가 12px로 매우 작게 표기됩니다.",
+          html: "<span class=\"stock-warning\">재고 3개 남음</span>",
+          wcag_criteria: "1.4.4",
+        },
+        {
+          wcagIssueId: "6b72db31-b65e-96dc-5e63-d740e7f9eeb1",
+          title: "상품 정보 헤딩 위계 누락",
+          severity: "Minor" as const,
+          description: "상품명이 h1 없이 div로 표기되어 스크린리더 헤딩 탐색이 어렵습니다.",
+          html: "<div class=\"product-title\">스마트 향초 디퓨저</div>",
+          wcag_criteria: "1.3.1",
+        },
+      ],
+    },
+    "https://a-mall.com/cart": {
+      score: 40,
+      wcagLabel: "미달",
+      distribution: {
+        Critical: 2,
+        Moderate: 3,
+        Minor: 1,
+      },
+      violations: [
+        {
+          wcagIssueId: "2dc9100b-cfe1-980e-6990-dbb7de6619ec",
+          title: "수량 변경 버튼 터치 영역 미달",
+          severity: "Critical" as const,
+          description: "+/- 버튼이 22x22px로 WCAG 권장 44x44px를 크게 미달합니다.",
+          html: "<button class=\"qty-btn qty-decrease\">-</button>",
+          wcag_criteria: "2.5.5",
+        },
+        {
+          wcagIssueId: "68c4b955-6fce-fe8b-5293-6ab95367f8ff",
+          title: "삭제 동작 확인 단계 부재",
+          severity: "Critical" as const,
+          description: "휴지통 아이콘 클릭만으로 즉시 삭제되어 의도치 않은 삭제 시 되돌릴 수 없습니다.",
+          html: "<button class=\"cart-item-delete\" aria-label=\"삭제\">",
+          wcag_criteria: "3.3.4",
+        },
+        {
+          wcagIssueId: "804ba02f-861a-d1c7-e522-85b67bf30a49",
+          title: "비활성 주문 버튼 사유 미표시",
+          severity: "Moderate" as const,
+          description: "주문하기 버튼 비활성화 사유가 aria-describedby 등으로 안내되지 않습니다.",
+          html: "<button class=\"order-submit\" disabled>주문하기</button>",
+          wcag_criteria: "3.3.1",
+        },
+        {
+          wcagIssueId: "755469cc-7494-1972-25e0-bc9abb83424c",
+          title: "쿠폰 영역 발견 가능성 부족",
+          severity: "Moderate" as const,
+          description: "쿠폰 적용 메뉴가 아코디언 내부에 숨겨져 시각·키보드 탐색에서 발견이 어렵습니다.",
+          html: "<details class=\"coupon-accordion\">",
+          wcag_criteria: "2.4.5",
+        },
+        {
+          wcagIssueId: "f908a3d9-1060-0e58-a6b6-006da41c8af2",
+          title: "총 금액 시각 위계 부재",
+          severity: "Moderate" as const,
+          description: "총 금액이 다른 텍스트와 동일 크기·색상으로 표기됩니다.",
+          html: "<p class=\"cart-total\">총 금액 89,400원</p>",
+          wcag_criteria: "1.3.1",
+        },
+        {
+          wcagIssueId: "2ffcd9ac-6455-e49c-41d3-189cdac97916",
+          title: "삭제 아이콘 텍스트 라벨 부재",
+          severity: "Minor" as const,
+          description: "휴지통 아이콘에 visible text 라벨이 없어 시각적 의미 전달이 부족합니다.",
+          html: "<button class=\"cart-item-delete\" aria-label=\"삭제\">",
+          wcag_criteria: "1.1.1",
+        },
+      ],
+    },
+    "https://a-mall.com/checkout": {
+      score: 40,
+      wcagLabel: "미달",
+      distribution: {
+        Critical: 2,
+        Moderate: 2,
+        Minor: 2,
+      },
+      violations: [
+        {
+          wcagIssueId: "b18d40ff-746c-5338-cd6c-da960bbaf635",
+          title: "주소 검색 모달 뷰포트 이탈",
+          severity: "Critical" as const,
+          description: "주소 검색 모달이 1280px 이하 환경에서 우측 하단 절단으로 핵심 입력 영역이 가려집니다.",
+          html: "<div class=\"postal-search-modal\" style=\"right:0;bottom:0\">",
+          wcag_criteria: "1.4.10",
+        },
+        {
+          wcagIssueId: "53f7eb07-23a8-3a49-29bf-ef56554fb92d",
+          title: "강제 자동입력 동의 기본값",
+          severity: "Critical" as const,
+          description: "'다음에도 사용' 체크박스가 기본 체크 상태로 사용자의 명시적 동의 없이 데이터를 저장합니다.",
+          html: "<input type=\"checkbox\" id=\"auto-fill-save\" checked />",
+          wcag_criteria: "3.3.4",
+        },
+        {
+          wcagIssueId: "628080ee-df6c-9a67-9f9f-b2f712ba2225",
+          title: "배송 옵션 라디오 터치 영역 부족",
+          severity: "Moderate" as const,
+          description: "라디오 버튼이 16x16px로 정밀 클릭이 어렵습니다.",
+          html: "<input type=\"radio\" name=\"shipping-option\" />",
+          wcag_criteria: "2.5.5",
+        },
+        {
+          wcagIssueId: "6faa9032-7bcd-525f-7cde-d426206d50c4",
+          title: "다음 단계 버튼 위치 비표준",
+          severity: "Moderate" as const,
+          description: "주요 진행 버튼이 폼 하단 시야 외 영역에 위치합니다.",
+          html: "<button class=\"checkout-next\">다음 단계</button>",
+          wcag_criteria: "2.4.3",
+        },
+        {
+          wcagIssueId: "d70c0e99-9517-2d92-5d00-04fb9568d775",
+          title: "배송 메모 안내 잘림",
+          severity: "Minor" as const,
+          description: "Placeholder가 길어 한 줄 표시 기준 초과 시 핵심 안내가 잘립니다.",
+          html: "<input class=\"delivery-memo\" placeholder=\"경비실에 맡겨주세요...\" />",
+          wcag_criteria: "3.3.2",
+        },
+        {
+          wcagIssueId: "52520b47-5ae0-5de3-59f5-49f3e3f732a0",
+          title: "배송지 라벨 시각 강조 부족",
+          severity: "Minor" as const,
+          description: "필수 항목 라벨의 시각 강조가 약하여 입력 순서 인지가 어렵습니다.",
+          html: "<label for=\"recipient-name\">받는 분</label>",
+          wcag_criteria: "1.3.1",
+        },
+      ],
+    },
+    "https://a-mall.com/payment": {
+      score: 30,
+      wcagLabel: "미달",
+      distribution: {
+        Critical: 2,
+        Moderate: 3,
+        Minor: 2,
+      },
+      violations: [
+        {
+          wcagIssueId: "f3e8534c-2aa4-0570-8bac-92653cd39e5d",
+          title: "비활성 결제 버튼 이유 미표시",
+          severity: "Critical" as const,
+          description: "결제하기 버튼 disabled 사유가 aria-describedby 등으로 안내되지 않습니다.",
+          html: "<button class=\"payment-submit\" disabled>결제하기</button>",
+          wcag_criteria: "3.3.1",
+        },
+        {
+          wcagIssueId: "217522c9-abe7-c0ea-2ed0-e500da98d81e",
+          title: "카드 번호 입력 포커스 이동 불안정",
+          severity: "Critical" as const,
+          description: "카드 4개 분할 입력 박스의 자동 포커스 이동이 일부 환경에서 동작하지 않습니다.",
+          html: "<input class=\"card-digit\" maxlength=\"4\" />",
+          wcag_criteria: "2.4.3",
+        },
+        {
+          wcagIssueId: "f1c3ecf9-c768-8c0b-927d-03fefe0162a1",
           title: "최종 결제 금액 강조 약함",
-          severity: "moderate",
-          summary: "핵심 비용 정보를 놓치기 쉬워 결제 확신이 떨어집니다.",
-          description:
-            "최종 결제 금액이 주변 텍스트와 비슷한 시각 강도로 노출되어 중요한 정보가 묻힙니다.",
-          guidance: "총 결제 금액은 크기, 굵기, 여백을 한 단계 올려 시각적 우선순위를 확보하세요.",
-          selector: "div.total-price",
-          criterion: "1.4.8 Visual Presentation",
+          severity: "Moderate" as const,
+          description: "최종 금액이 본문과 동일한 크기·색상으로 표기되어 시각 위계가 부재합니다.",
+          html: "<p class=\"final-amount\">최종 결제 금액 29,800원</p>",
+          wcag_criteria: "1.3.1",
         },
         {
-          id: "payment-wcag-3",
-          issueNo: 3,
+          wcagIssueId: "94fc6e1e-b8ed-25ab-c68b-c2887b80d3b2",
           title: "외부 결제창 이동 안내 부족",
-          severity: "moderate",
-          summary: "새 창/새 흐름 전환 맥락이 부족해 사용자가 실패로 오해할 수 있습니다.",
-          description:
-            "외부 결제창 이동 시 로딩/전환 안내가 부족해 사용자가 흐름 종료로 오인할 수 있습니다.",
-          guidance: "외부 결제창 이동 전 안내 문구와 로딩 상태를 분명히 노출하세요.",
-          selector: "a[data-provider='payment']",
-          criterion: "3.2.2 On Input",
+          severity: "Moderate" as const,
+          description: "외부 PG 결제창 전환 시 사전 안내가 없어 사용자가 예상치 못한 화면 변경을 경험합니다.",
+          html: "<button data-action=\"open-pg\">신용카드 결제</button>",
+          wcag_criteria: "3.2.2",
         },
         {
-          id: "payment-wcag-4",
-          issueNo: 4,
+          wcagIssueId: "74250672-1560-3429-c01b-c0de4eed5e0e",
+          title: "할인 적용 피드백 부재",
+          severity: "Moderate" as const,
+          description: "할인 적용 후 금액 변화가 시각적 피드백 없이 발생합니다.",
+          html: "<span class=\"final-amount-value\">29,800원</span>",
+          wcag_criteria: "4.1.3",
+        },
+        {
+          wcagIssueId: "d21f82e1-3aee-e8d8-d14e-f38406268708",
           title: "약관 체크 포커스 표시 약함",
-          severity: "minor",
-          summary: "체크박스 포커스 상태가 약해 키보드 사용 시 현재 위치가 흐려집니다.",
-          description:
-            "약관 동의 체크박스의 포커스 표시가 약해 키보드 네비게이션 중 현재 위치를 놓치기 쉽습니다.",
-          guidance: "체크박스 포커스 링과 라벨 강조를 추가해 현재 위치를 분명히 보여주세요.",
-          selector: "input[type='checkbox']",
-          criterion: "2.4.7 Focus Visible",
+          severity: "Minor" as const,
+          description: "체크박스 키보드 포커스 outline이 1px·#94A3B8로 인지성이 낮습니다.",
+          html: "<input type=\"checkbox\" id=\"agree-terms\" />",
+          wcag_criteria: "2.4.7",
+        },
+        {
+          wcagIssueId: "0409f7dd-94a9-ed71-a7bd-eb0dcac9f234",
+          title: "결제 수단 아이콘 라벨 부재",
+          severity: "Minor" as const,
+          description: "결제 수단 아이콘에 visible text가 없어 의미 전달이 부족합니다.",
+          html: "<button class=\"pay-method-icon\" aria-label=\"카카오페이\">",
+          wcag_criteria: "1.1.1",
         },
       ],
     },
-  ],
+    "https://a-mall.com/mypage": {
+      score: 50,
+      wcagLabel: "미달",
+      distribution: {
+        Critical: 1,
+        Moderate: 2,
+        Minor: 2,
+      },
+      violations: [
+        {
+          wcagIssueId: "672e1eba-6b77-96c5-7dd0-30378dd259d5",
+          title: "메뉴 텍스트 가독성 미달",
+          severity: "Critical" as const,
+          description: "사이드 메뉴 텍스트가 14px로 50대+ 가독 기준(16px) 미충족.",
+          html: "<a class=\"mypage-menu-item\">주문 내역</a>",
+          wcag_criteria: "1.4.4",
+        },
+        {
+          wcagIssueId: "46a376cf-e975-0a79-aeeb-a356f518ac2e",
+          title: "페이지네이션 터치 영역 부족",
+          severity: "Moderate" as const,
+          description: "페이지 숫자 버튼이 24x24px로 권장 영역 미달.",
+          html: "<button class=\"pagination-page\">2</button>",
+          wcag_criteria: "2.5.5",
+        },
+        {
+          wcagIssueId: "5a0faabd-c31a-6394-ed4b-54144b0d914c",
+          title: "회원 정보 폼 라벨 분리",
+          severity: "Moderate" as const,
+          description: "라벨이 입력 필드와 좌측 별도 컬럼에 위치하여 매칭이 어렵습니다.",
+          html: "<label class=\"floating-label\">이름</label>",
+          wcag_criteria: "1.3.1",
+        },
+        {
+          wcagIssueId: "4f900627-dcb6-845a-4fb6-c71d4783c32f",
+          title: "로그아웃 위치 비표준",
+          severity: "Minor" as const,
+          description: "로그아웃 버튼이 페이지 최하단에 위치하여 일반적 사용자 기대와 다릅니다.",
+          html: "<button class=\"logout-btn-bottom\">로그아웃</button>",
+          wcag_criteria: "2.4.3",
+        },
+        {
+          wcagIssueId: "2c18ab01-d0c2-44c9-c748-49cbeb74a629",
+          title: "주문 내역 헤딩 위계 누락",
+          severity: "Minor" as const,
+          description: "주문 내역 페이지에서 h2 헤딩이 누락되어 스크린리더 탐색이 어렵습니다.",
+          html: "<div class=\"section-title\">주문 내역</div>",
+          wcag_criteria: "1.3.1",
+        },
+      ],
+    },
+  }
 }

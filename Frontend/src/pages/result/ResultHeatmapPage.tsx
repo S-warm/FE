@@ -55,6 +55,48 @@ function HeatmapCanvas({
   onSelectPoint: (issueId: string) => void
 }) {
   const [failedScreenshotUrl, setFailedScreenshotUrl] = useState<string | null>(null)
+  const [imgDimensions, setImgDimensions] = useState<{ width: number; height: number } | null>(null)
+
+  const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const img = e.currentTarget
+    setImgDimensions({
+      width: img.naturalWidth,
+      height: img.naturalHeight,
+    })
+  }
+
+  // 이미지가 object-contain으로 표시될 때 실제 위치 계산
+  const getPointPosition = (pointX: number, pointY: number) => {
+    if (!imgDimensions) return { left: `${pointX}%`, top: `${pointY}%` }
+
+    // 컨테이너와 이미지의 비율 계산
+    const containerWidth = 100
+    const containerHeight = 600
+    const containerRatio = containerWidth / containerHeight
+    const imgRatio = imgDimensions.width / imgDimensions.height
+
+    if (imgRatio > containerRatio) {
+      // 이미지가 더 넓음 (가로로 꽉 참)
+      const displayWidth = containerWidth
+      const displayHeight = (containerWidth / imgDimensions.width) * imgDimensions.height
+      const offsetY = (containerHeight - displayHeight) / 2
+
+      return {
+        left: `${(pointX / 100) * displayWidth}%`,
+        top: `calc(${offsetY}px + ${(pointY / 100) * displayHeight}px)`,
+      }
+    } else {
+      // 이미지가 더 좁음 (세로로 꽉 참)
+      const displayHeight = containerHeight
+      const displayWidth = (containerHeight / imgDimensions.height) * imgDimensions.width
+      const offsetX = (containerWidth - displayWidth) / 2
+
+      return {
+        left: `calc(${offsetX}% + ${(pointX / 100) * displayWidth}%)`,
+        top: `${(pointY / 100) * displayHeight}px`,
+      }
+    }
+  }
 
   return (
     <div className="relative overflow-hidden rounded-2xl border border-border-strong bg-card flex items-center justify-center" style={{ height: '600px' }}>
@@ -63,6 +105,7 @@ function HeatmapCanvas({
           src={page.screenshotUrl}
           alt={page.pageName}
           className="max-h-full max-w-full object-contain"
+          onLoad={handleImageLoad}
           onError={() => setFailedScreenshotUrl(page.screenshotUrl ?? null)}
         />
       ) : (
@@ -78,6 +121,8 @@ function HeatmapCanvas({
           const isSelected = point.issueId === selectedPointId
           // 고유한 key: page URL + issueId + index (페이지별 중복 방지)
           const uniqueKey = `${page.pageUrl}-${point.issueId}-${index}`
+          const position = getPointPosition(point.x, point.y)
+
           return (
             <button
               key={uniqueKey}
@@ -89,8 +134,8 @@ function HeatmapCanvas({
                 isSelected ? "ring-4 ring-white/70" : "",
               )}
               style={{
-                left: `${point.x}%`,
-                top: `${point.y}%`,
+                left: position.left,
+                top: position.top,
               }}
               aria-label={`${point.issueId} ${point.description}`}
             >

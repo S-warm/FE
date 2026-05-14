@@ -69,47 +69,30 @@ function HeatmapCanvas({
   const getPointPosition = (pointX: number, pointY: number) => {
     if (!imgDimensions) return { left: `${pointX}%`, top: `${pointY}%` }
 
-    // 컨테이너와 이미지의 비율 계산
-    const containerWidth = 100
-    const containerHeight = 600
-    const containerRatio = containerWidth / containerHeight
+    // 실제 이미지 크기를 기반으로 포인트 위치 계산 (container max-height 없음)
     const imgRatio = imgDimensions.width / imgDimensions.height
+    const containerRatio = imgDimensions.width / imgDimensions.height // 이미지 비율 유지
 
-    if (imgRatio > containerRatio) {
-      // 이미지가 더 넓음 (가로로 꽉 참)
-      const displayWidth = containerWidth
-      const displayHeight = (containerWidth / imgDimensions.width) * imgDimensions.height
-      const offsetY = (containerHeight - displayHeight) / 2
-
-      return {
-        left: `${(pointX / 100) * displayWidth}%`,
-        top: `calc(${offsetY}px + ${(pointY / 100) * displayHeight}px)`,
-      }
-    } else {
-      // 이미지가 더 좁음 (세로로 꽉 참)
-      const displayHeight = containerHeight
-      const displayWidth = (containerHeight / imgDimensions.height) * imgDimensions.width
-      const offsetX = (containerWidth - displayWidth) / 2
-
-      return {
-        left: `calc(${offsetX}% + ${(pointX / 100) * displayWidth}%)`,
-        top: `${(pointY / 100) * displayHeight}px`,
-      }
+    // 이미지가 원본 비율대로 표시되므로 단순 백분율 계산
+    return {
+      left: `${pointX}%`,
+      top: `${pointY}%`,
     }
   }
 
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-border-strong bg-card flex items-center justify-center" style={{ height: '600px' }}>
+    <div className="relative rounded-2xl border border-border-strong bg-card overflow-y-auto" style={{ maxHeight: '80vh' }}>
       {page.screenshotUrl && failedScreenshotUrl !== page.screenshotUrl ? (
         <img
           src={page.screenshotUrl}
           alt={page.pageName}
-          className="max-h-full max-w-full object-contain"
+          className="w-full object-contain"
+          style={{ display: 'block' }}
           onLoad={handleImageLoad}
           onError={() => setFailedScreenshotUrl(page.screenshotUrl ?? null)}
         />
       ) : (
-        <div className="grid place-items-center">
+        <div className="grid w-full place-items-center py-12">
           <p className="text-caption-12-regular text-text-muted">
             스크린샷이 없습니다
           </p>
@@ -395,6 +378,7 @@ function ResultHeatmapPage() {
                 "rounded-2xl border border-border-strong bg-card shadow-none",
                 motion.card,
               )}
+              style={{ display: 'none' }}
             >
               <CardContent className="grid gap-4 px-6 py-5">
                 <div className="flex items-center gap-2">

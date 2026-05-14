@@ -8,9 +8,10 @@ import type { ResultIssueViewModel } from "@/types/view-model/result/result-issu
 interface IssueListSectionProps {
   issues: ResultIssueViewModel[]
   title?: string
+  pageUrl?: string
 }
 
-export function IssueListSection({ issues, title = "이슈목록" }: IssueListSectionProps) {
+export function IssueListSection({ issues, title = "이슈목록", pageUrl }: IssueListSectionProps) {
   const [selectedIssue, setSelectedIssue] = useState<IssueDetailViewModel | null>(null)
   const [isPanelOpen, setIsPanelOpen] = useState(false)
 
@@ -45,6 +46,7 @@ export function IssueListSection({ issues, title = "이슈목록" }: IssueListSe
               key={issue.issueId}
               issue={issue}
               onDetailClick={handleDetailClick}
+              pageUrl={pageUrl}
             />
           ))}
         </div>

@@ -65,11 +65,11 @@ export const resultWcagMockService: ResultWcagService = {
         simulationId,
         order: index + 1,
         pageName: page.pageName,
-        pageUrl: `https://mock.swarm.local/${page.pageId}`,
+        pageUrl: page.pageUrl || `https://a-mall.com/${page.pageId}`,
       })
     )
 
-    return adaptWcagResponseToViewModel(simulationId, createWcagMockResponse(), pageContext)
+    return adaptWcagResponseToViewModel(simulationId, createWcagMockResponse(), pageContext, wcagResultMock.pageResults)
   },
 }
 

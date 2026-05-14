@@ -4989,55 +4989,58 @@ export const MOCK_FIXES: Record<string, FixData> = {
  * 기존 서비스들과의 호환성을 위해 v2 형식으로 변환
  */
 
+// 기본 placeholder SVG (스크린샷 이미지 없을 때 표시)
+const defaultPlaceholderSvg = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1920' height='1080'%3E%3Crect fill='%23f3f4f6' width='1920' height='1080'/%3E%3Ctext x='50%25' y='50%25' font-family='system-ui' font-size='48' fill='%239ca3af' text-anchor='middle' dy='.3em'%3EPage Screenshot%3C/text%3E%3C/svg%3E`;
+
 // demoResultPages: 페이지 목록 (URL 맵핑용)
 export const demoResultPages = [
   {
     id: "login",
     name: "로그인 페이지",
     url: "https://a-mall.com/login",
-    screenshotUrl: "https://via.placeholder.com/1920x1080?text=Login+Page",
+    screenshotUrl: defaultPlaceholderSvg,
   },
   {
     id: "signup",
     name: "회원가입 페이지",
     url: "https://a-mall.com/signup",
-    screenshotUrl: "https://via.placeholder.com/1920x1080?text=Signup+Page",
+    screenshotUrl: defaultPlaceholderSvg,
   },
   {
     id: "main",
     name: "메인 페이지",
     url: "https://a-mall.com/main",
-    screenshotUrl: "https://via.placeholder.com/1920x1080?text=Main+Page",
+    screenshotUrl: defaultPlaceholderSvg,
   },
   {
     id: "product",
     name: "상품 상세 페이지",
     url: "https://a-mall.com/product/12847",
-    screenshotUrl: "https://via.placeholder.com/1920x1080?text=Product+Page",
+    screenshotUrl: defaultPlaceholderSvg,
   },
   {
     id: "cart",
     name: "장바구니 페이지",
     url: "https://a-mall.com/cart",
-    screenshotUrl: "https://via.placeholder.com/1920x1080?text=Cart+Page",
+    screenshotUrl: defaultPlaceholderSvg,
   },
   {
     id: "checkout",
     name: "배송지 페이지",
     url: "https://a-mall.com/checkout",
-    screenshotUrl: "https://via.placeholder.com/1920x1080?text=Checkout+Page",
+    screenshotUrl: defaultPlaceholderSvg,
   },
   {
     id: "payment",
     name: "결제 페이지",
     url: "https://a-mall.com/payment",
-    screenshotUrl: "https://via.placeholder.com/1920x1080?text=Payment+Page",
+    screenshotUrl: defaultPlaceholderSvg,
   },
   {
     id: "mypage",
     name: "마이페이지",
     url: "https://a-mall.com/mypage",
-    screenshotUrl: "https://via.placeholder.com/1920x1080?text=Mypage",
+    screenshotUrl: defaultPlaceholderSvg,
   },
 ] as const;
 

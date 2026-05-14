@@ -1,15 +1,17 @@
 import { ChevronRight, AlertTriangle, Sparkles, ArrowRight } from "lucide-react"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useParams } from "react-router-dom"
 import type { ResultIssueViewModel } from "@/types/view-model/result/result-issues"
 import { cn } from "@/lib/utils"
 
 interface IssueListItemProps {
   issue: ResultIssueViewModel
   onDetailClick: (issue: ResultIssueViewModel) => void
+  pageUrl?: string
 }
 
-export function IssueListItem({ issue, onDetailClick }: IssueListItemProps) {
+export function IssueListItem({ issue, onDetailClick, pageUrl }: IssueListItemProps) {
   const navigate = useNavigate()
+  const { simulationId } = useParams()
 
   const severityColorMap = {
     error: "bg-danger-surface text-danger-text",
@@ -22,7 +24,13 @@ export function IssueListItem({ issue, onDetailClick }: IssueListItemProps) {
 
   const handleAiFix = (e: React.MouseEvent) => {
     e.stopPropagation()
-    navigate("/result/ai")
+    // pageUrl이 있으면 쿼리 파라미터로 전달하여 해당 페이지의 수정 탭으로 이동
+    if (pageUrl) {
+      const targetUrl = `/result/${simulationId}/ai?page=${encodeURIComponent(pageUrl)}`
+      navigate(targetUrl)
+    } else {
+      navigate(`/result/${simulationId}/ai`)
+    }
   }
 
   return (

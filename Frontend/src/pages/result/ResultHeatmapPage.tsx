@@ -73,11 +73,13 @@ function HeatmapCanvas({
       )}
 
       <div className="pointer-events-none absolute inset-0">
-        {page.points.map((point) => {
+        {page.points.map((point, index) => {
           const isSelected = point.issueId === selectedPointId
+          // 고유한 key: page URL + issueId + index (페이지별 중복 방지)
+          const uniqueKey = `${page.pageUrl}-${point.issueId}-${index}`
           return (
             <button
-              key={point.issueId}
+              key={uniqueKey}
               type="button"
               onClick={() => onSelectPoint(point.issueId)}
               className={cn(
@@ -353,9 +355,12 @@ function ResultHeatmapPage() {
 
                 {selectedPage.points.length > 0 ? (
                   <div className="grid gap-3">
-                    {selectedPage.points.map((point) => (
+                    {selectedPage.points.map((point, index) => {
+                      // 고유한 key: page URL + issueId + index (페이지별 중복 방지)
+                      const uniqueKey = `${selectedPage.pageUrl}-${point.issueId}-${index}`
+                      return (
                       <button
-                        key={point.issueId}
+                        key={uniqueKey}
                         type="button"
                         onClick={() => setSelectedPointId(point.issueId)}
                         className={cn(
@@ -386,7 +391,8 @@ function ResultHeatmapPage() {
                           {point.description}
                         </p>
                       </button>
-                    ))}
+                    )
+                    })}
                   </div>
                 ) : (
                   <EmptyState

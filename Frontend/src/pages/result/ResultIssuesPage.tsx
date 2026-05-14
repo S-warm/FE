@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react"
+import { useMemo, useRef, useState, useEffect } from "react"
 import { useLocation, useNavigate, useParams } from "react-router-dom"
 import { ArrowRight } from "lucide-react"
 
@@ -97,7 +97,7 @@ function ResultIssuesPage() {
       pages.map((page) => ({
         id: page.pageId,
         name: page.pageName,
-        screenshotUrl: page.screenshotUrl || "/mock-images/img-example-site.png",
+        screenshotUrl: page.screenshotUrl,
       })),
     [pages],
   )
@@ -223,37 +223,43 @@ function ResultIssuesPage() {
 
             <div className="grid gap-3">
               <p className="text-body-14-medium text-text-body">카테고리별 분류</p>
-              <div className="grid gap-4 md:grid-cols-[280px_minmax(0,1fr)] md:items-center">
-                <DonutChart
-                  heightClassName="h-[200px]"
-                  data={donut.map((item) => ({
-                    name: item.name,
-                    value: item.value,
-                    color: item.color,
-                  }))}
-                  emptyDescription="시뮬레이션을 시작하면 이슈 카테고리 분류가 표시됩니다."
-                />
+              <div className="grid gap-4 md:grid-cols-[280px_minmax(0,1fr)] md:items-start">
+                <div className="min-h-[200px] h-[200px]">
+                  <DonutChart
+                    heightClassName="h-full"
+                    data={donut.map((item) => ({
+                      name: item.name,
+                      value: item.value,
+                      color: item.color,
+                    }))}
+                    emptyDescription="시뮬레이션을 시작하면 이슈 카테고리 분류가 표시됩니다."
+                  />
+                </div>
                 <div className="grid gap-2">
-                  {donut.map((item) => (
-                    <div
-                      key={item.name}
-                      className="flex items-center justify-between gap-3"
-                    >
-                      <div className="flex items-center gap-2">
-                        <span
-                          className="size-2.5 rounded-full"
-                          style={{ backgroundColor: item.color }}
-                          aria-hidden="true"
-                        />
-                        <p className="text-caption-12-regular text-text-muted">
-                          {item.name}
+                  {donut.length > 0 ? (
+                    donut.map((item) => (
+                      <div
+                        key={item.name}
+                        className="flex items-center justify-between gap-3"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span
+                            className="size-2.5 rounded-full"
+                            style={{ backgroundColor: item.color }}
+                            aria-hidden="true"
+                          />
+                          <p className="text-caption-12-regular text-text-muted">
+                            {item.name}
+                          </p>
+                        </div>
+                        <p className="text-caption-12-medium text-text-secondary">
+                          {item.count}건 / {item.percent}%
                         </p>
                       </div>
-                      <p className="text-caption-12-medium text-text-secondary">
-                        {item.count}건 / {item.percent}%
-                      </p>
-                    </div>
-                  ))}
+                    ))
+                  ) : (
+                    <p className="text-caption-12-regular text-text-muted">데이터 없음</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -265,6 +271,7 @@ function ResultIssuesPage() {
             <IssueListSection
               issues={filteredIssues}
               title="이슈목록"
+              pageUrl={selectedPage?.pageUrl}
             />
           ) : (
             <EmptyState

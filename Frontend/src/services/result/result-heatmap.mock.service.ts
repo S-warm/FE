@@ -6,9 +6,11 @@ import { createNotImplementedServiceError } from "@/services/core/api-service-er
 import type { ResultHeatmapService } from "@/services/result/result-heatmap.service"
 import type { ApiHeatmapAgeGroup, ApiHeatmapErrorType } from "@/types/api/common/enums"
 
-function toErrorType(label: string): ApiHeatmapErrorType {
-  if (label.includes("접근성")) return "Console"
-  if (label.includes("시각요소")) return "Timeout"
+function toErrorType(errorType: string): ApiHeatmapErrorType {
+  // errorType은 "접근성/터치 영역", "시각요소/가독성" 형식
+  if (errorType.includes("접근성")) return "Console"
+  if (errorType.includes("시각요소")) return "Timeout"
+  if (errorType.includes("사용성")) return "Network"
   return "Network"
 }
 
@@ -58,7 +60,7 @@ export const resultHeatmapMockService: ResultHeatmapService = {
           currentAgeGroup: toAgeBand(params.ageGroup),
           points: pagedPoints.map((point) => {
             const linkedIssue = findIssue(point.issueId)
-            const errorType = toErrorType(point.label)
+            const errorType = toErrorType(point.errorType)
 
             return {
               issueType: "ux" as const,
@@ -71,7 +73,7 @@ export const resultHeatmapMockService: ResultHeatmapService = {
               affectedUsersCount: linkedIssue?.affectedUsersCount ?? point.count,
               blockRate: Math.min(100, Math.round(((linkedIssue?.affectedUsersPercent ?? point.count) / 50) * 100)),
               repeatCount: Number((point.count / 4).toFixed(1)),
-              description: linkedIssue?.description ?? point.label,
+              description: linkedIssue?.description ?? point.errorType,
               ageBand: point.ageBand,
               errorBreakdown: buildBreakdown(errorType),
             }

@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react"
-import { useParams } from "react-router-dom"
+import { useMemo, useState, useEffect } from "react"
+import { useParams, useLocation } from "react-router-dom"
 import { Sparkles, TrendingUp } from "lucide-react"
 
 import { EmptyState } from "@/components/sections"
@@ -65,7 +65,9 @@ function firstFixIdForPage(page: ResultAiFixPageViewModel | null) {
 
 function ResultAiFixPage() {
   const { simulationId } = useParams()
+  const location = useLocation()
   const resolvedId = simulationId ?? "unknown"
+
   const {
     data,
     isLoading,
@@ -74,10 +76,47 @@ function ResultAiFixPage() {
   } = useResultAiFixQuery(resolvedId)
   const pages = useMemo(() => data?.pages ?? [], [data])
   const pageIds = pages.map((page) => page.pageId)
+
+  // URL 쿼리 파라미터에서 페이지 URL 읽기 (useLocation 사용)
+  const pageUrlParam = useMemo(() => {
+    const params = new URLSearchParams(location.search)
+    return params.get("page")
+  }, [location.search])
+
+  // 페이지 URL 또는 pageId로부터 pageId 찾기
+  const defaultPageId = useMemo(() => {
+    if (pageUrlParam) {
+      const decodedParam = decodeURIComponent(pageUrlParam)
+
+      // 1. pageId로 직접 매칭 (AI Fix 탭에서 온 경우)
+      if (decodedParam.startsWith("ai:")) {
+        const directMatch = pages.find((page) => page.pageId === decodedParam)
+        if (directMatch) {
+          return directMatch.pageId
+        }
+      }
+
+      // 2. URL로 매칭 (주요이슈 탭에서 온 경우)
+      const urlMatch = pages.find((page) => page.pageUrl === decodedParam)
+      if (urlMatch) {
+        return urlMatch.pageId
+      }
+    }
+    return pageIds[0]
+  }, [pageUrlParam, pages, pageIds])
+
+  // 페이지 선택 상태 초기화
   const { selectedPageId, setSelectedPageId } = useResultPageParam({
     availablePageIds: pageIds,
-    defaultPageId: pageIds[0],
+    defaultPageId: defaultPageId,
   })
+
+  // 쿼리 파라미터로 페이지가 지정되었을 때 자동으로 해당 페이지로 이동
+  useEffect(() => {
+    if (pageUrlParam && defaultPageId && defaultPageId !== pageIds[0]) {
+      setSelectedPageId(defaultPageId)
+    }
+  }, [pageUrlParam, defaultPageId, pageIds, setSelectedPageId])
   const { expandedPageIds, expandPage, togglePage } = useResultPageSidePanelState(
     selectedPageId,
   )
@@ -97,7 +136,7 @@ function ResultAiFixPage() {
       pages.map((page) => ({
         id: page.pageId,
         name: page.pageName,
-        screenshotUrl: page.screenshotUrl || "/mock-images/img-example-site.png",
+        screenshotUrl: page.screenshotUrl,
       })),
     [pages],
   )
@@ -130,19 +169,19 @@ function ResultAiFixPage() {
 
   return (
     <div className="grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
-      <ResultPageSidePanel
-        pages={sidePages}
-        selectedPageId={selectedPageId}
-        expandedPageIds={expandedPageIds}
-        onSelectPage={(pageId) => {
-          const nextPage = pages.find((page) => page.pageId === pageId) ?? null
-          const nextFixId = firstFixIdForPage(nextPage)
-          setSelectedPageId(pageId)
-          setSelectedFixId((prev) => nextFixId ?? prev)
-          expandPage(pageId)
-        }}
-        onTogglePage={togglePage}
-      />
+        <ResultPageSidePanel
+          pages={sidePages}
+          selectedPageId={selectedPageId}
+          expandedPageIds={expandedPageIds}
+          onSelectPage={(pageId) => {
+            const nextPage = pages.find((page) => page.pageId === pageId) ?? null
+            const nextFixId = firstFixIdForPage(nextPage)
+            setSelectedPageId(pageId)
+            setSelectedFixId((prev) => nextFixId ?? prev)
+            expandPage(pageId)
+          }}
+          onTogglePage={togglePage}
+        />
 
       <div className="grid gap-4">
         {!selectedPage || !selectedFix ? (
@@ -150,9 +189,9 @@ function ResultAiFixPage() {
             title="AI 수정 제안이 없습니다"
             description="선택한 페이지에 연결된 수정 제안 데이터가 아직 없습니다."
           />
-        ) : null}
-
-        <Card
+        ) : (
+          <>
+            <Card
           className={cn(
             "rounded-2xl border border-border-strong bg-card shadow-none",
             motion.card,
@@ -239,6 +278,8 @@ function ResultAiFixPage() {
             </div>
           </CardContent>
         </Card>
+            </>
+          )}
       </div>
     </div>
   )

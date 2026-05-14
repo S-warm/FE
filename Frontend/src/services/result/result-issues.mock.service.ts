@@ -6,10 +6,11 @@ import { createNotImplementedServiceError } from "@/services/core/api-service-er
 import type { ResultIssuesService } from "@/services/result/result-issues.service"
 
 function mapCategory(category: string) {
-  if (category === "접근성") return "Accessibility"
-  if (category === "사용성") return "Usability"
-  if (category === "시각요소") return "Visual"
-  return "Other"
+  // 한글 카테고리명 유지 (ResultIssuesPage의 filterCategories와 일치)
+  if (category === "접근성") return "접근성"
+  if (category === "사용성") return "사용성"
+  if (category === "시각요소") return "시각요소"
+  return "기타"
 }
 
 function groupIssuesByUrl(url: string) {

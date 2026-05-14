@@ -144,6 +144,7 @@ function ResultLayoutPage() {
     refetch,
   } = useSimulationHeaderQuery(resolvedId)
 
+
   return (
     <AuthLayout
       mainClassName="items-start justify-start pb-0"
@@ -170,17 +171,17 @@ function ResultLayoutPage() {
           />
         ) : null}
 
-        {!isLoading && !isError && !simulationHeader ? (
-          <EmptyState
-            title="시뮬레이션 정보를 찾을 수 없습니다"
-            description="요청한 결과 정보가 아직 준비되지 않았거나 접근할 수 없습니다."
-          />
-        ) : null}
-
         {!isLoading && !isError && simulationHeader ? (
           <ResultHeaderCard
             title={simulationHeader.title}
             createdAt={simulationHeader.createdAt}
+          />
+        ) : null}
+
+        {!isLoading && !isError && !simulationHeader ? (
+          <EmptyState
+            title="시뮬레이션 정보를 찾을 수 없습니다"
+            description="요청한 결과 정보가 아직 준비되지 않았거나 접근할 수 없습니다."
           />
         ) : null}
 

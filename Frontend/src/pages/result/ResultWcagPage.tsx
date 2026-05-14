@@ -74,7 +74,7 @@ function MetricCard({
         motion.card,
       )}
     >
-      <CardContent className="grid gap-3 px-5 py-4">
+      <CardContent className="grid gap-3 px-5 py-4 min-h-[120px]">
         <div className="flex items-start justify-between gap-3 text-text-subtle">
           <div className="flex items-center gap-2">
             <span className="grid size-7 place-items-center rounded-xl bg-surface-muted text-text-muted">
@@ -92,7 +92,11 @@ function MetricCard({
         </div>
         <div className="grid gap-1">
           <p className="text-title-24-bold text-text-strong">{value}</p>
-          <p className="text-caption-12-regular text-text-subtle">{subtitle}</p>
+          {subtitle ? (
+            <p className="text-caption-12-regular text-text-subtle">{subtitle}</p>
+          ) : (
+            <div className="h-5" />
+          )}
         </div>
       </CardContent>
     </Card>
@@ -273,7 +277,7 @@ function ResultWcagPage() {
       pages.map((page) => ({
         id: page.pageId,
         name: page.pageName,
-        screenshotUrl: page.screenshotUrl || "/mock-images/img-example-site.png",
+        screenshotUrl: page.screenshotUrl,
       })),
     [pages],
   )
@@ -344,7 +348,7 @@ function ResultWcagPage() {
               motion.card,
             )}
           >
-            <CardContent className="grid gap-3 px-5 py-4">
+            <CardContent className="grid gap-3 px-5 py-4 min-h-[120px]">
               <div className="flex items-start justify-between gap-3 text-text-subtle">
                 <div className="flex items-center gap-2">
                   <span className="grid size-7 place-items-center rounded-xl bg-surface-muted text-text-muted">
@@ -364,6 +368,7 @@ function ResultWcagPage() {
                 <p className="text-title-24-bold text-text-strong">
                   {selectedPage?.summary.foundIssues ?? 0}
                 </p>
+                <div className="h-5" />
               </div>
             </CardContent>
           </Card>

@@ -1,3 +1,4 @@
+import { useRef, useEffect, useState } from "react"
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
 
 import { chartTooltipContentStyle } from "@/components/charts/chart-tooltip"
@@ -28,6 +29,29 @@ function LineTrendChart<T extends object>({
   emptyTitle,
   emptyDescription,
 }: LineTrendChartProps<T>) {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [height, setHeight] = useState(240)
+
+  useEffect(() => {
+    const updateHeight = () => {
+      if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect()
+        setHeight(Math.max(200, Math.round(rect.height)))
+      }
+    }
+
+    const timer = setTimeout(updateHeight, 0)
+    const resizeObserver = new ResizeObserver(updateHeight)
+    if (containerRef.current) {
+      resizeObserver.observe(containerRef.current)
+    }
+
+    return () => {
+      clearTimeout(timer)
+      resizeObserver.disconnect()
+    }
+  }, [])
+
   if (!data.length) {
     return (
       <div className={`${heightClassName} w-full`}>
@@ -37,8 +61,8 @@ function LineTrendChart<T extends object>({
   }
 
   return (
-    <div className={`${heightClassName} w-full`}>
-      <ResponsiveContainer width="100%" height="100%">
+    <div ref={containerRef} className={`${heightClassName} w-full flex items-center justify-center`}>
+      <ResponsiveContainer width="100%" height={height}>
         <LineChart data={data} margin={{ top: 8, right: 12, left: 0, bottom: 4 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
           <XAxis

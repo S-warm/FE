@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react"
+import { useMemo, useRef, useEffect, useState } from "react"
 import { useParams } from "react-router-dom"
 import { Info } from "lucide-react"
 

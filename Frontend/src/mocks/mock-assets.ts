@@ -1,11 +1,11 @@
 export const resultPageScreenshotUrl = "/mock-images/img-example-site.png"
 
 export const resultPageScreenshotUrls = {
-  login: resultPageScreenshotUrl,
-  signup: resultPageScreenshotUrl,
-  main: resultPageScreenshotUrl,
-  product: resultPageScreenshotUrl,
-  cart: resultPageScreenshotUrl,
+  login: "/mock-images/page-login.png",
+  signup: "/mock-images/page-signup.png",
+  main: "/mock-images/page-main.png",
+  product: "/mock-images/page-product-detail.png",
+  cart: "/mock-images/page-cart.png",
   checkout: resultPageScreenshotUrl,
   payment: resultPageScreenshotUrl,
   mypage: resultPageScreenshotUrl,

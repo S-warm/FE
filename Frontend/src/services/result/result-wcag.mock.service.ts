@@ -1,64 +1,75 @@
-import { createResultPageSummary } from "@/adapters/result/result-page.adapter"
-import { adaptWcagSeverity } from "@/adapters/result/result-severity.adapter"
-import { demoResultPages, demoWcagPages } from "@/mocks/uxswarm-demo.mock"
+import { adaptWcagResponseToViewModel, createResultPageBase } from "@/adapters/result"
 import { mockDelay } from "@/services/core/mock-delay"
 import { createNotImplementedServiceError } from "@/services/core/api-service-error"
 import type { ResultWcagService } from "@/services/result/result-wcag.service"
+import { wcagResultMock } from "@/mocks/result-wcag.mock"
+import type { ApiWcagSeverity } from "@/types/api/common/enums"
+import type { SimulationWcagResponseDto } from "@/types/api/simulation/simulation-wcag.response"
 
-function buildDistribution(distribution: { critical: number; moderate: number; minor: number }) {
-  return [
-    {
-      severity: adaptWcagSeverity("Critical"),
-      count: distribution.critical,
-      label: "치명적",
-      description: "즉시 수정이 필요한 접근성 문제",
+function mapWcagSeverity(severity: "critical" | "moderate" | "minor"): ApiWcagSeverity {
+  if (severity === "critical") return "Critical"
+  if (severity === "moderate") return "Moderate"
+  return "Minor"
+}
+
+function createWcagMockResponse(): SimulationWcagResponseDto {
+  const pageResults = wcagResultMock.pageResults
+  const totalTests = pageResults.reduce((sum, item) => sum + item.totalTests, 0)
+  const passedTests = pageResults.reduce((sum, item) => sum + item.passedTests, 0)
+  const foundIssues = pageResults.reduce((sum, item) => sum + item.foundIssues, 0)
+  const critical = pageResults.reduce(
+    (sum, item) => sum + (item.distribution.find((distributionItem) => distributionItem.severity === "critical")?.count ?? 0),
+    0
+  )
+  const moderate = pageResults.reduce(
+    (sum, item) => sum + (item.distribution.find((distributionItem) => distributionItem.severity === "moderate")?.count ?? 0),
+    0
+  )
+  const minor = pageResults.reduce(
+    (sum, item) => sum + (item.distribution.find((distributionItem) => distributionItem.severity === "minor")?.count ?? 0),
+    0
+  )
+
+  const issues = pageResults.flatMap((page) =>
+    page.details.map((detail) => ({
+      wcagIssueId: detail.id,
+      title: detail.title,
+      severity: mapWcagSeverity(detail.severity),
+      description: detail.description,
+      selector: detail.selector,
+    }))
+  )
+
+  return {
+    summary: {
+      complianceScore: Number(((passedTests / Math.max(totalTests, 1)) * 100).toFixed(1)),
+      wcagLabel: pageResults[0]?.wcagLabel ?? "AA",
+      totalTests,
+      passedTests,
+      foundIssues,
     },
-    {
-      severity: adaptWcagSeverity("Moderate"),
-      count: distribution.moderate,
-      label: "보통",
-      description: "사용성에 영향을 주는 주요 문제",
+    distribution: {
+      critical,
+      moderate,
+      minor,
     },
-    {
-      severity: adaptWcagSeverity("Minor"),
-      count: distribution.minor,
-      label: "경미",
-      description: "개선 권장 수준의 접근성 문제",
-    },
-  ]
+    issues,
+  }
 }
 
 export const resultWcagMockService: ResultWcagService = {
   async getWcag(simulationId) {
     await mockDelay()
+    const pageContext = wcagResultMock.pageResults.map((page, index) =>
+      createResultPageBase({
+        simulationId,
+        order: index + 1,
+        pageName: page.pageName,
+        pageUrl: `https://mock.swarm.local/${page.pageId}`,
+      })
+    )
 
-    return {
-      pages: demoWcagPages.map((page, index) => {
-        const pageMeta = demoResultPages.find((item) => item.id === page.pageId)
-
-        return {
-          ...createResultPageSummary({
-            simulationId,
-            order: index + 1,
-            pageName: page.pageName,
-            pageUrl: page.url,
-            screenshotUrl: pageMeta?.screenshotUrl,
-            totalCount: page.summary.foundIssues,
-            totalCountType: "wcag-issues",
-            metaText: `${page.summary.foundIssues}건 WCAG 이슈`,
-          }),
-          summary: page.summary,
-          distribution: buildDistribution(page.distribution),
-          issues: page.issues.map((issue) => ({
-            issueType: "wcag" as const,
-            wcagIssueId: issue.wcagIssueId,
-            title: issue.title,
-            severity: adaptWcagSeverity(issue.severity),
-            description: issue.description,
-          })),
-        }
-      }),
-    }
+    return adaptWcagResponseToViewModel(simulationId, createWcagMockResponse(), pageContext)
   },
 }
 

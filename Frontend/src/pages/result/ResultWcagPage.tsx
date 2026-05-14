@@ -200,6 +200,11 @@ function DetailIssueRow({
                 <p className="truncate text-body-14-medium text-text-body">
                   {issue.title}
                 </p>
+                {issue.htmlElement && (
+                  <code className="w-fit rounded-xl bg-surface-muted px-3 py-2 text-[12px] text-text-body">
+                    {issue.htmlElement}
+                  </code>
+                )}
               </div>
             </div>
           </div>
@@ -268,8 +273,7 @@ function ResultWcagPage() {
       pages.map((page) => ({
         id: page.pageId,
         name: page.pageName,
-        screenshotUrl: page.screenshotUrl,
-        metaText: page.metaText,
+        screenshotUrl: page.screenshotUrl || "/mock-images/img-example-site.png",
       })),
     [pages],
   )
@@ -313,7 +317,7 @@ function ResultWcagPage() {
         onTogglePage={togglePage}
       />
 
-      <div className="grid gap-5">
+      <div className="grid gap-4">
         {!selectedPage ? (
           <EmptyState
             title="WCAG 검사 결과가 없습니다"
@@ -323,15 +327,15 @@ function ResultWcagPage() {
 
         <section className="grid gap-3 md:grid-cols-3">
           <MetricCard
-            title="준수 점수"
-            value={`${selectedPage?.summary.complianceScore ?? 0}%`}
-            subtitle={selectedPage?.summary.wcagLabel ?? "-"}
+            title="웹 접근성 점수"
+            value={`${selectedPage?.summary.complianceScore ?? 0}점`}
+            subtitle=""
             icon={<ShieldCheck className="size-4" />}
           />
           <MetricCard
             title="통과된 테스트"
             value={`${selectedPage?.summary.passedTests ?? 0}`}
-            subtitle={`${selectedPage?.summary.totalTests ?? 0}개 테스트 중`}
+            subtitle=""
             icon={<ClipboardCheck className="size-4" />}
           />
           <Card
@@ -359,9 +363,6 @@ function ResultWcagPage() {
               <div className="grid gap-1">
                 <p className="text-title-24-bold text-text-strong">
                   {selectedPage?.summary.foundIssues ?? 0}
-                </p>
-                <p className="text-caption-12-regular text-text-subtle">
-                  {selectedPage?.summary.foundIssues ?? 0}건 발견됨
                 </p>
               </div>
             </CardContent>

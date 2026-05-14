@@ -39,6 +39,7 @@ function SimulationSummaryCard({
   projectTitle,
   targetUrl,
   endUrl,
+  urlParams,
   personaCount,
   ageGroupSummary,
   personaDevice,
@@ -49,6 +50,7 @@ function SimulationSummaryCard({
   projectTitle: string
   targetUrl: string
   endUrl: string
+  urlParams: string
   personaCount: number
   ageGroupSummary: string
   personaDevice: PersonaDevice
@@ -70,6 +72,7 @@ function SimulationSummaryCard({
         <SummaryRow title="시작 URL" value={targetUrl.trim() || "타겟 URL을 입력하세요"} />
         <div className="h-px bg-border-subtle" />
         <SummaryRow title="종료 URL" value={endUrl.trim() || "종료 URL을 입력하세요"} />
+        <SummaryRow title="URL 파라미터" value={urlParams.trim() || "파라미터 없음"} />
         <SummaryRow title="페르소나 횟수" value={`총 ${personaCount.toLocaleString()}회 시뮬레이션`} />
         <div className="h-px bg-border-subtle" />
         <SummaryRow title="연령대별 횟수" value={ageGroupSummary} scrollable />

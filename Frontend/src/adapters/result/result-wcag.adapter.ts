@@ -9,20 +9,20 @@ function buildDistribution(raw: SimulationWcagResponseDto) {
     {
       severity: adaptWcagSeverity("Critical"),
       count: raw.distribution.critical,
-      label: "치명적",
-      description: "즉시 수정이 필요한 접근성 문제",
+      label: "심각",
+      description: "바로 고쳐야 할 문제",
     },
     {
       severity: adaptWcagSeverity("Moderate"),
       count: raw.distribution.moderate,
-      label: "보통",
-      description: "사용성에 영향을 주는 주요 문제",
+      label: "중요",
+      description: "사용하기 어려운 문제",
     },
     {
       severity: adaptWcagSeverity("Minor"),
       count: raw.distribution.minor,
-      label: "경미",
-      description: "개선 권장 수준의 접근성 문제",
+      label: "가벼움",
+      description: "개선하면 좋을 문제",
     },
   ]
 }
@@ -66,6 +66,7 @@ export function adaptWcagResponseToViewModel(
     title: issue.title,
     severity: adaptWcagSeverity(issue.severity),
     description: issue.description,
+    htmlElement: issue.selector,
   }))
 
   return {

@@ -30,13 +30,13 @@ function ScreenshotPreview({
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-border-strong bg-card">
+    <div className="overflow-hidden rounded-xl border border-border-strong bg-surface-subtle flex items-center justify-center" style={{ height: '140px' }}>
       <img
         src={screenshotUrl}
         alt={alt}
         loading="lazy"
         decoding="async"
-        className="aspect-[16/10] w-full object-cover"
+        className="max-h-full max-w-full object-contain"
         onError={() => setFailedScreenshotUrl(screenshotUrl)}
       />
     </div>

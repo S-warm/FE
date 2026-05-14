@@ -57,16 +57,16 @@ function HeatmapCanvas({
   const [failedScreenshotUrl, setFailedScreenshotUrl] = useState<string | null>(null)
 
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-border-strong bg-card">
+    <div className="relative overflow-hidden rounded-2xl border border-border-strong bg-card flex items-center justify-center" style={{ height: '600px' }}>
       {page.screenshotUrl && failedScreenshotUrl !== page.screenshotUrl ? (
         <img
           src={page.screenshotUrl}
           alt={page.pageName}
-          className="aspect-[16/10] w-full object-cover"
+          className="max-h-full max-w-full object-contain"
           onError={() => setFailedScreenshotUrl(page.screenshotUrl ?? null)}
         />
       ) : (
-        <div className="grid aspect-[16/10] place-items-center bg-surface-subtle">
+        <div className="grid place-items-center">
           <p className="text-caption-12-regular text-text-muted">
             스크린샷이 없습니다
           </p>

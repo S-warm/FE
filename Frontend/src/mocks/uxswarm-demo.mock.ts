@@ -5030,24 +5030,6 @@ export const demoResultPages = [
     url: "https://a-mall.com/cart",
     screenshotUrl: "/mock-images/page-cart.png",
   },
-  {
-    id: "checkout",
-    name: "배송지 페이지",
-    url: "https://a-mall.com/checkout",
-    screenshotUrl: defaultPlaceholderSvg,
-  },
-  {
-    id: "payment",
-    name: "결제 페이지",
-    url: "https://a-mall.com/payment",
-    screenshotUrl: defaultPlaceholderSvg,
-  },
-  {
-    id: "mypage",
-    name: "마이페이지",
-    url: "https://a-mall.com/mypage",
-    screenshotUrl: defaultPlaceholderSvg,
-  },
 ] as const;
 
 // demoIssues: 모든 이슈 목록

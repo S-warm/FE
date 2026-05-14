@@ -4982,6 +4982,204 @@ export const MOCK_FIXES: Record<string, FixData> = {
 };
 
 // ============================================================================
+// 호환성 변환 (v2 형식)
+// ============================================================================
+
+/**
+ * 기존 서비스들과의 호환성을 위해 v2 형식으로 변환
+ */
+
+// demoResultPages: 페이지 목록 (URL 맵핑용)
+export const demoResultPages = [
+  {
+    id: "login",
+    name: "로그인 페이지",
+    url: "https://a-mall.com/login",
+    screenshotUrl: "https://via.placeholder.com/1920x1080?text=Login+Page",
+  },
+  {
+    id: "signup",
+    name: "회원가입 페이지",
+    url: "https://a-mall.com/signup",
+    screenshotUrl: "https://via.placeholder.com/1920x1080?text=Signup+Page",
+  },
+  {
+    id: "main",
+    name: "메인 페이지",
+    url: "https://a-mall.com/main",
+    screenshotUrl: "https://via.placeholder.com/1920x1080?text=Main+Page",
+  },
+  {
+    id: "product",
+    name: "상품 상세 페이지",
+    url: "https://a-mall.com/product/12847",
+    screenshotUrl: "https://via.placeholder.com/1920x1080?text=Product+Page",
+  },
+  {
+    id: "cart",
+    name: "장바구니 페이지",
+    url: "https://a-mall.com/cart",
+    screenshotUrl: "https://via.placeholder.com/1920x1080?text=Cart+Page",
+  },
+  {
+    id: "checkout",
+    name: "배송지 페이지",
+    url: "https://a-mall.com/checkout",
+    screenshotUrl: "https://via.placeholder.com/1920x1080?text=Checkout+Page",
+  },
+  {
+    id: "payment",
+    name: "결제 페이지",
+    url: "https://a-mall.com/payment",
+    screenshotUrl: "https://via.placeholder.com/1920x1080?text=Payment+Page",
+  },
+  {
+    id: "mypage",
+    name: "마이페이지",
+    url: "https://a-mall.com/mypage",
+    screenshotUrl: "https://via.placeholder.com/1920x1080?text=Mypage",
+  },
+] as const;
+
+// demoIssues: 모든 이슈 목록
+export const demoIssues = MOCK_FINAL_ISSUES.issues.map((issue, idx) => ({
+  issueId: `issue_${idx}`,
+  category: issue.category,
+  severity: issue.severity === "critical" ? "CRITICAL" : issue.severity === "high" ? "HIGH" : issue.severity === "medium" ? "MEDIUM" : "LOW",
+  title: issue.title,
+  description: issue.description,
+  targetHtml: issue.targetHtml,
+  tags: issue.tags,
+  url: issue.url,
+  affectedUsersCount: issue.fail_count,
+  affectedUsersPercent: Math.round(issue.fail_rate * 100 * 10) / 10,
+}));
+
+// demoHeatmapPoints: 모든 히트맵 포인트
+export const demoHeatmapPoints = MOCK_HEATMAP.errorPoints.map((point) => ({
+  issueId: point.issueId,
+  url: point.url,
+  x: point.x,
+  y: point.y,
+  ageBand: point.ageBand,
+  count: point.count,
+  severity: point.severity,
+  errorType: point.errorType,
+}));
+
+// demoOverview: 개요 통계
+export const demoOverview = {
+  summary: {
+    totalSessions: MOCK_SUMMARY.summary.total_sessions,
+    successCount: MOCK_SUMMARY.summary.success_count,
+    successRate: Math.round(MOCK_SUMMARY.summary.success_rate * 100 * 10) / 10,
+    avgDurationSeconds: Math.round(MOCK_SUMMARY.summary.avg_duration_ms / 1000),
+  },
+  ageStats: MOCK_SUMMARY.overview.map((overview) => ({
+    ageBand: {
+      "10s": "10대",
+      "20s": "20대",
+      "30s": "30대",
+      "40s": "40대",
+      "50s": "50대",
+      "60s": "60대",
+      "70s": "70대",
+    }[overview.age_group] || overview.age_group,
+    entered: overview.total_sessions,
+    passed: overview.success_count,
+    dropOff: overview.total_sessions - overview.success_count,
+    successRate: Math.round(overview.success_rate * 100 * 10) / 10,
+    failureRate: Math.round(overview.fail_rate * 100 * 10) / 10,
+    avgDurationMinutes: Math.round((overview.avg_duration_ms / 60000) * 10) / 10,
+    avgActions: overview.avg_actions,
+  })),
+};
+
+// demoFixesByUrl: URL별 수정안
+export const demoFixesByUrl: Record<string, Array<{
+  title: string;
+  severity: string;
+  affectedUsersCount: number;
+  beforeCode: string;
+  afterCode: string;
+  impactDescription: string;
+  changeDescription: string;
+}>> = {
+  "https://a-mall.com/login": MOCK_FIXES.login.fixes.map((fix) => ({
+    title: fix.title,
+    severity: fix.severity,
+    affectedUsersCount: fix.impactedUsers.count,
+    beforeCode: fix.beforeCode,
+    afterCode: fix.afterCode,
+    impactDescription: fix.impactSummary,
+    changeDescription: fix.changeSummaryBody,
+  })),
+  "https://a-mall.com/signup": MOCK_FIXES.signup.fixes.map((fix) => ({
+    title: fix.title,
+    severity: fix.severity,
+    affectedUsersCount: fix.impactedUsers.count,
+    beforeCode: fix.beforeCode,
+    afterCode: fix.afterCode,
+    impactDescription: fix.impactSummary,
+    changeDescription: fix.changeSummaryBody,
+  })),
+  "https://a-mall.com/main": MOCK_FIXES.main.fixes.map((fix) => ({
+    title: fix.title,
+    severity: fix.severity,
+    affectedUsersCount: fix.impactedUsers.count,
+    beforeCode: fix.beforeCode,
+    afterCode: fix.afterCode,
+    impactDescription: fix.impactSummary,
+    changeDescription: fix.changeSummaryBody,
+  })),
+  "https://a-mall.com/product/12847": MOCK_FIXES.product.fixes.map((fix) => ({
+    title: fix.title,
+    severity: fix.severity,
+    affectedUsersCount: fix.impactedUsers.count,
+    beforeCode: fix.beforeCode,
+    afterCode: fix.afterCode,
+    impactDescription: fix.impactSummary,
+    changeDescription: fix.changeSummaryBody,
+  })),
+  "https://a-mall.com/cart": MOCK_FIXES.cart.fixes.map((fix) => ({
+    title: fix.title,
+    severity: fix.severity,
+    affectedUsersCount: fix.impactedUsers.count,
+    beforeCode: fix.beforeCode,
+    afterCode: fix.afterCode,
+    impactDescription: fix.impactSummary,
+    changeDescription: fix.changeSummaryBody,
+  })),
+  "https://a-mall.com/checkout": MOCK_FIXES.checkout.fixes.map((fix) => ({
+    title: fix.title,
+    severity: fix.severity,
+    affectedUsersCount: fix.impactedUsers.count,
+    beforeCode: fix.beforeCode,
+    afterCode: fix.afterCode,
+    impactDescription: fix.impactSummary,
+    changeDescription: fix.changeSummaryBody,
+  })),
+  "https://a-mall.com/payment": MOCK_FIXES.payment.fixes.map((fix) => ({
+    title: fix.title,
+    severity: fix.severity,
+    affectedUsersCount: fix.impactedUsers.count,
+    beforeCode: fix.beforeCode,
+    afterCode: fix.afterCode,
+    impactDescription: fix.impactSummary,
+    changeDescription: fix.changeSummaryBody,
+  })),
+  "https://a-mall.com/mypage": MOCK_FIXES.mypage.fixes.map((fix) => ({
+    title: fix.title,
+    severity: fix.severity,
+    affectedUsersCount: fix.impactedUsers.count,
+    beforeCode: fix.beforeCode,
+    afterCode: fix.afterCode,
+    impactDescription: fix.impactSummary,
+    changeDescription: fix.changeSummaryBody,
+  })),
+};
+
+// ============================================================================
 // 통합 export
 // ============================================================================
 

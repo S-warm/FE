@@ -169,6 +169,15 @@ function PointDetail({
       )}
     >
       <CardContent className="grid gap-4 px-6 py-5">
+        <div className="grid gap-3">
+          <div>
+            <p className="text-body-14-medium text-text-body">오류 상세 정보</p>
+            <p className="text-caption-12-regular text-text-muted mt-1">
+              선택한 히트맵 포인트의 오류 상황을 분석한 결과입니다. 차단율, 반복 발생 횟수, 오류 타입 분포를 통해 문제의 심각도를 파악할 수 있습니다.
+            </p>
+          </div>
+        </div>
+
         <div className="flex items-start justify-between gap-3">
           <div className="grid gap-1">
             <div className="flex flex-wrap items-center gap-2">
@@ -322,12 +331,7 @@ function ResultHeatmapPage() {
   }
 
   return (
-    <div className="relative grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
-      {/* 전체 스포트라이트 오버레이 */}
-      {hoveredPointId && (
-        <div className="pointer-events-none fixed inset-0 bg-black/40 z-40" />
-      )}
-
+    <div className="grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
       <ResultPageSidePanel
         pages={sidePages}
         selectedPageId={selectedPageId}

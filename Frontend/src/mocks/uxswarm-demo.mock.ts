@@ -5095,7 +5095,7 @@ export const demoOverview = {
   })),
 };
 
-// demoFixesByUrl: URL별 수정안
+// demoFixesByUrl: URL별 수정안 (result-ai-fix.mock.service 호환성)
 export const demoFixesByUrl: Record<string, Array<{
   title: string;
   severity: string;
@@ -5104,80 +5104,42 @@ export const demoFixesByUrl: Record<string, Array<{
   afterCode: string;
   impactDescription: string;
   changeDescription: string;
-}>> = {
-  "https://a-mall.com/login": MOCK_FIXES.login.fixes.map((fix) => ({
-    title: fix.title,
-    severity: fix.severity,
-    affectedUsersCount: fix.impactedUsers.count,
-    beforeCode: fix.beforeCode,
-    afterCode: fix.afterCode,
-    impactDescription: fix.impactSummary,
-    changeDescription: fix.changeSummaryBody,
-  })),
-  "https://a-mall.com/signup": MOCK_FIXES.signup.fixes.map((fix) => ({
-    title: fix.title,
-    severity: fix.severity,
-    affectedUsersCount: fix.impactedUsers.count,
-    beforeCode: fix.beforeCode,
-    afterCode: fix.afterCode,
-    impactDescription: fix.impactSummary,
-    changeDescription: fix.changeSummaryBody,
-  })),
-  "https://a-mall.com/main": MOCK_FIXES.main.fixes.map((fix) => ({
-    title: fix.title,
-    severity: fix.severity,
-    affectedUsersCount: fix.impactedUsers.count,
-    beforeCode: fix.beforeCode,
-    afterCode: fix.afterCode,
-    impactDescription: fix.impactSummary,
-    changeDescription: fix.changeSummaryBody,
-  })),
-  "https://a-mall.com/product/12847": MOCK_FIXES.product.fixes.map((fix) => ({
-    title: fix.title,
-    severity: fix.severity,
-    affectedUsersCount: fix.impactedUsers.count,
-    beforeCode: fix.beforeCode,
-    afterCode: fix.afterCode,
-    impactDescription: fix.impactSummary,
-    changeDescription: fix.changeSummaryBody,
-  })),
-  "https://a-mall.com/cart": MOCK_FIXES.cart.fixes.map((fix) => ({
-    title: fix.title,
-    severity: fix.severity,
-    affectedUsersCount: fix.impactedUsers.count,
-    beforeCode: fix.beforeCode,
-    afterCode: fix.afterCode,
-    impactDescription: fix.impactSummary,
-    changeDescription: fix.changeSummaryBody,
-  })),
-  "https://a-mall.com/checkout": MOCK_FIXES.checkout.fixes.map((fix) => ({
-    title: fix.title,
-    severity: fix.severity,
-    affectedUsersCount: fix.impactedUsers.count,
-    beforeCode: fix.beforeCode,
-    afterCode: fix.afterCode,
-    impactDescription: fix.impactSummary,
-    changeDescription: fix.changeSummaryBody,
-  })),
-  "https://a-mall.com/payment": MOCK_FIXES.payment.fixes.map((fix) => ({
-    title: fix.title,
-    severity: fix.severity,
-    affectedUsersCount: fix.impactedUsers.count,
-    beforeCode: fix.beforeCode,
-    afterCode: fix.afterCode,
-    impactDescription: fix.impactSummary,
-    changeDescription: fix.changeSummaryBody,
-  })),
-  "https://a-mall.com/mypage": MOCK_FIXES.mypage.fixes.map((fix) => ({
-    title: fix.title,
-    severity: fix.severity,
-    affectedUsersCount: fix.impactedUsers.count,
-    beforeCode: fix.beforeCode,
-    afterCode: fix.afterCode,
-    impactDescription: fix.impactSummary,
-    changeDescription: fix.changeSummaryBody,
-  })),
-};
+}>> = (() => {
+  const result: Record<string, Array<{
+    title: string;
+    severity: string;
+    affectedUsersCount: number;
+    beforeCode: string;
+    afterCode: string;
+    impactDescription: string;
+    changeDescription: string;
+  }>> = {};
+
+  // MOCK_FIXES의 각 URL별 데이터 변환
+  for (const [url, fixData] of Object.entries(MOCK_FIXES)) {
+    if (fixData && Array.isArray(fixData.fixes)) {
+      result[url] = fixData.fixes.map((fix: any) => {
+        // impact 문자열에서 숫자 추출 (예: "+312명" -> 312)
+        const affectedMatch = fix.impact?.match(/\+?(\d+)/);
+        const affectedCount = affectedMatch ? parseInt(affectedMatch[1]) : 100;
+
+        return {
+          title: fix.issue_title || "미정의 제목",
+          severity: "medium",
+          affectedUsersCount: affectedCount,
+          beforeCode: fix.before || "",
+          afterCode: fix.after || "",
+          impactDescription: fix.impact || "",
+          changeDescription: fix.description || "",
+        };
+      });
+    } else {
+      result[url] = [];
+    }
+  }
+
+  return result;
+})();
 
 // ============================================================================
 // 통합 export

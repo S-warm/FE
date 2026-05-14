@@ -58,8 +58,10 @@ function HeatmapCanvas({
   hoveredPointId: string | null
   onHoverPoint: (issueId: string | null) => void
 }) {
+  const containerRef = useRef<HTMLDivElement>(null)
   const [failedScreenshotUrl, setFailedScreenshotUrl] = useState<string | null>(null)
   const [imgDimensions, setImgDimensions] = useState<{ width: number; height: number } | null>(null)
+  const [containerRect, setContainerRect] = useState<DOMRect | null>(null)
 
   const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
     const img = e.currentTarget
@@ -68,6 +70,26 @@ function HeatmapCanvas({
       height: img.naturalHeight,
     })
   }
+
+  // 컨테이너 위치 추적
+  useEffect(() => {
+    const updateRect = () => {
+      if (containerRef.current) {
+        setContainerRect(containerRef.current.getBoundingClientRect())
+      }
+    }
+
+    updateRect()
+
+    // 스크롤, 리사이즈 이벤트 리스너
+    window.addEventListener('scroll', updateRect)
+    window.addEventListener('resize', updateRect)
+
+    return () => {
+      window.removeEventListener('scroll', updateRect)
+      window.removeEventListener('resize', updateRect)
+    }
+  }, [])
 
   // 이미지가 object-contain으로 표시될 때 실제 위치 계산
   const getPointPosition = (pointX: number, pointY: number) => {
@@ -85,7 +107,7 @@ function HeatmapCanvas({
   }
 
   return (
-    <div className="relative rounded-2xl border border-border-strong bg-card overflow-y-auto" style={{ maxHeight: '80vh' }}>
+    <div ref={containerRef} className="relative rounded-2xl border border-border-strong bg-card overflow-y-auto" style={{ maxHeight: '80vh' }}>
       {page.screenshotUrl && failedScreenshotUrl !== page.screenshotUrl ? (
         <img
           src={page.screenshotUrl}
@@ -103,46 +125,64 @@ function HeatmapCanvas({
         </div>
       )}
 
-      {/* 스포트라이트 어두운 오버레이 */}
-      {hoveredPointId && (
-        <div className="pointer-events-none absolute inset-0 bg-black/60 rounded-2xl" />
+      {/* 스포트라이트 어두운 오버레이 - fixed로 전환 */}
+      {hoveredPointId && containerRect && (
+        <div
+          className="pointer-events-none fixed bg-black/60"
+          style={{
+            left: `${containerRect.left}px`,
+            top: `${containerRect.top}px`,
+            width: `${containerRect.width}px`,
+            height: `${containerRect.height}px`,
+            borderRadius: '1rem',
+            zIndex: 50,
+          }}
+        />
       )}
 
-      {/* 마커들 */}
-      <div className="pointer-events-none absolute inset-0">
-        {page.points.map((point, index) => {
-          const isSelected = point.issueId === selectedPointId
-          const isHovered = point.issueId === hoveredPointId
-          // 고유한 key: page URL + issueId + index (페이지별 중복 방지)
-          const uniqueKey = `${page.pageUrl}-${point.issueId}-${index}`
-          const position = getPointPosition(point.x, point.y)
+      {/* 마커들 - fixed로 스크롤에 따라 움직임 */}
+      {containerRect && (
+        <div className="pointer-events-none">
+          {page.points.map((point, index) => {
+            const isSelected = point.issueId === selectedPointId
+            const isHovered = point.issueId === hoveredPointId
+            // 고유한 key: page URL + issueId + index (페이지별 중복 방지)
+            const uniqueKey = `${page.pageUrl}-${point.issueId}-${index}`
+            const position = getPointPosition(point.x, point.y)
 
-          return (
-            <button
-              key={uniqueKey}
-              type="button"
-              onClick={() => onSelectPoint(point.issueId)}
-              onMouseEnter={() => onHoverPoint(point.issueId)}
-              onMouseLeave={() => onHoverPoint(null)}
-              className={cn(
-                "pointer-events-auto absolute grid size-7 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border-2 border-white text-[11px] font-semibold text-white shadow-lg transition-all",
-                getMarkerColor(point),
-                isSelected ? "ring-4 ring-white/70" : "",
-                isHovered ? "scale-125 ring-4 ring-white/90 shadow-xl" : "hover:scale-105",
-                hoveredPointId && !isHovered ? "opacity-40" : "",
-              )}
-              style={{
-                left: position.left,
-                top: position.top,
-                zIndex: isHovered ? 10 : 1,
-              }}
-              aria-label={`${point.issueId} ${point.description}`}
-            >
-              {point.count}
-            </button>
-          )
-        })}
-      </div>
+            // fixed 포지션을 위한 절대 좌표 계산
+            const leftPercent = parseFloat(position.left as string)
+            const topPercent = parseFloat(position.top as string)
+            const markerLeftPx = containerRect.left + (containerRect.width * leftPercent / 100)
+            const markerTopPx = containerRect.top + (containerRect.height * topPercent / 100)
+
+            return (
+              <button
+                key={uniqueKey}
+                type="button"
+                onClick={() => onSelectPoint(point.issueId)}
+                onMouseEnter={() => onHoverPoint(point.issueId)}
+                onMouseLeave={() => onHoverPoint(null)}
+                className={cn(
+                  "pointer-events-auto fixed grid size-7 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border-2 border-white text-[11px] font-semibold text-white shadow-lg transition-all",
+                  getMarkerColor(point),
+                  isSelected ? "ring-4 ring-white/70" : "",
+                  isHovered ? "scale-125 ring-4 ring-white/90 shadow-xl" : "hover:scale-105",
+                  hoveredPointId && !isHovered ? "opacity-40" : "",
+                )}
+                style={{
+                  left: `${markerLeftPx}px`,
+                  top: `${markerTopPx}px`,
+                  zIndex: isHovered ? 60 : 55,
+                }}
+                aria-label={`${point.issueId} ${point.description}`}
+              >
+                {point.count}
+              </button>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }

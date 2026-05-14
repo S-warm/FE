@@ -149,31 +149,78 @@ function HeatmapCanvas({
           const uniqueKey = `${page.pageUrl}-${point.issueId}-${index}`
           const position = getPointPosition(point.x, point.y)
 
+          // tooltip 위치 계산 (픽셀 좌표)
+          const tooltipX = containerRect
+            ? containerRect.left + (containerRect.width * parseFloat(position.left as string)) / 100
+            : 0
+          const tooltipY = containerRect
+            ? containerRect.top + (containerRect.height * parseFloat(position.top as string)) / 100
+            : 0
+
           return (
-            <button
-              key={uniqueKey}
-              type="button"
-              onClick={() => onSelectPoint(point.issueId)}
-              onMouseEnter={() => onHoverPoint(point.issueId)}
-              onMouseLeave={() => onHoverPoint(null)}
-              className={cn(
-                "pointer-events-auto absolute grid size-7 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border-2 border-white text-[11px] font-semibold text-white shadow-lg transition-all",
-                getMarkerColor(point),
-                isSelected ? "ring-4 ring-white/70" : "",
-                isHovered ? "scale-125 ring-4 ring-white/90 shadow-xl" : "hover:scale-105",
-                hoveredPointId && !isHovered ? "opacity-40" : "",
+            <div key={uniqueKey}>
+              <button
+                type="button"
+                onClick={() => onSelectPoint(point.issueId)}
+                onMouseEnter={() => onHoverPoint(point.issueId)}
+                onMouseLeave={() => onHoverPoint(null)}
+                className={cn(
+                  "pointer-events-auto absolute grid size-7 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border-2 border-white text-[11px] font-semibold text-white shadow-lg transition-all",
+                  getMarkerColor(point),
+                  isSelected ? "ring-4 ring-white/70" : "",
+                  isHovered ? "scale-125 ring-4 ring-white/90 shadow-xl" : "hover:scale-105",
+                  hoveredPointId && !isHovered ? "opacity-40" : "",
+                )}
+                style={{
+                  left: position.left,
+                  top: position.top,
+                  zIndex: isHovered ? 10 : 1,
+                }}
+                aria-label={`${point.issueId} ${point.description}`}
+              >
+                {point.count}
+              </button>
+
+              {/* 호버 시 tooltip 표시 */}
+              {isHovered && (
+                <MarkerTooltip
+                  point={point}
+                  position={{ x: tooltipX, y: tooltipY }}
+                />
               )}
-              style={{
-                left: position.left,
-                top: position.top,
-                zIndex: isHovered ? 10 : 1,
-              }}
-              aria-label={`${point.issueId} ${point.description}`}
-            >
-              {point.count}
-            </button>
+            </div>
           )
         })}
+      </div>
+    </div>
+  )
+}
+
+function MarkerTooltip({
+  point,
+  position,
+}: {
+  point: ResultHeatmapPointViewModel
+  position: { x: number; y: number }
+}) {
+  return (
+    <div
+      className="pointer-events-none fixed bg-white border border-border-strong rounded-xl shadow-lg p-3 z-70 max-w-xs"
+      style={{
+        left: `${position.x + 12}px`,
+        top: `${position.y - 50}px`,
+      }}
+    >
+      <div className="grid gap-2">
+        <div className="flex items-start gap-2">
+          <IssueBadge variant={getPointBadgeVariant(point)} size="sm">
+            {point.errorType}
+          </IssueBadge>
+          <p className="text-body-14-medium text-text-body">{point.issueId}</p>
+        </div>
+        <p className="text-caption-12-regular text-text-muted">
+          {point.description}
+        </p>
       </div>
     </div>
   )

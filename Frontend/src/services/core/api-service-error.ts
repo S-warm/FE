@@ -4,6 +4,10 @@ export class ApiServiceError extends Error {
   status: number
   error: string
   path: string
+  fieldErrors?: Array<{
+    path: string
+    message: string
+  }>
 
   constructor(payload: ApiErrorResponse) {
     super(payload.message)
@@ -11,6 +15,7 @@ export class ApiServiceError extends Error {
     this.status = payload.status
     this.error = payload.error
     this.path = payload.path
+    this.fieldErrors = payload.fieldErrors
   }
 }
 

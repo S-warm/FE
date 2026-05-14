@@ -1,9 +1,19 @@
+import { adaptAiFixResponseToViewModel } from "@/adapters/result/result-ai-fix.adapter"
 import { createResultPageSummary } from "@/adapters/result/result-page.adapter"
 import { adaptIssueSeverity } from "@/adapters/result/result-severity.adapter"
 import { demoFixesByUrl, demoResultPages } from "@/mocks/uxswarm-demo.mock"
 import { mockDelay } from "@/services/core/mock-delay"
-import { createNotImplementedServiceError } from "@/services/core/api-service-error"
+import { requestJsonWithFallback } from "@/services/core/http-client"
 import type { ResultAiFixService } from "@/services/result/result-ai-fix.service"
+import type { ApiIssueSeverity } from "@/types/api/common/enums"
+import type { SimulationAiFixResponseDto } from "@/types/api/simulation/simulation-ai-fix.response"
+
+function toApiIssueSeverity(severity: string): ApiIssueSeverity {
+  if (severity === "critical") return "CRITICAL"
+  if (severity === "high") return "HIGH"
+  if (severity === "medium") return "MEDIUM"
+  return "LOW"
+}
 
 export const resultAiFixMockService: ResultAiFixService = {
   async getAiFix(simulationId) {
@@ -28,7 +38,7 @@ export const resultAiFixMockService: ResultAiFixService = {
             issueType: "ux" as const,
             issueId: `fix-${page.id}-${fixIndex + 1}`,
             title: fix.title,
-            severity: adaptIssueSeverity(fix.severity),
+            severity: adaptIssueSeverity(toApiIssueSeverity(fix.severity)),
             impactedUsersCount: fix.affectedUsersCount,
             beforeCode: fix.beforeCode,
             afterCode: fix.afterCode,
@@ -43,7 +53,14 @@ export const resultAiFixMockService: ResultAiFixService = {
 }
 
 export const resultAiFixHttpService: ResultAiFixService = {
-  async getAiFix() {
-    throw createNotImplementedServiceError("service://result-ai-fix/http/get", "AI Fix HTTP 서비스는 아직 구현되지 않았습니다.")
+  async getAiFix(simulationId) {
+    const raw = await requestJsonWithFallback<SimulationAiFixResponseDto>([
+      `/api/simulations/${simulationId}/results/ai-fix`,
+      `/api/simulations/${simulationId}/ai-fix`,
+      `/api/simulations/${simulationId}/ai`,
+      `/simulations/${simulationId}/ai-fix`,
+    ])
+
+    return adaptAiFixResponseToViewModel(simulationId, raw)
   },
 }

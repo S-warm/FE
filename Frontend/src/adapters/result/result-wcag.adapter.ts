@@ -1,34 +1,14 @@
 import { createResultPageSummary } from "@/adapters/result/result-page.adapter"
 import { adaptWcagSeverity } from "@/adapters/result/result-severity.adapter"
+import type { WcagPageResult } from "@/mocks/result-wcag.mock"
 import type { SimulationWcagResponseDto } from "@/types/api/simulation/simulation-wcag.response"
 import type { ResultPageBaseViewModel } from "@/types/view-model/common/result-page"
 import type { ResultWcagViewModel } from "@/types/view-model/result/result-wcag"
 
-function buildDistribution(raw: SimulationWcagResponseDto) {
-  return [
-    {
-      severity: adaptWcagSeverity("Critical"),
-      count: raw.distribution.critical,
-      label: "심각",
-      description: "바로 고쳐야 할 문제",
-    },
-    {
-      severity: adaptWcagSeverity("Moderate"),
-      count: raw.distribution.moderate,
-      label: "중요",
-      description: "사용하기 어려운 문제",
-    },
-    {
-      severity: adaptWcagSeverity("Minor"),
-      count: raw.distribution.minor,
-      label: "가벼움",
-      description: "개선하면 좋을 문제",
-    },
-  ]
-}
-
 // 이슈 배열에서 severity별 분포를 계산
-function buildDistributionFromIssues(issues: any[]) {
+function buildDistributionFromIssues(
+  issues: Array<{ severity: { raw: string } }>
+) {
   const critical = issues.filter((issue) => issue.severity.raw === "Critical").length
   const moderate = issues.filter((issue) => issue.severity.raw === "Moderate").length
   const minor = issues.filter((issue) => issue.severity.raw === "Minor").length
@@ -59,7 +39,7 @@ export function adaptWcagResponseToViewModel(
   simulationId: string,
   raw: SimulationWcagResponseDto,
   pageContext: ResultPageBaseViewModel[] = [],
-  pageResults?: any[]
+  pageResults?: WcagPageResult[]
 ): ResultWcagViewModel {
   const pages =
     pageContext.length > 0
@@ -88,8 +68,6 @@ export function adaptWcagResponseToViewModel(
           }),
         ]
 
-  const distribution = buildDistribution(raw)
-
   // 페이지별 이슈 매핑
   const allIssues = raw.issues.map((issue) => ({
     issueType: "wcag" as const,
@@ -106,7 +84,7 @@ export function adaptWcagResponseToViewModel(
       let pageIssues = allIssues
       if (pageResults && pageResults[pageIndex]) {
         const pageDetail = pageResults[pageIndex]
-        const pageIssueIds = new Set(pageDetail.details?.map((d: any) => d.id) || [])
+        const pageIssueIds = new Set(pageDetail.details?.map((detail) => detail.id) || [])
         pageIssues = allIssues.filter((issue) => pageIssueIds.has(issue.wcagIssueId))
       }
 

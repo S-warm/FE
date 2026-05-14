@@ -9,8 +9,9 @@ interface AuthUser {
 interface AuthState {
   isAuthenticated: boolean
   user: AuthUser | null
+  accessToken: string | null
   canLogin: (username: string, password: string) => boolean
-  login: (username: string) => void
+  login: (username: string, accessToken?: string | null) => void
   logout: () => void
 }
 
@@ -25,6 +26,7 @@ export const useAuthStore = create<AuthState>()(
     (set) => ({
       isAuthenticated: false,
       user: null,
+      accessToken: null,
       canLogin: (username, password) => {
         const normalizedUsername = username.trim()
         if (
@@ -36,14 +38,15 @@ export const useAuthStore = create<AuthState>()(
 
         return false
       },
-      login: (username) => {
+      login: (username, accessToken = null) => {
         const normalizedUsername = username.trim()
         set({
           isAuthenticated: true,
           user: { initials: DUMMY_CREDENTIALS.initials, username: normalizedUsername },
+          accessToken,
         })
       },
-      logout: () => set({ isAuthenticated: false, user: null }),
+      logout: () => set({ isAuthenticated: false, user: null, accessToken: null }),
     }),
     { name: "swarm-auth" }
   )

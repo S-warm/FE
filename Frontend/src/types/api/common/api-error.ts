@@ -3,4 +3,8 @@ export interface ApiErrorResponse {
   error: string
   message: string
   path: string
+  fieldErrors?: Array<{
+    path: string
+    message: string
+  }>
 }

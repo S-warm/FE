@@ -26,6 +26,7 @@ import { useSimulationDraftStore } from "@/store/simulation-draft.store"
 import { useSimulationSettingsStore } from "@/store/simulation-settings.store"
 import { cn } from "@/lib/utils"
 import { motion } from "@/lib/motion"
+import { mapApiErrorToSimulationSetupFormErrors } from "@/validation/api-error-to-form"
 import type { SimulationFormViewModel } from "@/types/view-model/simulation/simulation-form"
 import {
   hasSimulationSetupValidationErrors,
@@ -170,6 +171,10 @@ function SimulationSetupPage() {
       })
     } catch (error) {
       if (error instanceof ApiServiceError) {
+        const nextFieldErrors = mapApiErrorToSimulationSetupFormErrors(error)
+        if (hasSimulationSetupValidationErrors(nextFieldErrors)) {
+          setErrors(nextFieldErrors)
+        }
         setSubmitError(error.message)
         return
       }

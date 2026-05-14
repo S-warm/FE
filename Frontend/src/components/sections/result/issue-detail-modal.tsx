@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { X, AlertCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { IssueDetailViewModel } from "@/types/view-model/result/issue-detail"
@@ -10,13 +10,7 @@ interface IssueDetailModalProps {
 }
 
 export function IssueDetailModal({ isOpen, issue, onClose }: IssueDetailModalProps) {
-  const [isAnimating, setIsAnimating] = useState(false)
-
-  useEffect(() => {
-    if (isOpen) {
-      setIsAnimating(true)
-    }
-  }, [isOpen])
+  const [isAnimating, setIsAnimating] = useState(true)
 
   const handleClose = () => {
     setIsAnimating(false)

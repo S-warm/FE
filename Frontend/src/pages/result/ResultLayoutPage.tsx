@@ -13,13 +13,13 @@ import {
 
 import { CommonButton } from "@/components/atoms"
 import { BrandingHeader } from "@/components/sections/auth/branding-header"
-import { EmptyState } from "@/components/sections"
 import { ErrorState, ResultPageSkeleton } from "@/components/states"
 import { Card, CardContent } from "@/components/ui/card"
 import { AuthLayout } from "@/layouts/AuthLayout"
 import { motion } from "@/lib/motion"
 import { cn } from "@/lib/utils"
 import { useSimulationHeaderQuery } from "@/queries"
+import { useSimulationDraftStore } from "@/store/simulation-draft.store"
 import { formatRelativeTime } from "@/utils/format-relative-time"
 
 const RESULT_TAB_HOVER_BG =
@@ -137,12 +137,21 @@ function ResultLayoutPage() {
   const location = useLocation()
   const search = location.search
   const resolvedId = simulationId ?? "unknown"
+  const draftProjectTitle = useSimulationDraftStore((state) => state.projectTitle)
+  const draftStartedAt = useSimulationDraftStore((state) => state.startedAt)
+  const fallbackTitle = draftProjectTitle.trim() || "A-Mall 회원가입 및 구매 플로우"
+  const fallbackCreatedAt = draftStartedAt || new Date().toISOString()
   const {
     data: simulationHeader,
     isLoading,
     isError,
     refetch,
   } = useSimulationHeaderQuery(resolvedId)
+  const displayHeader = simulationHeader ?? {
+    simulationId: resolvedId,
+    title: fallbackTitle,
+    createdAt: fallbackCreatedAt,
+  }
 
 
   return (
@@ -171,17 +180,10 @@ function ResultLayoutPage() {
           />
         ) : null}
 
-        {!isLoading && !isError && simulationHeader ? (
+        {!isError && displayHeader ? (
           <ResultHeaderCard
-            title={simulationHeader.title}
-            createdAt={simulationHeader.createdAt}
-          />
-        ) : null}
-
-        {!isLoading && !isError && !simulationHeader ? (
-          <EmptyState
-            title="시뮬레이션 정보를 찾을 수 없습니다"
-            description="요청한 결과 정보가 아직 준비되지 않았거나 접근할 수 없습니다."
+            title={displayHeader.title}
+            createdAt={displayHeader.createdAt}
           />
         ) : null}
 

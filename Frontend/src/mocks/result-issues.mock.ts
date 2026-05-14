@@ -688,10 +688,10 @@ const backendIssuesData = [
 // 프론트엔드 형식으로 변환
 const convertToFrontendIssue = (backendIssue: (typeof backendIssuesData)[0], id: string): ResultIssue => {
   const severityMap: Record<string, IssueSeverity> = {
-    critical: "error",
-    high: "error",
-    medium: "warning",
-    low: "info",
+    critical: "critical",
+    high: "high",
+    medium: "medium",
+    low: "low",
   }
 
   return {

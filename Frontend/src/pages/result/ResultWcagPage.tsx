@@ -17,6 +17,7 @@ import { useResultPageParam } from "@/lib/result-page-param"
 import { useResultPageSidePanelState } from "@/lib/result-page-side-panel-state"
 import { motion } from "@/lib/motion"
 import { cn } from "@/lib/utils"
+import { getResultPageScreenshotUrl } from "@/mocks/mock-assets"
 import { useResultWcagQuery } from "@/queries"
 import type { SeverityTokenViewModel } from "@/types/view-model/common/severity"
 import type {
@@ -277,7 +278,7 @@ function ResultWcagPage() {
       pages.map((page) => ({
         id: page.pageId,
         name: page.pageName,
-        screenshotUrl: page.screenshotUrl,
+        screenshotUrl: page.screenshotUrl || getResultPageScreenshotUrl(page.pageId),
       })),
     [pages],
   )

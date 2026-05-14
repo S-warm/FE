@@ -1,4 +1,4 @@
-import type { HeatmapAgeBand } from "@/mocks/result-heatmap.mock"
+import type { AgeGroup as HeatmapAgeBand } from "@/mocks/result-heatmap.mock"
 import { resultPageScreenshotUrl } from "@/mocks/mock-assets"
 
 export type HeatmapLogEventType = "click" | "step"
@@ -47,9 +47,9 @@ function createRng(seed: number) {
 }
 
 function pickAgeBand(random: () => number): HeatmapAgeBand {
-  const bands: HeatmapAgeBand[] = ["10대", "20대", "30대", "40대", "50대", "60대", "70대", "80대"]
+  const bands: HeatmapAgeBand[] = ["10s", "20s", "30s", "40s", "50s", "60s", "70s"]
   const index = Math.floor(random() * bands.length)
-  return bands[index] ?? "30대"
+  return bands[index] ?? "30s"
 }
 
 function jitter(random: () => number, value: number, amount: number) {
@@ -69,11 +69,11 @@ function generateSessions(seed: number, sessionCount: number) {
     const blockTime = hasBlock ? Math.floor(timelineMaxMs * (0.3 + random() * 0.55)) : null
 
     const baseHotspot =
-      ageBand === "10대" || ageBand === "20대"
+      ageBand === "10s" || ageBand === "20s"
         ? { x: 0.72, y: 0.26 }
-        : ageBand === "30대" || ageBand === "40대"
+        : ageBand === "30s" || ageBand === "40s"
           ? { x: 0.52, y: 0.42 }
-          : ageBand === "50대" || ageBand === "60대"
+          : ageBand === "50s" || ageBand === "60s"
             ? { x: 0.32, y: 0.58 }
             : { x: 0.26, y: 0.34 }
 
@@ -93,9 +93,9 @@ function generateSessions(seed: number, sessionCount: number) {
       const x = jitter(random, base.x, 0.18)
       const y = jitter(random, base.y, 0.18)
 
-      const dwellMultiplier = ageBand === "70대" || ageBand === "80대" ? 1.35 : ageBand === "60대" ? 1.2 : 1
+      const dwellMultiplier = ageBand === "70s" ? 1.35 : ageBand === "60s" ? 1.2 : 1
       const dwellMs = Math.floor((120 + Math.floor(random() * 2200)) * dwellMultiplier)
-      const retryBoost = ageBand === "70대" || ageBand === "80대" ? 2 : ageBand === "60대" ? 1 : 0
+      const retryBoost = ageBand === "70s" ? 2 : ageBand === "60s" ? 1 : 0
       const retries = Math.floor(random() * (bias < 0.6 ? 4 + retryBoost : 2 + retryBoost))
       const isNearBlock = blockTime !== null && tMs >= blockTime - 4000 && tMs <= blockTime + 1500
       const block = Boolean(blockTime !== null && tMs >= blockTime && isNearBlock && random() < 0.65)

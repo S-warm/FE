@@ -6,6 +6,8 @@ export const queryKeys = {
     list: (userId: string) => ["simulations", "list", userId] as const,
     header: (simulationId: string, userId: string) =>
       ["simulations", "header", simulationId, userId] as const,
+    status: (simulationId: string) =>
+      ["simulations", "status", simulationId] as const,
   },
   results: {
     all: ["results"] as const,

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { X, BarChart3, Users, AlertCircle, Tag, Link as LinkIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { IssueDetailViewModel } from "@/types/view-model/result/issue-detail"
@@ -10,13 +10,7 @@ interface IssueDetailModalNewProps {
 }
 
 export function IssueDetailModalNew({ isOpen, issue, onClose }: IssueDetailModalNewProps) {
-  const [isAnimating, setIsAnimating] = useState(false)
-
-  useEffect(() => {
-    if (isOpen) {
-      setIsAnimating(true)
-    }
-  }, [isOpen])
+  const [isAnimating, setIsAnimating] = useState(true)
 
   const handleClose = () => {
     setIsAnimating(false)

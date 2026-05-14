@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, useEffect } from "react"
+import { useMemo, useRef, useState } from "react"
 import { useLocation, useNavigate, useParams } from "react-router-dom"
 import { ArrowRight } from "lucide-react"
 
@@ -13,6 +13,7 @@ import { useResultPageParam } from "@/lib/result-page-param"
 import { useResultPageSidePanelState } from "@/lib/result-page-side-panel-state"
 import { motion } from "@/lib/motion"
 import { cn } from "@/lib/utils"
+import { getResultPageScreenshotUrl } from "@/mocks/mock-assets"
 import { useResultIssuesQuery } from "@/queries"
 import type {
   ResultIssuesPageViewModel,
@@ -97,7 +98,7 @@ function ResultIssuesPage() {
       pages.map((page) => ({
         id: page.pageId,
         name: page.pageName,
-        screenshotUrl: page.screenshotUrl,
+        screenshotUrl: page.screenshotUrl || getResultPageScreenshotUrl(page.pageId),
       })),
     [pages],
   )

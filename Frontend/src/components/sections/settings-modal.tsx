@@ -66,6 +66,7 @@ function SettingsModal() {
       includeLowContrast: state.includeLowContrast,
       includeWarnings: state.includeWarnings,
       tags: state.tags,
+      urlParams: state.urlParams,
     }))
   )
   const applySettings = useSimulationSettingsStore((state) => state.applySettings)

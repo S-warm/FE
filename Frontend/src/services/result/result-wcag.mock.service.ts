@@ -1,9 +1,10 @@
 import { adaptWcagResponseToViewModel, createResultPageBase } from "@/adapters/result"
 import { mockDelay } from "@/services/core/mock-delay"
-import { createNotImplementedServiceError } from "@/services/core/api-service-error"
+import { requestJsonWithFallback } from "@/services/core/http-client"
 import type { ResultWcagService } from "@/services/result/result-wcag.service"
 import { wcagResultMock } from "@/mocks/result-wcag.mock"
 import type { ApiWcagSeverity } from "@/types/api/common/enums"
+import type { SimulationOverviewResponseDto } from "@/types/api/simulation/simulation-overview.response"
 import type { SimulationWcagResponseDto } from "@/types/api/simulation/simulation-wcag.response"
 
 function mapWcagSeverity(severity: "critical" | "moderate" | "minor"): ApiWcagSeverity {
@@ -65,7 +66,7 @@ export const resultWcagMockService: ResultWcagService = {
         simulationId,
         order: index + 1,
         pageName: page.pageName,
-        pageUrl: page.pageUrl || `https://a-mall.com/${page.pageId}`,
+        pageUrl: `https://a-mall.com/${page.pageId}`,
       })
     )
 
@@ -74,7 +75,34 @@ export const resultWcagMockService: ResultWcagService = {
 }
 
 export const resultWcagHttpService: ResultWcagService = {
-  async getWcag() {
-    throw createNotImplementedServiceError("service://result-wcag/http/get", "WCAG HTTP 서비스는 아직 구현되지 않았습니다.")
+  async getWcag(simulationId) {
+    const raw = await requestJsonWithFallback<SimulationWcagResponseDto>([
+      `/api/simulations/${simulationId}/results/wcag`,
+      `/api/simulations/${simulationId}/wcag`,
+      `/simulations/${simulationId}/wcag`,
+    ])
+
+    let pageContext = [] as ReturnType<typeof createResultPageBase>[]
+
+    try {
+      const overview = await requestJsonWithFallback<SimulationOverviewResponseDto>([
+        `/api/simulations/${simulationId}/results/overview`,
+        `/api/simulations/${simulationId}/overview`,
+        `/simulations/${simulationId}/overview`,
+      ])
+
+      pageContext = overview.funnelPanels.map((panel) =>
+        createResultPageBase({
+          simulationId,
+          order: panel.order,
+          pageName: panel.pageName,
+          pageUrl: panel.pageUrl,
+        })
+      )
+    } catch {
+      pageContext = []
+    }
+
+    return adaptWcagResponseToViewModel(simulationId, raw, pageContext)
   },
 }

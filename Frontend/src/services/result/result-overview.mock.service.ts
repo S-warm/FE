@@ -1,8 +1,11 @@
+import { adaptOverviewResponseToViewModel } from "@/adapters/result/result-overview.adapter"
 import { createResultPageBase } from "@/adapters/result/result-page.adapter"
 import { demoOverview, demoResultPages } from "@/mocks/uxswarm-demo.mock"
 import { mockDelay } from "@/services/core/mock-delay"
-import { createNotImplementedServiceError } from "@/services/core/api-service-error"
+import { requestJsonWithFallback } from "@/services/core/http-client"
 import type { ResultOverviewService } from "@/services/result/result-overview.service"
+import type { SimulationOverviewResponseDto } from "@/types/api/simulation/simulation-overview.response"
+import type { ResultAgeBand } from "@/types/view-model/common/result-meta"
 
 function formatNumberLabel(value: number) {
   return value.toLocaleString("ko-KR")
@@ -38,7 +41,7 @@ export const resultOverviewMockService: ResultOverviewService = {
         })
       ),
       ageStats: demoOverview.ageStats.map((item) => ({
-        ageBand: item.ageBand,
+        ageBand: item.ageBand as ResultAgeBand,
         successRate: item.successRate,
         failureRate: item.failureRate,
         dropOffRate: item.failureRate,
@@ -50,7 +53,13 @@ export const resultOverviewMockService: ResultOverviewService = {
 }
 
 export const resultOverviewHttpService: ResultOverviewService = {
-  async getOverview() {
-    throw createNotImplementedServiceError("service://result-overview/http/get", "Overview HTTP 서비스는 아직 구현되지 않았습니다.")
+  async getOverview(simulationId) {
+    const raw = await requestJsonWithFallback<SimulationOverviewResponseDto>([
+      `/api/simulations/${simulationId}/results/overview`,
+      `/api/simulations/${simulationId}/overview`,
+      `/simulations/${simulationId}/overview`,
+    ])
+
+    return adaptOverviewResponseToViewModel(simulationId, raw)
   },
 }

@@ -11,6 +11,7 @@ import { useResultPageParam } from "@/lib/result-page-param"
 import { useResultPageSidePanelState } from "@/lib/result-page-side-panel-state"
 import { motion } from "@/lib/motion"
 import { cn } from "@/lib/utils"
+import { getResultPageScreenshotUrl } from "@/mocks/mock-assets"
 import { useResultAiFixQuery } from "@/queries"
 import type {
   ResultAiFixItemViewModel,
@@ -136,7 +137,7 @@ function ResultAiFixPage() {
       pages.map((page) => ({
         id: page.pageId,
         name: page.pageName,
-        screenshotUrl: page.screenshotUrl,
+        screenshotUrl: page.screenshotUrl || getResultPageScreenshotUrl(page.pageId),
       })),
     [pages],
   )
@@ -217,16 +218,22 @@ function ResultAiFixPage() {
                       type="button"
                       onClick={() => setSelectedFixId(fix.issueId)}
                       className={cn(
-                        "rounded-2xl border p-4 text-left transition-colors",
+                        "min-w-0 rounded-2xl border p-4 text-left transition-colors",
                         motion.item,
                         active
                           ? "border-border-focus bg-card"
                           : "border-border-soft bg-surface-subtle hover:bg-card",
                       )}
                     >
-                      <div className="flex items-start justify-between gap-3">
-                        <p className="text-body-14-medium text-text-body">{fix.title}</p>
-                        <StatusBadge variant={toStatusBadgeVariant(fix)} size="sm">
+                      <div className="flex min-w-0 items-start justify-between gap-3">
+                        <p className="min-w-0 flex-1 truncate text-body-14-medium text-text-body">
+                          {fix.title}
+                        </p>
+                        <StatusBadge
+                          variant={toStatusBadgeVariant(fix)}
+                          size="sm"
+                          className="self-start"
+                        >
                           {fix.severity.label}
                         </StatusBadge>
                       </div>

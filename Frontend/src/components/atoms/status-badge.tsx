@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils"
 import type { ComponentState } from "@/types/ui"
 
 const statusBadgeVariants = cva(
-  "inline-flex items-center justify-center rounded-full border px-2.5 py-1 text-caption-12-medium leading-none",
+  "inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-full border px-2.5 py-1 text-caption-12-medium leading-none",
   {
     variants: {
       variant: {

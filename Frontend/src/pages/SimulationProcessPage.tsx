@@ -1,20 +1,23 @@
-import { useEffect, useMemo, useState } from "react"
+import { useEffect } from "react"
 import { useLocation, useNavigate } from "react-router-dom"
 
-import { CheckCircle2, Loader2 } from "lucide-react"
+import { AlertTriangle, CheckCircle2, Loader2 } from "lucide-react"
 
 import { CommonButton } from "@/components/atoms"
 import { BrandingHeader } from "@/components/sections/auth/branding-header"
 import { EmptyState } from "@/components/sections"
+import { ErrorState } from "@/components/states"
 import { Card, CardContent } from "@/components/ui/card"
 import { AuthLayout } from "@/layouts/AuthLayout"
 import { buildResultOverviewPath } from "@/constants/routes"
 import { motion } from "@/lib/motion"
 import { cn } from "@/lib/utils"
+import { useSimulationStatusQuery } from "@/queries"
 import { useSimulationDraftStore } from "@/store/simulation-draft.store"
 
 const steps = ["페이지 수집", "페르소나 생성", "시뮬레이션 실행", "결과 분석"] as const
 const REDIRECT_DELAY_MS = 1200
+const TERMINAL_STATUSES = new Set(["completed", "failed", "error", "cancelled"])
 
 interface SimulationProcessLocationState {
   simulationId: string
@@ -24,8 +27,6 @@ interface SimulationProcessLocationState {
 }
 
 function SimulationProcessPage() {
-  const [tick, setTick] = useState(0)
-  const maxTick = steps.length * 3 - 1
   const navigate = useNavigate()
   const location = useLocation()
   const draftProjectTitle = useSimulationDraftStore((state) => state.projectTitle)
@@ -35,23 +36,48 @@ function SimulationProcessPage() {
   const simulationTitle = locationState?.title ?? draftProjectTitle.trim()
   const simulationCreatedAt = locationState?.createdAt ?? startedAt ?? ""
   const hasProcessContext = Boolean(simulationId && simulationTitle && simulationCreatedAt)
+  const {
+    data: simulationStatus,
+    isLoading: isStatusLoading,
+    isError: isStatusError,
+    refetch: refetchStatus,
+  } = useSimulationStatusQuery(simulationId)
 
-  const activeStepIndex = useMemo(() => Math.min(steps.length - 1, Math.floor(tick / 3)), [tick])
-  const progress = useMemo(() => Math.min(100, Math.round(((tick + 1) / (steps.length * 3)) * 100)), [tick])
+  const normalizedStatus = String(simulationStatus?.status ?? "").toLowerCase()
+  const isTerminalStatus = TERMINAL_STATUSES.has(normalizedStatus)
+  const isFailedStatus =
+    normalizedStatus === "failed" ||
+    normalizedStatus === "error" ||
+    normalizedStatus === "cancelled"
+
+  const activeStepIndex = (() => {
+    const currentStep = simulationStatus?.currentStep
+    const resolvedIndex = currentStep ? steps.findIndex((step) => step === currentStep) : -1
+    if (resolvedIndex >= 0) return resolvedIndex
+    if (normalizedStatus === "queued" || normalizedStatus === "collecting_pages") return 0
+    if (normalizedStatus === "generating_personas") return 1
+    if (normalizedStatus === "running" || normalizedStatus === "in_progress") return 2
+    return 3
+  })()
+
+  const progress = (() => {
+    if (typeof simulationStatus?.progress === "number") {
+      return Math.max(0, Math.min(100, Math.round(simulationStatus.progress)))
+    }
+
+    const fallbackByStep = [15, 35, 70, isFailedStatus ? 100 : 92]
+    return fallbackByStep[activeStepIndex] ?? 15
+  })()
+
+  const statusLabel = isFailedStatus
+    ? "시뮬레이션 실패"
+    : isTerminalStatus
+      ? "시뮬레이션 완료"
+      : "시뮬레이션 진행 중"
 
   useEffect(() => {
     if (!hasProcessContext) return
-    if (tick >= maxTick) return
-
-    const handle = window.setInterval(() => {
-      setTick((prev) => Math.min(maxTick, prev + 1))
-    }, 900)
-    return () => window.clearInterval(handle)
-  }, [hasProcessContext, maxTick, tick])
-
-  useEffect(() => {
-    if (!hasProcessContext) return
-    if (tick < maxTick) {
+    if (!isTerminalStatus || isFailedStatus) {
       return
     }
 
@@ -59,7 +85,7 @@ function SimulationProcessPage() {
       navigate(buildResultOverviewPath(simulationId))
     }, REDIRECT_DELAY_MS)
     return () => window.clearTimeout(handle)
-  }, [hasProcessContext, maxTick, navigate, simulationId, tick])
+  }, [hasProcessContext, isFailedStatus, isTerminalStatus, navigate, simulationId])
 
   return (
     <AuthLayout
@@ -76,6 +102,17 @@ function SimulationProcessPage() {
           />
         ) : null}
 
+        {hasProcessContext && isStatusError ? (
+          <ErrorState
+            title="진행 상태를 불러오지 못했습니다"
+            description="잠시 후 다시 시도해주세요."
+            actionLabel="다시 시도"
+            onAction={() => {
+              void refetchStatus()
+            }}
+          />
+        ) : null}
+
         {hasProcessContext ? (
         <Card className={cn("rounded-2xl border border-border-strong bg-card shadow-none", motion.card)}>
           <CardContent className="grid gap-4 px-6 py-5">
@@ -88,9 +125,22 @@ function SimulationProcessPage() {
                 <p className="text-caption-12-regular text-muted-foreground">생성일</p>
                 <p className="text-body-16-regular text-foreground">{simulationCreatedAt}</p>
               </div>
-              <div className="flex items-center justify-end gap-2 rounded-xl border border-border-soft-2 bg-surface-hover-2 px-4 py-2">
-                <Loader2 className="size-4 animate-spin text-[var(--color-primary-main)]" />
-                <span className="text-body-14-medium text-text-secondary">시뮬레이션 진행 중</span>
+              <div
+                className={cn(
+                  "flex items-center justify-end gap-2 rounded-xl border px-4 py-2",
+                  isFailedStatus
+                    ? "border-red-200 bg-red-50 text-red-700"
+                    : "border-border-soft-2 bg-surface-hover-2"
+                )}
+              >
+                {isFailedStatus ? (
+                  <AlertTriangle className="size-4" />
+                ) : isTerminalStatus ? (
+                  <CheckCircle2 className="size-4 text-[var(--color-primary-main)]" />
+                ) : (
+                  <Loader2 className="size-4 animate-spin text-[var(--color-primary-main)]" />
+                )}
+                <span className="text-body-14-medium">{isStatusLoading ? "상태 확인 중" : statusLabel}</span>
               </div>
             </div>
 
@@ -127,7 +177,7 @@ function SimulationProcessPage() {
                       <div className="grid gap-0.5">
                         <p className="text-body-14-medium text-text-strong">{step}</p>
                         <p className="text-caption-12-regular text-text-subtle">
-                          {isDone ? "완료" : isActive ? "진행 중" : "대기"}
+                          {isDone ? "완료" : isActive ? (isFailedStatus ? "중단" : "진행 중") : "대기"}
                         </p>
                       </div>
                       {isDone ? (
@@ -147,7 +197,9 @@ function SimulationProcessPage() {
               </div>
 
               <p className="text-caption-12-regular text-text-subtle">
-                현재는 임시 진행 모델을 사용 중이며, 이후 status API/polling 연결 포인트로 교체할 예정입니다.
+                {simulationStatus?.updatedAt
+                  ? `마지막 상태 갱신: ${simulationStatus.updatedAt}`
+                  : "1.5초 간격으로 상태를 확인하고 있습니다."}
               </p>
 
               <div className="flex justify-end">

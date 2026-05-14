@@ -11,6 +11,7 @@ import { useResultPageParam } from "@/lib/result-page-param"
 import { useResultPageSidePanelState } from "@/lib/result-page-side-panel-state"
 import { motion } from "@/lib/motion"
 import { cn } from "@/lib/utils"
+import { getResultPageScreenshotUrl } from "@/mocks/mock-assets"
 import { useResultHeatmapQuery } from "@/queries"
 import type { ResultAgeFilter } from "@/types/view-model/common/result-meta"
 import type {
@@ -88,8 +89,8 @@ function HeatmapCanvas({
                 isSelected ? "ring-4 ring-white/70" : "",
               )}
               style={{
-                left: `${point.x * 100}%`,
-                top: `${point.y * 100}%`,
+                left: `${point.x}%`,
+                top: `${point.y}%`,
               }}
               aria-label={`${point.issueId} ${point.description}`}
             >
@@ -134,6 +135,9 @@ function PointDetail({
             </div>
             <p className="text-caption-12-regular text-text-muted">
               {point.description}
+            </p>
+            <p className="text-caption-12-medium text-text-secondary">
+              위배 연령대 {point.ageBand === "all" ? "전체" : point.ageBand}
             </p>
           </div>
           <div className="rounded-xl bg-surface-subtle px-3 py-2 text-caption-12-medium text-text-secondary">
@@ -234,7 +238,7 @@ function ResultHeatmapPage() {
       pages.map((page) => ({
         id: page.pageId,
         name: page.pageName,
-        screenshotUrl: page.screenshotUrl || "/mock-images/img-example-site.png",
+        screenshotUrl: page.screenshotUrl || getResultPageScreenshotUrl(page.pageId),
       })),
     [pages],
   )
@@ -382,10 +386,13 @@ function ResultHeatmapPage() {
                               {point.issueId}
                             </p>
                           </div>
-                          <p className="text-caption-12-medium text-text-secondary">
-                            영향 {point.affectedUsersCount}명 · 차단율{" "}
-                            {formatPercent(point.blockRate)}
-                          </p>
+                          <div className="flex flex-wrap items-center gap-1 text-caption-12-medium text-text-secondary">
+                            <span>연령대 {point.ageBand === "all" ? "전체" : point.ageBand}</span>
+                            <span>·</span>
+                            <span>영향 {point.affectedUsersCount}명</span>
+                            <span>·</span>
+                            <span>차단율 {formatPercent(point.blockRate)}</span>
+                          </div>
                         </div>
                         <p className="mt-2 text-caption-12-regular text-text-muted">
                           {point.description}

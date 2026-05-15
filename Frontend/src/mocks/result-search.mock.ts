@@ -5,6 +5,16 @@ export const SEARCH_RESULT_PAGE = {
   screenshotUrl: "/mock-images/page-search.png",
 } as const
 
+const SEARCH_PERSONA_BASE_COUNT = 720
+
+function scaleSearchAffectedCount(value: number) {
+  return Math.max(0, Math.round((value / 1000) * SEARCH_PERSONA_BASE_COUNT))
+}
+
+function toSearchPercent(count: number) {
+  return Math.round((count / SEARCH_PERSONA_BASE_COUNT) * 1000) / 10
+}
+
 export const searchResultIssuesMock = [
   {
     issueId: "search-issue-1",
@@ -17,8 +27,8 @@ export const searchResultIssuesMock = [
     targetHtml:
       '<input type="search" class="search-input" placeholder="상품명 입력" aria-label="상품 검색" />',
     tags: ["검색", "포커스", "입력창"],
-    affectedUsersCount: 184,
-    affectedUsersPercent: 18.4,
+    affectedUsersCount: scaleSearchAffectedCount(184),
+    affectedUsersPercent: toSearchPercent(scaleSearchAffectedCount(184)),
   },
   {
     issueId: "search-issue-2",
@@ -30,8 +40,8 @@ export const searchResultIssuesMock = [
       "결과 카드 사이의 구분선과 배경 대비가 약해 한 번에 여러 상품을 훑을 때 개별 카드 단위가 쉽게 섞여 보입니다.",
     targetHtml: '<div class="search-result-card" role="article">',
     tags: ["검색결과", "카드", "대비"],
-    affectedUsersCount: 152,
-    affectedUsersPercent: 15.2,
+    affectedUsersCount: scaleSearchAffectedCount(152),
+    affectedUsersPercent: toSearchPercent(scaleSearchAffectedCount(152)),
   },
   {
     issueId: "search-issue-3",
@@ -43,8 +53,8 @@ export const searchResultIssuesMock = [
       "정렬 토글이 아이콘 위주로 표현되어 있어 사용자가 '인기순/최신순' 정렬 기능을 즉시 파악하지 못합니다.",
     targetHtml: '<button class="sort-toggle" aria-label="정렬">',
     tags: ["정렬", "버튼", "탐색"],
-    affectedUsersCount: 129,
-    affectedUsersPercent: 12.9,
+    affectedUsersCount: scaleSearchAffectedCount(129),
+    affectedUsersPercent: toSearchPercent(scaleSearchAffectedCount(129)),
   },
   {
     issueId: "search-issue-4",
@@ -57,8 +67,8 @@ export const searchResultIssuesMock = [
     targetHtml:
       '<input type="checkbox" class="filter-checkbox" id="category-filter-1" />',
     tags: ["필터", "체크박스", "상태표시"],
-    affectedUsersCount: 118,
-    affectedUsersPercent: 11.8,
+    affectedUsersCount: scaleSearchAffectedCount(118),
+    affectedUsersPercent: toSearchPercent(scaleSearchAffectedCount(118)),
   },
   {
     issueId: "search-issue-5",
@@ -71,8 +81,8 @@ export const searchResultIssuesMock = [
     targetHtml:
       '<button class="pagination-btn" aria-label="2페이지">2</button>',
     tags: ["페이지네이션", "터치영역", "모바일"],
-    affectedUsersCount: 101,
-    affectedUsersPercent: 10.1,
+    affectedUsersCount: scaleSearchAffectedCount(101),
+    affectedUsersPercent: toSearchPercent(scaleSearchAffectedCount(101)),
   },
   {
     issueId: "search-issue-6",
@@ -84,8 +94,8 @@ export const searchResultIssuesMock = [
       "검색 결과 카드 안에서 현재 가격, 정가, 할인율의 시각적 위계가 약해 구매 판단에 필요한 핵심 정보가 한눈에 들어오지 않습니다.",
     targetHtml: '<p class="result-price"><strong>29,800원</strong></p>',
     tags: ["가격", "정보위계", "카드"],
-    affectedUsersCount: 94,
-    affectedUsersPercent: 9.4,
+    affectedUsersCount: scaleSearchAffectedCount(94),
+    affectedUsersPercent: toSearchPercent(scaleSearchAffectedCount(94)),
   },
   {
     issueId: "search-issue-7",
@@ -98,8 +108,8 @@ export const searchResultIssuesMock = [
     targetHtml:
       '<div class="no-results-message" role="status" aria-live="polite">검색 결과가 없습니다</div>',
     tags: ["빈상태", "메시지", "스크롤"],
-    affectedUsersCount: 58,
-    affectedUsersPercent: 5.8,
+    affectedUsersCount: scaleSearchAffectedCount(58),
+    affectedUsersPercent: toSearchPercent(scaleSearchAffectedCount(58)),
   },
   {
     issueId: "search-issue-8",
@@ -112,8 +122,8 @@ export const searchResultIssuesMock = [
     targetHtml:
       '<button class="filter-toggle" aria-expanded="false">카테고리</button>',
     tags: ["필터", "아코디언", "상태"],
-    affectedUsersCount: 41,
-    affectedUsersPercent: 4.1,
+    affectedUsersCount: scaleSearchAffectedCount(41),
+    affectedUsersPercent: toSearchPercent(scaleSearchAffectedCount(41)),
   },
 ] as const
 
@@ -184,52 +194,52 @@ export const searchAiFixesMock = [
   {
     title: "검색 입력창 포커스 링 강화",
     severity: "high",
-    affectedUsersCount: 184,
+    affectedUsersCount: scaleSearchAffectedCount(184),
     beforeCode:
       ".search-input {\n  border: 1px solid #d7dce5;\n}\n.search-input:focus {\n  outline: none;\n  border-color: #94a3b8;\n}",
     afterCode:
       ".search-input {\n  border: 1px solid #cbd5e1;\n  min-height: 48px;\n}\n.search-input:focus-visible {\n  outline: 3px solid #2f5ae8;\n  outline-offset: 2px;\n  border-color: #2f5ae8;\n  box-shadow: 0 0 0 6px rgba(47, 90, 232, 0.14);\n}",
     impactDescription:
-      "+184명의 사용자가 현재 포커스 위치를 바로 인지하고 검색 입력을 안정적으로 이어갈 수 있습니다.",
+      `+${scaleSearchAffectedCount(184)}명의 사용자가 현재 포커스 위치를 바로 인지하고 검색 입력을 안정적으로 이어갈 수 있습니다.`,
     changeDescription:
       "포커스 상태를 색상 한 단계 변경에서 두꺼운 링과 그림자 강조로 바꿔 키보드 탐색 가시성을 높입니다.",
   },
   {
     title: "검색 결과 카드 시각적 경계 재정의",
     severity: "high",
-    affectedUsersCount: 152,
+    affectedUsersCount: scaleSearchAffectedCount(152),
     beforeCode:
       ".search-result-card {\n  border: 1px solid #e5e7eb;\n  background: #ffffff;\n}",
     afterCode:
       ".search-result-card {\n  border: 1px solid #cbd5e1;\n  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);\n  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);\n}\n.search-result-card + .search-result-card {\n  margin-top: 14px;\n}",
     impactDescription:
-      "+152명의 사용자가 카드 단위 정보를 더 빠르게 스캔하고 상품 간 혼동을 줄일 수 있습니다.",
+      `+${scaleSearchAffectedCount(152)}명의 사용자가 카드 단위 정보를 더 빠르게 스캔하고 상품 간 혼동을 줄일 수 있습니다.`,
     changeDescription:
       "카드 경계를 더 분명히 하고 세로 간격과 그림자를 추가해 결과 리스트가 한 장씩 읽히도록 정리합니다.",
   },
   {
     title: "정렬 버튼을 라벨형 컨트롤로 개편",
     severity: "medium",
-    affectedUsersCount: 129,
+    affectedUsersCount: scaleSearchAffectedCount(129),
     beforeCode:
       "<button class=\"sort-toggle\" aria-label=\"정렬\">\n  <SortIcon />\n</button>",
     afterCode:
       "<button className=\"sort-toggle\" aria-label=\"정렬 기준 변경\">\n  <SortIcon />\n  <span>인기순</span>\n  <ChevronDownIcon />\n</button>",
     impactDescription:
-      "+129명의 사용자가 정렬 기능을 첫 시선에서 인식하고 원하는 기준으로 결과를 바꾸기 쉬워집니다.",
+      `+${scaleSearchAffectedCount(129)}명의 사용자가 정렬 기능을 첫 시선에서 인식하고 원하는 기준으로 결과를 바꾸기 쉬워집니다.`,
     changeDescription:
       "아이콘-only 정렬 버튼을 텍스트 라벨 포함 컨트롤로 바꿔 기능 의미를 즉시 드러냅니다.",
   },
   {
     title: "페이지네이션 터치 영역 확대",
     severity: "medium",
-    affectedUsersCount: 101,
+    affectedUsersCount: scaleSearchAffectedCount(101),
     beforeCode:
       ".pagination-btn {\n  width: 20px;\n  height: 20px;\n  font-size: 12px;\n}",
     afterCode:
       ".pagination-btn {\n  min-width: 44px;\n  min-height: 44px;\n  padding: 0 10px;\n  border-radius: 10px;\n  font-size: 14px;\n}\n.pagination-btn[aria-current='page'] {\n  background: #2f5ae8;\n  color: #ffffff;\n}",
     impactDescription:
-      "+101명의 사용자가 페이지 이동 버튼을 더 정확하게 누르고 현재 위치도 쉽게 파악할 수 있습니다.",
+      `+${scaleSearchAffectedCount(101)}명의 사용자가 페이지 이동 버튼을 더 정확하게 누르고 현재 위치도 쉽게 파악할 수 있습니다.`,
     changeDescription:
       "페이지 번호를 WCAG 권장 크기 이상으로 키우고 현재 페이지 스타일을 분명하게 구분합니다.",
   },

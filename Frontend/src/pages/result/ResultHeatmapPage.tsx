@@ -96,8 +96,6 @@ function HeatmapCanvas({
     if (!imgDimensions) return { left: `${pointX}%`, top: `${pointY}%` }
 
     // 실제 이미지 크기를 기반으로 포인트 위치 계산 (container max-height 없음)
-    const imgRatio = imgDimensions.width / imgDimensions.height
-    const containerRatio = imgDimensions.width / imgDimensions.height // 이미지 비율 유지
 
     // 이미지가 원본 비율대로 표시되므로 단순 백분율 계산
     return {

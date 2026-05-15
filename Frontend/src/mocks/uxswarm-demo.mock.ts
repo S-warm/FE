@@ -126,6 +126,21 @@ export interface FixData {
   fixes: FixItem[];
 }
 
+const PERSONA_BASE_COUNT = 720;
+const PERSONA_SCALE_RATIO = PERSONA_BASE_COUNT / 1000;
+
+function scalePersonaCount(value: number) {
+  return Math.max(0, Math.round(value * PERSONA_SCALE_RATIO));
+}
+
+function toPercentFromPersonaBase(count: number) {
+  return Math.round((count / PERSONA_BASE_COUNT) * 1000) / 10;
+}
+
+function replaceLeadingImpactCount(text: string, nextCount: number) {
+  return text.replace(/\+?\d+명/, `+${nextCount}명`);
+}
+
 // ============================================================================
 // 시뮬레이션 메타
 // ============================================================================
@@ -136,7 +151,7 @@ export const MOCK_SIMULATION_META = {
   siteName: "A-Mall",
   targetUrl: "https://a-mall.com/login",
   endUrl: "https://a-mall.com/payment/complete",
-  personaCount: 1000,
+  personaCount: PERSONA_BASE_COUNT,
   successCondition: "회원가입 후 첫 상품 결제 완료",
   device: "Mac",
   status: "완료",
@@ -210,75 +225,75 @@ export const MOCK_PAGES = [
 
 export const MOCK_SUMMARY: SummaryAggregation = {
   summary: {
-    total_sessions: 1000,
-    success_count: 280,
-    success_rate: 0.28,
+    total_sessions: PERSONA_BASE_COUNT,
+    success_count: 202,
+    success_rate: 202 / PERSONA_BASE_COUNT,
     avg_duration_ms: 252000,
   },
   overview: [
     {
       age_group: "10s",
-      total_sessions: 100,
-      success_count: 62,
-      success_rate: 0.62,
-      fail_rate: 0.38,
+      total_sessions: 72,
+      success_count: 45,
+      success_rate: 45 / 72,
+      fail_rate: 27 / 72,
       avg_duration_ms: 66000,
       avg_actions: 7.42,
       avg_declare_failure: 0.38,
     },
     {
       age_group: "20s",
-      total_sessions: 200,
-      success_count: 96,
-      success_rate: 0.48,
-      fail_rate: 0.52,
+      total_sessions: 144,
+      success_count: 69,
+      success_rate: 69 / 144,
+      fail_rate: 75 / 144,
       avg_duration_ms: 78000,
       avg_actions: 8.31,
       avg_declare_failure: 0.52,
     },
     {
       age_group: "30s",
-      total_sessions: 200,
-      success_count: 76,
-      success_rate: 0.38,
-      fail_rate: 0.62,
+      total_sessions: 144,
+      success_count: 55,
+      success_rate: 55 / 144,
+      fail_rate: 89 / 144,
       avg_duration_ms: 132000,
       avg_actions: 10.12,
       avg_declare_failure: 0.62,
     },
     {
       age_group: "40s",
-      total_sessions: 200,
-      success_count: 36,
-      success_rate: 0.18,
-      fail_rate: 0.82,
+      total_sessions: 144,
+      success_count: 26,
+      success_rate: 26 / 144,
+      fail_rate: 118 / 144,
       avg_duration_ms: 234000,
       avg_actions: 12.84,
       avg_declare_failure: 0.82,
     },
     {
       age_group: "50s",
-      total_sessions: 150,
-      success_count: 8,
-      success_rate: 0.0533,
-      fail_rate: 0.9467,
+      total_sessions: 108,
+      success_count: 6,
+      success_rate: 6 / 108,
+      fail_rate: 102 / 108,
       avg_duration_ms: 348000,
       avg_actions: 15.21,
       avg_declare_failure: 0.95,
     },
     {
       age_group: "60s",
-      total_sessions: 100,
-      success_count: 2,
-      success_rate: 0.02,
-      fail_rate: 0.98,
+      total_sessions: 72,
+      success_count: 1,
+      success_rate: 1 / 72,
+      fail_rate: 71 / 72,
       avg_duration_ms: 462000,
       avg_actions: 17.63,
       avg_declare_failure: 0.98,
     },
     {
       age_group: "70s",
-      total_sessions: 50,
+      total_sessions: 36,
       success_count: 0,
       success_rate: 0.0,
       fail_rate: 1.0,
@@ -5042,8 +5057,8 @@ export const demoIssues = MOCK_FINAL_ISSUES.issues.map((issue, idx) => ({
   targetHtml: issue.targetHtml,
   tags: issue.tags,
   url: issue.url,
-  affectedUsersCount: issue.fail_count,
-  affectedUsersPercent: Math.round(issue.fail_rate * 100 * 10) / 10,
+  affectedUsersCount: scalePersonaCount(issue.fail_count),
+  affectedUsersPercent: toPercentFromPersonaBase(scalePersonaCount(issue.fail_count)),
 }));
 
 // demoHeatmapPoints: 모든 히트맵 포인트
@@ -5112,7 +5127,8 @@ export const demoFixesByUrl: Record<string, Array<{
       result[url] = fixData.fixes.map((fix: any) => {
         // impact 문자열에서 숫자 추출 (예: "+312명" -> 312)
         const affectedMatch = fix.impact?.match(/\+?(\d+)/);
-        const affectedCount = affectedMatch ? parseInt(affectedMatch[1]) : 100;
+        const rawAffectedCount = affectedMatch ? parseInt(affectedMatch[1]) : 100;
+        const affectedCount = scalePersonaCount(rawAffectedCount);
 
         return {
           title: fix.issue_title || "미정의 제목",
@@ -5120,7 +5136,7 @@ export const demoFixesByUrl: Record<string, Array<{
           affectedUsersCount: affectedCount,
           beforeCode: fix.before || "",
           afterCode: fix.after || "",
-          impactDescription: fix.impact || "",
+          impactDescription: replaceLeadingImpactCount(fix.impact || "", affectedCount),
           changeDescription: fix.description || "",
         };
       });

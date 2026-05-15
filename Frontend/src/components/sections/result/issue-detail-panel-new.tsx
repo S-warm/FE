@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { X, AlertCircle, TrendingUp, Zap, Globe } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { DonutChart } from "@/components/charts"
@@ -12,6 +12,12 @@ interface IssueDetailPanelNewProps {
 
 export function IssueDetailPanelNew({ isOpen, issue, onClose }: IssueDetailPanelNewProps) {
   const [isAnimating, setIsAnimating] = useState(true)
+
+  useEffect(() => {
+    if (isOpen) {
+      setIsAnimating(true)
+    }
+  }, [isOpen, issue?.title])
 
   const handleClose = () => {
     setIsAnimating(false)

@@ -1,31 +1,58 @@
-export type SimulationOverviewAgeBand = "10대" | "20대" | "30대" | "40대" | "50대" | "60대" | "70대"
+export type SimulationOverviewAgeGroupApiValue =
+  | "10s"
+  | "20s"
+  | "30s"
+  | "40s"
+  | "50s"
+  | "60s"
+  | "70s"
+  | "10대"
+  | "20대"
+  | "30대"
+  | "40대"
+  | "50대"
+  | "60대"
+  | "70대"
 
-export interface SimulationOverviewAgeGroupDto {
-  entered: number
-  passed: number
-  dropOff: number
+export interface SimulationOverviewSummaryApiDto {
+  success_rate: number
+  total_sessions: number
+  avg_duration_ms: number
+  success_count: number
+}
+
+export interface SimulationOverviewAgeItemApiDto {
+  age_group?: SimulationOverviewAgeGroupApiValue
+  ageBand?: SimulationOverviewAgeGroupApiValue
+  total_sessions?: number
+  totalSessions?: number
+  success_count?: number
+  successCount?: number
+  success_rate?: number
+  successRate?: number
+  fail_rate?: number
+  failRate?: number
+  avg_duration_ms?: number
+  avgDurationMs?: number
+  avg_actions?: number
+  avgActions?: number
+  avg_declare_failure?: number
+  avgDeclareFailure?: number
+}
+
+export interface SimulationOverviewBusinessResponseDto {
+  summary: SimulationOverviewSummaryApiDto
+  overview: SimulationOverviewAgeItemApiDto[]
+}
+
+export interface SimulationOverviewBackendResponseDto {
+  totalSessions: number
+  successCount: number
   successRate: number
+  avgDurationMs: number
+  ageOverview: SimulationOverviewAgeItemApiDto[]
 }
 
-export interface SimulationOverviewSummaryDto {
-  taskSuccessRate: number
-  totalAgents: number
-  avgCompletionSeconds: number
-  dropOffAgents: number
-}
-
-export interface SimulationOverviewFunnelPanelDto {
-  order: number
-  pageName: string
-  pageUrl: string
-  totalEntered: number
-  totalPassed: number
-  panelSuccessRate: number
-  avgTimeSeconds: number
-  agentsByAge: Record<SimulationOverviewAgeBand, SimulationOverviewAgeGroupDto>
-}
-
-export interface SimulationOverviewResponseDto {
-  summary: SimulationOverviewSummaryDto
-  funnelPanels: SimulationOverviewFunnelPanelDto[]
-}
+export type SimulationOverviewResponseDto =
+  | SimulationOverviewBusinessResponseDto
+  | SimulationOverviewBackendResponseDto

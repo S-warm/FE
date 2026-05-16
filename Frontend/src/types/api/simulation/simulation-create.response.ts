@@ -1,5 +1,5 @@
 export interface SimulationCreateResponseDto {
-  id: string
+  projectId: string
   title: string
   status: string
   createdAt: string

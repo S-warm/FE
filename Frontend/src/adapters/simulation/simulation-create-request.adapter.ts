@@ -18,14 +18,44 @@ export function getSimulationFormTotalPersonaCount(ageCounts: SimulationFormAgeC
   return Object.values(ageCounts).reduce((sum, count) => sum + count, 0)
 }
 
+function normalizeUrlSearchParams(rawValue: string) {
+  const trimmedValue = rawValue.trim()
+  if (!trimmedValue) {
+    return new URLSearchParams()
+  }
+
+  const normalizedValue = trimmedValue.startsWith("?")
+    ? trimmedValue.slice(1)
+    : trimmedValue
+
+  return new URLSearchParams(normalizedValue)
+}
+
+function buildSuccessCondition(endUrl: string, urlParams: string) {
+  const parsedEndUrl = new URL(endUrl.trim())
+  const mergedParams = new URLSearchParams(parsedEndUrl.search)
+  const manualParams = normalizeUrlSearchParams(urlParams)
+
+  manualParams.forEach((value, key) => {
+    mergedParams.set(key, value)
+  })
+
+  return {
+    path: parsedEndUrl.pathname || "/",
+    requiredParams: Object.fromEntries(mergedParams.entries()),
+  }
+}
+
 export function mapSimulationFormToCreateRequest(
-  form: SimulationFormViewModel
+  form: SimulationFormViewModel,
+  urlParams = ""
 ): SimulationCreateRequestDto {
   return {
     title: form.projectTitle.trim(),
+    task: form.successCondition.trim(),
     targetUrl: form.targetUrl.trim(),
     digitalLiteracy: form.digitalLiteracy,
-    successCondition: form.successCondition.trim(),
+    successCondition: buildSuccessCondition(form.endUrl, urlParams),
     personaDevice: mapSimulationFormPersonaDeviceToApiDevice(form.personaDevice),
     ageCount10: form.ageCounts.teens,
     ageCount20: form.ageCounts.twenties,

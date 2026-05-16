@@ -5,7 +5,6 @@ import { requestJsonWithFallback } from "@/services/core/http-client"
 import type { ResultWcagService } from "@/services/result/result-wcag.service"
 import { wcagResultMock } from "@/mocks/result-wcag.mock"
 import type { ApiWcagSeverity } from "@/types/api/common/enums"
-import type { SimulationOverviewResponseDto } from "@/types/api/simulation/simulation-overview.response"
 import type { SimulationWcagResponseDto } from "@/types/api/simulation/simulation-wcag.response"
 
 function mapWcagSeverity(severity: "critical" | "moderate" | "minor"): ApiWcagSeverity {
@@ -84,27 +83,6 @@ export const resultWcagHttpService: ResultWcagService = {
       `/simulations/${simulationId}/wcag`,
     ])
 
-    let pageContext = [] as ReturnType<typeof createResultPageBase>[]
-
-    try {
-      const overview = await requestJsonWithFallback<SimulationOverviewResponseDto>([
-        `/api/simulations/${simulationId}/results/overview`,
-        `/api/simulations/${simulationId}/overview`,
-        `/simulations/${simulationId}/overview`,
-      ])
-
-      pageContext = overview.funnelPanels.map((panel) =>
-        createResultPageBase({
-          simulationId,
-          order: panel.order,
-          pageName: panel.pageName,
-          pageUrl: panel.pageUrl,
-        })
-      )
-    } catch {
-      pageContext = []
-    }
-
-    return adaptWcagResponseToViewModel(simulationId, raw, pageContext)
+    return adaptWcagResponseToViewModel(simulationId, raw, [])
   },
 }

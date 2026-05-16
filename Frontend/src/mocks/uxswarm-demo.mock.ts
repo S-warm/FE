@@ -5005,7 +5005,7 @@ export const MOCK_FIXES: Record<string, FixData> = {
  */
 
 // 기본 placeholder SVG (스크린샷 이미지 없을 때 표시)
-const defaultPlaceholderSvg = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1920' height='1080'%3E%3Crect fill='%23f3f4f6' width='1920' height='1080'/%3E%3Ctext x='50%25' y='50%25' font-family='system-ui' font-size='48' fill='%239ca3af' text-anchor='middle' dy='.3em'%3EPage Screenshot%3C/text%3E%3C/svg%3E`;
+export const defaultPlaceholderSvg = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1920' height='1080'%3E%3Crect fill='%23f3f4f6' width='1920' height='1080'/%3E%3Ctext x='50%25' y='50%25' font-family='system-ui' font-size='48' fill='%239ca3af' text-anchor='middle' dy='.3em'%3EPage Screenshot%3C/text%3E%3C/svg%3E`;
 
 // demoResultPages: 페이지 목록 (URL 맵핑용)
 export const demoResultPages = [

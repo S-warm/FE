@@ -158,12 +158,12 @@ function SimulationSetupPage() {
     }
 
     try {
-      const requestBody = mapSimulationFormToCreateRequest(formValues)
+      const requestBody = mapSimulationFormToCreateRequest(formValues, urlParams)
       const response = await createSimulationMutation.mutateAsync(requestBody)
 
       navigate(routes.simulationProcess, {
         state: {
-          simulationId: response.id,
+          simulationId: response.projectId,
           title: requestBody.title,
           createdAt: response.createdAt ?? startedAtValue,
           status: response.status,

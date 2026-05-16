@@ -15,6 +15,9 @@ export interface ResultOverviewAgeStatViewModel {
   dropOffRate: number
   avgDurationMinutes?: number
   avgActions?: number | null
+  avgDeclareFailure?: number | null
+  totalSessions?: number
+  successCount?: number
 }
 
 export interface ResultOverviewViewModel {

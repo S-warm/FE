@@ -3,6 +3,9 @@ export interface SimulationStatusResponseDto {
   status: string
   progress?: number
   currentStep?: string
+  completed?: number
+  total?: number
+  failed?: number
   createdAt?: string
   updatedAt?: string
 }

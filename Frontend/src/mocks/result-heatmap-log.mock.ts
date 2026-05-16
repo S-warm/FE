@@ -1,5 +1,4 @@
 import type { AgeGroup as HeatmapAgeBand } from "@/mocks/result-heatmap.mock"
-import { resultPageScreenshotUrl } from "@/mocks/mock-assets"
 
 export type HeatmapLogEventType = "click" | "step"
 

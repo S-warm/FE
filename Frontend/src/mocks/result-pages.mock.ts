@@ -1,5 +1,3 @@
-import { resultPageScreenshotUrl } from "@/mocks/mock-assets"
-
 export interface ResultPageSummary {
   id: string
   name: string

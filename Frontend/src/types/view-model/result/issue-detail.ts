@@ -82,23 +82,57 @@ export interface IssueDetailModalState {
  * ResultIssueViewModel을 IssueDetailViewModel으로 변환
  */
 export function mapResultIssueToDetail(issue: ResultIssueViewModel): IssueDetailViewModel {
+  const personas = issue.personaList.reduce<PersonaAnalysis[]>((acc, age) => {
+    const existing = acc.find((item) => item.age === age)
+    const sessionsForAge = issue.affectedSessions
+      .filter((session) => session.personaAge === age)
+      .map((session) => session.sessionId)
+
+    if (existing) {
+      existing.count += 1
+      existing.sessionIds.push(...sessionsForAge)
+      return acc
+    }
+
+    acc.push({
+      age,
+      count: 1,
+      percentage: 0,
+      sessionIds: [...sessionsForAge],
+    })
+
+    return acc
+  }, [])
+
+  const totalPersonaCount = personas.reduce((sum, persona) => sum + persona.count, 0)
+
+  const normalizedPersonas = personas
+    .map((persona) => ({
+      ...persona,
+      percentage:
+        totalPersonaCount > 0
+          ? Number(((persona.count / totalPersonaCount) * 100).toFixed(1))
+          : 0,
+    }))
+    .sort((left, right) => right.count - left.count)
+
   return {
     issueId: issue.issueId,
-    url: "",
+    url: issue.url,
     title: issue.title,
     category: issue.category,
-    subCategory: "",
+    subCategory: issue.subCategory,
     description: issue.description,
     severity: issue.severity,
     targetHtml: issue.selector,
     tags: issue.tags,
-    totalFailures: issue.affectedUsersCount,
-    failureRate: issue.affectedUsersPercent,
+    totalFailures: issue.totalFailures,
+    failureRate: issue.failureRate,
     affectedUsersCount: issue.affectedUsersCount,
     affectedUsersPercent: issue.affectedUsersPercent,
-    personas: [],
-    personaList: [],
-    sessionIds: [],
-    affectedSessions: [],
+    personas: normalizedPersonas,
+    personaList: issue.personaList,
+    sessionIds: issue.sessionIds,
+    affectedSessions: issue.affectedSessions,
   }
 }

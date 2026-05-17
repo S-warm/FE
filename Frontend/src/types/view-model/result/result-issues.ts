@@ -9,13 +9,23 @@ export interface ResultIssueExpectedBenefitViewModel {
 
 export interface ResultIssueViewModel extends ResultUxIssueLinkViewModel {
   title: string
+  url: string
   category: string
+  subCategory: string
   severity: SeverityTokenViewModel
+  totalFailures: number
+  failureRate: number
   affectedUsersCount: number
   affectedUsersPercent: number
   description: string
   selector: string
   tags: string[]
+  personaList: string[]
+  sessionIds: string[]
+  affectedSessions: Array<{
+    sessionId: string
+    personaAge: string
+  }>
   expectedBenefit?: ResultIssueExpectedBenefitViewModel | null
 }
 

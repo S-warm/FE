@@ -104,21 +104,21 @@ export function mapResultIssueToDetailEnhanced(
 ): IssueDetailViewModel {
   return {
     issueId: issue.issueId,
-    url: additionalData?.url || "",
+    url: additionalData?.url || issue.url,
     title: issue.title,
     category: issue.category,
-    subCategory: additionalData?.subCategory || "",
+    subCategory: additionalData?.subCategory || issue.subCategory,
     description: issue.description,
     severity: issue.severity,
     targetHtml: issue.selector,
     tags: issue.tags,
-    totalFailures: issue.affectedUsersCount,
-    failureRate: issue.affectedUsersPercent,
+    totalFailures: issue.totalFailures,
+    failureRate: issue.failureRate,
     affectedUsersCount: issue.affectedUsersCount,
     affectedUsersPercent: issue.affectedUsersPercent,
     personas: additionalData?.personas || [],
-    personaList: additionalData?.personaList || [],
-    sessionIds: additionalData?.sessionIds || [],
-    affectedSessions: additionalData?.affectedSessions || [],
+    personaList: additionalData?.personaList || issue.personaList,
+    sessionIds: additionalData?.sessionIds || issue.sessionIds,
+    affectedSessions: additionalData?.affectedSessions || issue.affectedSessions,
   }
 }

@@ -1,7 +1,8 @@
 import { ChevronRight, AlertTriangle, Sparkles, ArrowRight } from "lucide-react"
 import { useNavigate, useParams } from "react-router-dom"
-import type { ResultIssueViewModel } from "@/types/view-model/result/result-issues"
+
 import { cn } from "@/lib/utils"
+import type { ResultIssueViewModel } from "@/types/view-model/result/result-issues"
 
 interface IssueListItemProps {
   issue: ResultIssueViewModel
@@ -9,7 +10,11 @@ interface IssueListItemProps {
   pageUrl?: string
 }
 
-export function IssueListItem({ issue, onDetailClick, pageUrl }: IssueListItemProps) {
+export function IssueListItem({
+  issue,
+  onDetailClick,
+  pageUrl,
+}: IssueListItemProps) {
   const navigate = useNavigate()
   const { simulationId } = useParams()
 
@@ -20,29 +25,36 @@ export function IssueListItem({ issue, onDetailClick, pageUrl }: IssueListItemPr
     neutral: "bg-info-surface text-info-text",
   } as const
 
-  const severityColor = severityColorMap[issue.severity.tone as keyof typeof severityColorMap] || severityColorMap.neutral
+  const severityColor =
+    severityColorMap[issue.severity.tone as keyof typeof severityColorMap] ??
+    severityColorMap.neutral
 
-  const handleAiFix = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    // pageUrl이 있으면 쿼리 파라미터로 전달하여 해당 페이지의 수정 탭으로 이동
+  const handleAiFix = (event: React.MouseEvent) => {
+    event.stopPropagation()
+
     if (pageUrl) {
-      const targetUrl = `/result/${simulationId}/ai?page=${encodeURIComponent(pageUrl)}`
-      navigate(targetUrl)
-    } else {
-      navigate(`/result/${simulationId}/ai`)
+      navigate(`/result/${simulationId}/ai?page=${encodeURIComponent(pageUrl)}`)
+      return
     }
+
+    navigate(`/result/${simulationId}/ai`)
   }
 
   return (
     <div
       onClick={() => onDetailClick(issue)}
       className={cn(
-        "rounded-2xl border border-border-strong bg-card shadow-none hover:shadow-md transition-shadow cursor-pointer group grid gap-4 px-5 py-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-start"
+        "group grid gap-4 rounded-2xl border border-border-strong bg-card px-5 py-4 shadow-none transition-shadow hover:shadow-md md:grid-cols-[minmax(0,1fr)_auto] md:items-start"
       )}
     >
       <div className="grid gap-2">
         <div className="flex items-start gap-2">
-          <span className={cn("mt-0.5 grid size-7 shrink-0 place-items-center rounded-xl", severityColor)}>
+          <span
+            className={cn(
+              "mt-0.5 grid size-7 shrink-0 place-items-center rounded-xl",
+              severityColor
+            )}
+          >
             <AlertTriangle className="size-4" />
           </span>
           <div className="min-w-0 flex-1">
@@ -51,6 +63,11 @@ export function IssueListItem({ issue, onDetailClick, pageUrl }: IssueListItemPr
               <span className="inline-flex h-5 items-center rounded-full border border-border-soft bg-surface-subtle px-2.5 text-[11px] font-medium text-text-secondary">
                 {issue.category}
               </span>
+              {issue.subCategory ? (
+                <span className="inline-flex h-5 items-center rounded-full border border-border-soft bg-surface-subtle px-2.5 text-[11px] font-medium text-text-secondary">
+                  {issue.subCategory}
+                </span>
+              ) : null}
               {issue.tags.map((tag) => (
                 <span
                   key={tag}
@@ -61,25 +78,28 @@ export function IssueListItem({ issue, onDetailClick, pageUrl }: IssueListItemPr
               ))}
             </div>
             <p className="mt-1 text-caption-12-regular text-text-subtle">
-              {issue.affectedUsersCount}명 사용자 영향 ({issue.affectedUsersPercent}%)
+              실패 {issue.totalFailures}건 · 영향 세션 {issue.affectedUsersCount}건 ·
+              실패율 {issue.failureRate}%
             </p>
           </div>
         </div>
 
-        <p className="text-caption-12-regular text-text-muted">{issue.description}</p>
+        <p className="text-caption-12-regular text-text-muted">
+          {issue.description}
+        </p>
 
         <div className="grid gap-1">
-          <p className="text-caption-12-medium text-text-subtle">영향받는 요소</p>
+          <p className="text-caption-12-medium text-text-subtle">영향 요소</p>
           <code className="w-fit rounded-xl bg-surface-muted px-3 py-2 text-[12px] text-text-body">
             {issue.selector}
           </code>
         </div>
       </div>
 
-      <div className="flex flex-col items-center gap-2 pt-3 border-t border-border-soft md:border-0 md:pt-0 md:flex-row">
+      <div className="flex flex-col items-center gap-2 border-t border-border-soft pt-3 md:flex-row md:border-0 md:pt-0">
         <button
           onClick={handleAiFix}
-          className="flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-[#e8f0ff] to-[#f0f5ff] dark:from-[#1e2a48] dark:to-[#2a3a5a] hover:from-[#d6e3ff] hover:to-[#e0ecff] dark:hover:from-[#2a3a5a] dark:hover:to-[#3a4a6a] text-[#2f5ae8] dark:text-[#6b9fff] text-caption-12-medium font-medium transition-all whitespace-nowrap"
+          className="flex items-center justify-center gap-2 whitespace-nowrap rounded-full border border-border-soft-2 bg-surface-muted px-4 py-2 text-caption-12-medium font-medium text-text-link transition-colors hover:bg-surface-muted-hover hover:text-text-link"
         >
           <Sparkles className="size-3.5" />
           AI 수정 받기
@@ -87,14 +107,14 @@ export function IssueListItem({ issue, onDetailClick, pageUrl }: IssueListItemPr
         </button>
 
         <div
-          className="p-2 hover:bg-surface-muted rounded-lg transition-colors opacity-0 group-hover:opacity-100 flex-shrink-0 flex items-center justify-center"
+          className="flex shrink-0 items-center justify-center rounded-lg p-2 opacity-0 transition-colors group-hover:opacity-100 hover:bg-surface-muted"
           title="상세보기"
-          onClick={(e) => {
-            e.stopPropagation()
+          onClick={(event) => {
+            event.stopPropagation()
             onDetailClick(issue)
           }}
         >
-          <ChevronRight className="w-5 h-5 text-text-secondary" />
+          <ChevronRight className="h-5 w-5 text-text-secondary" />
         </div>
       </div>
     </div>

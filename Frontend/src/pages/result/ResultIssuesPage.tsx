@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from "react"
 import { useLocation, useNavigate, useParams } from "react-router-dom"
+
 import { ArrowRight } from "lucide-react"
 
 import { CommonButton } from "@/components/atoms"
@@ -25,11 +26,10 @@ type IssueCategoryFilter = (typeof filterCategories)[number]
 
 const categoryColorMap: Record<IssueCategoryFilter, string> = {
   접근성: "var(--color-category-accessibility)",
-  시각요소: "var(--color-category-visual)",
   사용성: "var(--color-category-usability)",
+  시각요소: "var(--color-category-visual)",
   기타: "var(--color-category-etc)",
 }
-
 
 function buildCategoryDonut(issues: ResultIssueViewModel[]) {
   const total = issues.length || 1
@@ -38,18 +38,18 @@ function buildCategoryDonut(issues: ResultIssueViewModel[]) {
       acc[category] = 0
       return acc
     },
-    {} as Record<IssueCategoryFilter, number>,
+    {} as Record<IssueCategoryFilter, number>
   )
 
   for (const issue of issues) {
     const category = issue.category as IssueCategoryFilter
     if (category in counts) {
-      counts[category] = (counts[category] ?? 0) + 1
+      counts[category] += 1
     }
   }
 
   return filterCategories.map((category) => {
-    const count = counts[category] ?? 0
+    const count = counts[category]
     const percent = Math.round((count / total) * 100)
 
     return {
@@ -68,12 +68,8 @@ function ResultIssuesPage() {
   const location = useLocation()
   const resolvedId = simulationId ?? "unknown"
   const search = location.search
-  const {
-    data,
-    isLoading,
-    isError,
-    refetch,
-  } = useResultIssuesQuery(resolvedId)
+  const { data, isLoading, isError, refetch } = useResultIssuesQuery(resolvedId)
+
   const pages = useMemo(() => data?.pages ?? [], [data])
   const pageIds = pages.map((page) => page.pageId)
   const { selectedPageId, setSelectedPageId } = useResultPageParam({
@@ -81,12 +77,10 @@ function ResultIssuesPage() {
     defaultPageId: pageIds[0],
   })
   const { expandedPageIds, expandPage, togglePage } = useResultPageSidePanelState(
-    selectedPageId,
+    selectedPageId
   )
   const [activeFilters, setActiveFilters] = useState<IssueCategoryFilter[]>([
-    "접근성",
-    "사용성",
-    "시각요소",
+    ...filterCategories,
   ])
   const issuesSectionRef = useRef<HTMLDivElement>(null)
 
@@ -98,16 +92,18 @@ function ResultIssuesPage() {
       pages.map((page) => ({
         id: page.pageId,
         name: page.pageName,
-        screenshotUrl: page.screenshotUrl || getResultPageScreenshotUrl(page.pageId),
+        screenshotUrl:
+          page.screenshotUrl || getResultPageScreenshotUrl(page.pageId),
       })),
-    [pages],
+    [pages]
   )
 
   const filteredIssues = useMemo(() => {
     if (!selectedPage) return []
     if (!activeFilters.length) return selectedPage.issues
+
     return selectedPage.issues.filter((issue) =>
-      activeFilters.includes(issue.category as IssueCategoryFilter),
+      activeFilters.includes(issue.category as IssueCategoryFilter)
     )
   }, [activeFilters, selectedPage])
 
@@ -121,7 +117,7 @@ function ResultIssuesPage() {
     return (
       <ErrorState
         title="이슈 데이터를 불러오지 못했습니다"
-        description="잠시 후 다시 시도해주세요."
+        description="잠시 후 다시 시도해 주세요."
         actionLabel="다시 시도"
         onAction={() => {
           void refetch()
@@ -163,17 +159,20 @@ function ResultIssuesPage() {
         <Card
           className={cn(
             "rounded-2xl border border-border-strong bg-card shadow-none",
-            motion.card,
+            motion.card
           )}
         >
           <CardContent className="grid gap-4 px-6 py-5">
             <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
               <div className="grid gap-2">
                 <div className="flex flex-wrap items-center gap-2">
-                  <p className="text-caption-12-medium text-text-secondary">필터링</p>
+                  <p className="text-caption-12-medium text-text-secondary">
+                    카테고리 필터
+                  </p>
                   <div className="flex flex-wrap gap-2">
                     {filterCategories.map((category) => {
                       const selected = activeFilters.includes(category)
+
                       return (
                         <ChipTag
                           key={category}
@@ -183,7 +182,7 @@ function ResultIssuesPage() {
                             setActiveFilters((prev) =>
                               prev.includes(category)
                                 ? prev.filter((item) => item !== category)
-                                : [...prev, category],
+                                : [...prev, category]
                             )
                           }}
                         >
@@ -217,7 +216,7 @@ function ResultIssuesPage() {
                     })
                   }}
                 >
-                  이슈 전체보기
+                  이슈 전체 보기
                 </CommonButton>
               </div>
             </div>
@@ -225,7 +224,7 @@ function ResultIssuesPage() {
             <div className="grid gap-3">
               <p className="text-body-14-medium text-text-body">카테고리별 분류</p>
               <div className="grid gap-4 md:grid-cols-[280px_minmax(0,1fr)] md:items-start">
-                <div className="min-h-[200px] h-[200px]">
+                <div className="h-[200px] min-h-[200px]">
                   <DonutChart
                     heightClassName="h-full"
                     data={donut.map((item) => ({
@@ -233,7 +232,7 @@ function ResultIssuesPage() {
                       value: item.value,
                       color: item.color,
                     }))}
-                    emptyDescription="시뮬레이션을 시작하면 이슈 카테고리 분류가 표시됩니다."
+                    emptyDescription="이슈가 연결되면 카테고리 분포가 여기 표시됩니다."
                   />
                 </div>
                 <div className="grid gap-2">
@@ -259,7 +258,9 @@ function ResultIssuesPage() {
                       </div>
                     ))
                   ) : (
-                    <p className="text-caption-12-regular text-text-muted">데이터 없음</p>
+                    <p className="text-caption-12-regular text-text-muted">
+                      데이터 없음
+                    </p>
                   )}
                 </div>
               </div>
@@ -268,16 +269,16 @@ function ResultIssuesPage() {
         </Card>
 
         <section ref={issuesSectionRef}>
-          {filteredIssues.length > 0 ? (
+          {selectedPage && filteredIssues.length > 0 ? (
             <IssueListSection
               issues={filteredIssues}
-              title="이슈목록"
-              pageUrl={selectedPage?.pageUrl}
+              title="이슈 목록"
+              pageUrl={selectedPage.pageUrl}
             />
           ) : (
             <EmptyState
               title="표시할 이슈가 없습니다"
-              description="현재 필터 조건에 맞는 이슈가 없거나, 아직 분석 데이터가 연결되지 않았습니다."
+              description="현재 필터 조건에 맞는 이슈가 없거나 아직 분석 데이터가 연결되지 않았습니다."
             />
           )}
         </section>

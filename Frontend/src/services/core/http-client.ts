@@ -196,48 +196,4 @@ export async function requestJson<T>(path: string, options: RequestOptions = {})
 
     if (response.status === 401) {
       handleUnauthorized(path)
-    }
-
-    const payload = await parseResponseBody(response)
-
-    if (!response.ok) {
-      throw new ApiServiceError(toApiErrorPayload(path, response, payload))
-    }
-
-    return unwrapPayload<T>(payload)
-  } catch (error) {
-    if (error instanceof DOMException && error.name === "AbortError") {
-      throw new ApiServiceError({
-        status: 408,
-        error: "Request Timeout",
-        message: `요청이 ${REQUEST_TIMEOUT_MS / 1000}초 이상 걸렸습니다. 네트워크 연결을 확인하세요.`,
-        path,
-      })
-    }
-
-    throw error
-  } finally {
-    globalThis.clearTimeout(timeoutId)
-  }
-}
-
-export async function requestJsonWithFallback<T>(
-  paths: string[],
-  options: RequestOptions = {}
-) {
-  let lastError: unknown
-
-  for (const path of paths) {
-    try {
-      return await requestJson<T>(path, options)
-    } catch (error) {
-      lastError = error
-
-      if (!(error instanceof ApiServiceError) || error.status !== 404) {
-        throw error
-      }
-    }
-  }
-
-  throw lastError
-}
+   

@@ -66,11 +66,4 @@ function AuthPage({
             <LoginPanel onGoToSignUp={() => switchMode("signup")} />
           ) : (
             <SignUpPanel onGoToLogin={() => switchMode("login")} />
-          )}
-        </div>
-      </AuthBrandingShell>
-    </AuthLayout>
-  )
-}
-
-export default AuthPage
+    

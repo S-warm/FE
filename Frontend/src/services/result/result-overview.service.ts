@@ -44,6 +44,7 @@ export const resultOverviewService: ResultOverviewService = {
 
       return adaptOverviewResponseToViewModel(simulationId, apiResponse)
     } catch (error) {
+      // DEV 환경에서만 mock fallback 데이터 시도
       if (import.meta.env.DEV && error instanceof ApiServiceError && error.status === 404) {
         const fallbackViewModel = await getOverviewFallback(simulationId)
         if (fallbackViewModel) {
@@ -51,11 +52,5 @@ export const resultOverviewService: ResultOverviewService = {
         }
       }
 
-      if (error instanceof ApiServiceError && error.status === 404) {
-        return createEmptyOverviewViewModel()
-      }
-
-      throw error
-    }
-  },
-}
+      // 404 에러는 명시적으로 throw하여 UI에서 에러 상태로 처리
+      // (pr

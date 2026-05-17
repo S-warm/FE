@@ -215,7 +215,7 @@ function ResultOverviewPage() {
     return (
       <ErrorState
         title="Overview 데이터를 불러오지 못했습니다"
-        description="잠시 후 다시 시도해주세요."
+        description="시뮬레이션이 존재하지 않거나 아직 분석이 완료되지 않았을 수 있습니다. 시뮬레이션 상태를 확인하거나 잠시 후 다시 시도해주세요."
         actionLabel="다시 시도"
         onAction={() => {
           void refetch()
@@ -239,25 +239,25 @@ function ResultOverviewPage() {
         <MetricCard
           title="테스트 성공률"
           value={data.summary.taskSuccessRateLabel}
-          description="success_count / total_sessions"
+          description="성공한 세션 수 / 전체 세션 수"
           icon={<Flag className="size-4" />}
         />
         <MetricCard
           title="전체 세션 수"
           value={data.summary.totalAgentsLabel}
-          description="summary.total_sessions"
+          description="전체 시뮬레이션 세션 수"
           icon={<Users className="size-4" />}
         />
         <MetricCard
           title="평균 완료 시간"
           value={data.summary.avgCompletionTimeLabel}
-          description="summary.avg_duration_ms"
+          description="성공한 세션 기준"
           icon={<Clock className="size-4" />}
         />
         <MetricCard
           title="이탈 세션 수"
           value={data.summary.dropOffAgentsLabel}
-          description="total_sessions - success_count"
+          description="전체 세션 수 - 성공한 세션 수"
           icon={<AlertCircle className="size-4" />}
         />
       </section>
@@ -356,14 +356,14 @@ function ResultOverviewPage() {
         </ChartCard>
 
         <ChartCard
-          title="연령대별 평균 declare failure 횟수"
-          badge={buildMaxBadge(
+          title="연령대별 실패 후 재탐색률"
+          badge={buildHighlightBadge(
             ageStats.map((item) => ({
               ageBand: item.ageBand,
               value: item.avgDeclareFailure ?? 0,
             })),
-            "가장 많음",
-            formatDeclareFailure
+            "max",
+            "%"
           )}
         >
           <LineTrendChart
@@ -375,12 +375,4 @@ function ResultOverviewPage() {
             heightClassName="h-[240px]"
             yAxisTickFormatter={formatDeclareFailure}
             tooltipFormatter={formatDeclareFailure}
-            emptyTitle="declare failure 데이터가 없습니다"
-          />
-        </ChartCard>
-      </section>
-    </div>
-  )
-}
-
-export default ResultOverviewPage
+            emptyTitle="

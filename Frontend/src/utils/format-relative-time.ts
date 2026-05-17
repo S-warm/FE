@@ -26,5 +26,5 @@ function formatRelativeTime(input: string | Date, now: Date = new Date()) {
   return isFuture ? `${days}일 후` : `${days}일 전`
 }
 
-export { formatRelativeTime }
-
+/**
+ * ISO 8601 타임스탬프�

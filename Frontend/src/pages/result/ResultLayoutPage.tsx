@@ -20,7 +20,7 @@ import { motion } from "@/lib/motion"
 import { cn } from "@/lib/utils"
 import { useSimulationHeaderQuery } from "@/queries"
 import { useSimulationDraftStore } from "@/store/simulation-draft.store"
-import { formatRelativeTime } from "@/utils/format-relative-time"
+import { formatRelativeTime, formatDateTime } from "@/utils/format-relative-time"
 
 const RESULT_TAB_HOVER_BG =
   "color-mix(in srgb, var(--brand-accent) 28%, transparent)"
@@ -103,7 +103,7 @@ function ResultHeaderCard({
                   {formatRelativeTime(createdAt)}
                 </p>
                 <span className="h-4 w-px bg-border-soft" aria-hidden="true" />
-                <p className="text-body-16-regular text-text-muted">{createdAt}</p>
+                <p className="text-body-16-regular text-text-muted">{formatDateTime(createdAt, 'ko')}</p>
               </div>
             </MetaRow>
           </div>
@@ -233,6 +233,3 @@ function ResultLayoutPage() {
       </section>
     </AuthLayout>
   )
-}
-
-export default ResultLayoutPage

@@ -14,6 +14,7 @@ export interface ResultWcagIssueViewModel extends ResultWcagIssueLinkViewModel {
   severity: SeverityTokenViewModel
   description: string
   htmlElement?: string
+  wcagCriteria?: string
 }
 
 export interface ResultWcagPageViewModel extends ResultPageSummaryViewModel {

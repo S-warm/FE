@@ -1,106 +1,173 @@
 import { createResultPageSummary } from "@/adapters/result/result-page.adapter"
 import { adaptWcagSeverity } from "@/adapters/result/result-severity.adapter"
-import type { WcagPageResult } from "@/mocks/result-wcag.mock"
-import type { SimulationWcagResponseDto } from "@/types/api/simulation/simulation-wcag.response"
-import type { ResultPageBaseViewModel } from "@/types/view-model/common/result-page"
+import { getResultPageScreenshotUrl } from "@/mocks/mock-assets"
+import type {
+  SimulationWcagApiResponseDto,
+  SimulationWcagBusinessUrlResultDto,
+  SimulationWcagResponseDto,
+} from "@/types/api/simulation/simulation-wcag.response"
+import type { ResultWcagDistributionItemViewModel } from "@/types/view-model/result/result-wcag"
 import type { ResultWcagViewModel } from "@/types/view-model/result/result-wcag"
 
-// 이슈 배열에서 severity별 분포를 계산
-function buildDistributionFromIssues(
-  issues: Array<{ severity: { raw: string } }>
-) {
-  const critical = issues.filter((issue) => issue.severity.raw === "Critical").length
-  const moderate = issues.filter((issue) => issue.severity.raw === "Moderate").length
-  const minor = issues.filter((issue) => issue.severity.raw === "Minor").length
-
+function buildDistributionItems(input: {
+  critical: number
+  moderate: number
+  minor: number
+}): ResultWcagDistributionItemViewModel[] {
   return [
     {
       severity: adaptWcagSeverity("Critical"),
-      count: critical,
+      count: input.critical,
       label: "심각",
-      description: "바로 고쳐야 할 문제",
+      description: "즉시 수정이 필요한 문제",
     },
     {
       severity: adaptWcagSeverity("Moderate"),
-      count: moderate,
+      count: input.moderate,
       label: "중요",
-      description: "사용하기 어려운 문제",
+      description: "접근성 저하를 유발하는 문제",
     },
     {
       severity: adaptWcagSeverity("Minor"),
-      count: minor,
-      label: "가벼움",
-      description: "개선하면 좋을 문제",
+      count: input.minor,
+      label: "경미",
+      description: "개선 시 품질이 높아지는 문제",
     },
   ]
 }
 
-export function adaptWcagResponseToViewModel(
-  simulationId: string,
-  raw: SimulationWcagResponseDto,
-  pageContext: ResultPageBaseViewModel[] = [],
-  pageResults?: WcagPageResult[]
-): ResultWcagViewModel {
-  const pages =
-    pageContext.length > 0
-      ? pageContext.map((page) =>
-          createResultPageSummary({
-            simulationId,
-            order: page.order,
-            pageName: page.pageName,
-            pageUrl: page.pageUrl,
-            screenshotUrl: page.screenshotUrl,
-            totalCount: raw.summary.foundIssues,
-            totalCountType: "wcag-issues",
-            metaText: `${raw.summary.foundIssues}건 WCAG 이슈`,
-          })
-        )
-      : [
-          createResultPageSummary({
-            simulationId,
-            order: 1,
-            pageName: "전체 페이지",
-            pageUrl: undefined,
-            screenshotUrl: undefined,
-            totalCount: raw.summary.foundIssues,
-            totalCountType: "wcag-issues",
-            metaText: `${raw.summary.foundIssues}건 WCAG 이슈`,
-          }),
-        ]
+function resolvePageName(url: string) {
+  if (url.includes("/search")) return "검색 결과"
+  if (url.includes("/articleDetail")) return "논문 상세"
+  if (url.includes("/journal")) return "저널 상세"
+  if (url.includes("/login")) return "로그인"
+  if (url.includes("/signup")) return "회원가입"
+  return "상세 페이지"
+}
 
-  // 페이지별 이슈 매핑
-  const allIssues = raw.issues.map((issue) => ({
+function resolveScreenshotUrl(url: string) {
+  if (url.includes("/search")) return getResultPageScreenshotUrl("search")
+  if (url.includes("/articleDetail") || url.includes("/journal")) {
+    return getResultPageScreenshotUrl("product")
+  }
+  if (url.includes("/login")) return getResultPageScreenshotUrl("login")
+  if (url.includes("/signup")) return getResultPageScreenshotUrl("signup")
+  return getResultPageScreenshotUrl()
+}
+
+function deriveSummaryFromViolations(
+  score: number,
+  wcagLabel: string,
+  issuesCount: number
+) {
+  const foundIssues = issuesCount
+  const totalTests = Math.max(foundIssues + 8, 12)
+  const passedTests = Math.max(0, Math.round(totalTests * (score / 100)))
+
+  return {
+    complianceScore: score,
+    wcagLabel,
+    totalTests,
+    passedTests,
+    foundIssues,
+  }
+}
+
+function toBusinessPages(
+  simulationId: string,
+  raw: Extract<SimulationWcagApiResponseDto, { urls: Record<string, SimulationWcagBusinessUrlResultDto> }>
+): ResultWcagViewModel {
+  const entries = Object.entries(raw.urls)
+
+  return {
+    pages: entries.map(([url, result], index) => {
+      const issues = result.violations.map((violation) => ({
+        issueType: "wcag" as const,
+        wcagIssueId: violation.wcagIssueId,
+        title: violation.title,
+        severity: adaptWcagSeverity(violation.severity),
+        description: violation.description,
+        htmlElement: violation.html,
+        wcagCriteria: violation.wcag_criteria,
+      }))
+
+      return {
+        ...createResultPageSummary({
+          simulationId,
+          order: index + 1,
+          pageName: resolvePageName(url),
+          pageUrl: url,
+          screenshotUrl: resolveScreenshotUrl(url),
+          totalCount: issues.length,
+          totalCountType: "wcag-issues",
+          metaText: `${issues.length}건 WCAG 이슈`,
+        }),
+        summary: deriveSummaryFromViolations(
+          result.score,
+          result.wcagLabel,
+          issues.length
+        ),
+        distribution: buildDistributionItems({
+          critical: result.distribution.Critical,
+          moderate: result.distribution.Moderate,
+          minor: result.distribution.Minor,
+        }),
+        issues,
+      }
+    }),
+  }
+}
+
+function toLegacyPages(
+  simulationId: string,
+  raw: Extract<SimulationWcagApiResponseDto, SimulationWcagResponseDto>
+): ResultWcagViewModel {
+  const issues = raw.issues.map((issue) => ({
     issueType: "wcag" as const,
     wcagIssueId: issue.wcagIssueId,
     title: issue.title,
     severity: adaptWcagSeverity(issue.severity),
     description: issue.description,
     htmlElement: issue.selector,
+    wcagCriteria: undefined,
   }))
 
   return {
-    pages: pages.map((page, pageIndex) => {
-      // pageResults가 있으면 해당 페이지의 이슈만 필터링
-      let pageIssues = allIssues
-      if (pageResults && pageResults[pageIndex]) {
-        const pageDetail = pageResults[pageIndex]
-        const pageIssueIds = new Set(pageDetail.details?.map((detail) => detail.id) || [])
-        pageIssues = allIssues.filter((issue) => pageIssueIds.has(issue.wcagIssueId))
-      }
-
-      return {
-        ...page,
-        summary: {
-          complianceScore: raw.summary.complianceScore,
-          wcagLabel: raw.summary.wcagLabel,
-          totalTests: raw.summary.totalTests,
-          passedTests: raw.summary.passedTests,
-          foundIssues: pageIssues.length,
-        },
-        // 각 페이지별 이슈에서 severity 분포를 다시 계산
-        distribution: buildDistributionFromIssues(pageIssues),
-        issues: pageIssues,
-      }
-    }),
+    pages: [
+      {
+        ...createResultPageSummary({
+          simulationId,
+          order: 1,
+          pageName: "전체 페이지",
+          pageUrl: undefined,
+          screenshotUrl: undefined,
+          totalCount: raw.summary.foundIssues,
+          totalCountType: "wcag-issues",
+          metaText: `${raw.summary.foundIssues}건 WCAG 이슈`,
+        }),
+        summary: raw.summary,
+        distribution: buildDistributionItems({
+          critical: raw.distribution.critical,
+          moderate: raw.distribution.moderate,
+          minor: raw.distribution.minor,
+        }),
+        issues,
+      },
+    ],
   }
+}
+
+export function adaptWcagResponseToViewModel(
+  simulationId: string,
+  raw: SimulationWcagApiResponseDto
+): ResultWcagViewModel {
+  if ("urls" in raw && raw.urls) {
+    return toBusinessPages(simulationId, raw)
+  }
+
+  if ("summary" in raw && "distribution" in raw && Array.isArray(raw.issues)) {
+    return toLegacyPages(simulationId, raw)
+  }
+
+  return { pages: [] }
 }

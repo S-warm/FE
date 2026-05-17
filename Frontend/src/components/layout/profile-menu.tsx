@@ -2,8 +2,8 @@ import { useEffect, useId, useRef, useState } from "react"
 
 import { CreditCard, LogOut, Settings, User } from "lucide-react"
 
+import { clearClientSession } from "@/lib/session"
 import { cn } from "@/lib/utils"
-import { useAuthStore } from "@/store/auth.store"
 
 type MenuTone = "primary" | "muted"
 
@@ -39,7 +39,6 @@ function MenuItem({
 function ProfileMenu({ initials = "CN" }: { initials?: string }) {
   const [open, setOpen] = useState(false)
   const menuId = useId()
-  const logout = useAuthStore((state) => state.logout)
   const buttonRef = useRef<HTMLButtonElement | null>(null)
   const menuRef = useRef<HTMLDivElement | null>(null)
 
@@ -111,7 +110,7 @@ function ProfileMenu({ initials = "CN" }: { initials?: string }) {
             label="로그아웃"
             tone="muted"
             onClick={() => {
-              logout()
+              clearClientSession()
               closeMenu()
             }}
           />

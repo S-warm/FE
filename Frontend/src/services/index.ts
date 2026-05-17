@@ -6,5 +6,5 @@ export {
   resultIssuesService,
   resultOverviewService,
   resultWcagService,
-  simulationService,
-} from "@/services/core/service-factory"
+} from "@/services/result"
+export { simulationService } from "@/services/simulation/simulation.service"

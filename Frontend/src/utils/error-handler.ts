@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger"
 import { ApiServiceError } from "@/services"
 
 /**
@@ -45,7 +46,7 @@ export class ErrorHandler {
     if (error instanceof Error) {
       // 개발 환경에서만 상세 메시지 표시
       if (import.meta.env.DEV) {
-        console.error("Error details:", error.message)
+        logger.error("Error details:", error.message)
         return error.message
       }
       return (
@@ -88,7 +89,7 @@ export class ErrorHandler {
     }
 
     if (import.meta.env.DEV) {
-      console.error("[ERROR LOG]", logEntry)
+      logger.error("[ERROR LOG]", logEntry)
     }
 
     // TODO: 프로덕션 환경에서 에러 트래킹 서비스로 전송

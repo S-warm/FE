@@ -1,0 +1,6 @@
+export type { GetResultHeatmapParams } from "./result.types"
+export { resultAiFixService } from "./result-ai-fix.service"
+export { resultHeatmapService } from "./result-heatmap.service"
+export { resultIssuesService } from "./result-issues.service"
+export { resultOverviewService } from "./result-overview.service"
+export { resultWcagService } from "./result-wcag.service"

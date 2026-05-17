@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { AlertCircle, Globe, TrendingUp, X, Zap } from "lucide-react"
 
 import { DonutChart } from "@/components/charts"
@@ -6,7 +6,6 @@ import { cn } from "@/lib/utils"
 import type { IssueDetailViewModel } from "@/types/view-model/result/issue-detail"
 
 interface IssueDetailPanelNewProps {
-  isOpen: boolean
   issue: IssueDetailViewModel | null
   onClose: () => void
 }
@@ -35,17 +34,10 @@ const severityToneMap = {
 } as const
 
 export function IssueDetailPanelNew({
-  isOpen,
   issue,
   onClose,
 }: IssueDetailPanelNewProps) {
   const [isAnimating, setIsAnimating] = useState(true)
-
-  useEffect(() => {
-    if (isOpen) {
-      setIsAnimating(true)
-    }
-  }, [isOpen, issue?.title])
 
   const handleClose = () => {
     setIsAnimating(false)
@@ -54,7 +46,7 @@ export function IssueDetailPanelNew({
     }, 300)
   }
 
-  if (!isOpen || !issue) {
+  if (!issue) {
     return null
   }
 

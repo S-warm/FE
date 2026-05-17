@@ -17,6 +17,8 @@ function AuthPage({
   const [mode, setMode] = useState<AuthMode>(initialMode)
   const [visible, setVisible] = useState(false)
   const transitionTimeoutRef = useRef<number | null>(null)
+  const isControlled = typeof onModeChange === "function"
+  const activeMode = isControlled ? initialMode : mode
 
   useEffect(() => {
     window.requestAnimationFrame(() => {
@@ -30,12 +32,8 @@ function AuthPage({
     }
   }, [])
 
-  useEffect(() => {
-    setMode(initialMode)
-  }, [initialMode])
-
   const switchMode = (nextMode: AuthMode) => {
-    if (nextMode === mode) return
+    if (nextMode === activeMode) return
 
     if (transitionTimeoutRef.current) {
       window.clearTimeout(transitionTimeoutRef.current)
@@ -43,8 +41,9 @@ function AuthPage({
 
     setVisible(false)
     transitionTimeoutRef.current = window.setTimeout(() => {
-      if (onModeChange) {
+      if (isControlled && onModeChange) {
         onModeChange(nextMode)
+        window.requestAnimationFrame(() => setVisible(true))
         return
       }
 
@@ -63,7 +62,7 @@ function AuthPage({
           )}
           style={{ transitionDuration: `${LOGIN_TRANSITION_MS}ms` }}
         >
-          {mode === "login" ? (
+          {activeMode === "login" ? (
             <LoginPanel onGoToSignUp={() => switchMode("signup")} />
           ) : (
             <SignUpPanel onGoToLogin={() => switchMode("login")} />

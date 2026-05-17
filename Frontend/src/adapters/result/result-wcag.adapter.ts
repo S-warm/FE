@@ -1,6 +1,6 @@
 import { createResultPageSummary } from "@/adapters/result/result-page.adapter"
 import { adaptWcagSeverity } from "@/adapters/result/result-severity.adapter"
-import { getResultPageScreenshotUrl } from "@/mocks/mock-assets"
+import { getResultPageScreenshotUrl } from "@/features/result/assets"
 import type {
   SimulationWcagApiResponseDto,
   SimulationWcagBusinessUrlResultDto,

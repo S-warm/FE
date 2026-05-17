@@ -1,0 +1,40 @@
+{
+  "summary": {
+    "success_rate": 0.7111,
+    "total_sessions": 900,
+    "avg_duration_ms": 47200,
+    "success_count": 640
+  },
+  "overview": [
+    {
+      "age_group": "20s",
+      "total_sessions": 300,
+      "success_count": 252,
+      "success_rate": 0.84,
+      "fail_rate": 0.16,
+      "avg_duration_ms": 31500,
+      "avg_actions": 8.4,
+      "avg_declare_failure": 0.31
+    },
+    {
+      "age_group": "50s",
+      "total_sessions": 300,
+      "success_count": 219,
+      "success_rate": 0.73,
+      "fail_rate": 0.27,
+      "avg_duration_ms": 51200,
+      "avg_actions": 12.7,
+      "avg_declare_failure": 0.84
+    },
+    {
+      "age_group": "70s",
+      "total_sessions": 300,
+      "success_count": 169,
+      "success_rate": 0.5633,
+      "fail_rate": 0.4367,
+      "avg_duration_ms": 58900,
+      "avg_actions": 17.2,
+      "avg_declare_failure": 1.62
+    }
+  ]
+}

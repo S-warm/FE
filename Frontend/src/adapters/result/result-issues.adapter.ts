@@ -1,25 +1,13 @@
 import { adaptIssueCategory } from "@/adapters/result/result-category.adapter"
 import { createResultPageSummary } from "@/adapters/result/result-page.adapter"
 import { adaptIssueSeverity } from "@/adapters/result/result-severity.adapter"
-import { getResultPageScreenshotUrl } from "@/mocks/mock-assets"
-import type { ApiIssueSeverity } from "@/types/api/common/enums"
+import { getResultPageScreenshotUrl } from "@/features/result/assets"
 import type {
   SimulationBusinessIssueDto,
   SimulationIssuesApiResponseDto,
   SimulationIssuesPageDto,
 } from "@/types/api/simulation/simulation-issues.response"
 import type { ResultIssueViewModel, ResultIssuesViewModel } from "@/types/view-model/result/result-issues"
-
-function normalizeIssueSeverity(
-  severity: SimulationBusinessIssueDto["severity"]
-): ApiIssueSeverity {
-  const normalized = String(severity).trim().toUpperCase()
-
-  if (normalized === "CRITICAL") return "CRITICAL"
-  if (normalized === "HIGH") return "HIGH"
-  if (normalized === "MEDIUM") return "MEDIUM"
-  return "LOW"
-}
 
 function resolvePageNameFromUrl(url: string) {
   if (url.includes("/search")) return "검색 결과"
@@ -61,7 +49,7 @@ function mapBusinessIssueToViewModel(issue: SimulationBusinessIssueDto): ResultI
     url: issue.url,
     category: adaptIssueCategory(issue.category),
     subCategory: issue.subCategory ?? "",
-    severity: adaptIssueSeverity(normalizeIssueSeverity(issue.severity)),
+    severity: adaptIssueSeverity(issue.severity),
     totalFailures: issue.fail_count,
     failureRate,
     affectedUsersCount,

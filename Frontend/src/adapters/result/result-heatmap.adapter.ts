@@ -1,6 +1,6 @@
 import { createResultPageSummary } from "@/adapters/result/result-page.adapter"
 import { adaptIssueSeverity } from "@/adapters/result/result-severity.adapter"
-import { getResultPageScreenshotUrl } from "@/mocks/mock-assets"
+import { getResultPageScreenshotUrl } from "@/features/result/assets"
 import type { GetResultHeatmapParams } from "@/services/result/result.types"
 import type {
   SimulationHeatmapApiResponseDto,

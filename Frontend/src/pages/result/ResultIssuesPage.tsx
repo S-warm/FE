@@ -14,7 +14,7 @@ import { useResultPageParam } from "@/lib/result-page-param"
 import { useResultPageSidePanelState } from "@/lib/result-page-side-panel-state"
 import { motion } from "@/lib/motion"
 import { cn } from "@/lib/utils"
-import { getResultPageScreenshotUrl } from "@/mocks/mock-assets"
+import { getResultPageScreenshotUrl } from "@/features/result/assets"
 import { useResultIssuesQuery } from "@/queries"
 import type {
   ResultIssuesPageViewModel,

@@ -1,4 +1,5 @@
 import { useAuthStore } from "@/store/auth.store"
+import { clearClientSession, redirectToExpiredSessionLogin } from "@/lib/session"
 import { SERVICE_CONFIG } from "@/services/core/service-config"
 import { ApiServiceError } from "@/services/core/api-service-error"
 import type { ApiErrorResponse } from "@/types/api/common/api-error"
@@ -11,6 +12,8 @@ interface RequestOptions {
   headers?: Record<string, string>
   query?: Record<string, Primitive | null | undefined>
 }
+
+const REQUEST_TIMEOUT_MS = 30_000
 
 function normalizeBaseUrl(baseUrl: string) {
   return baseUrl.endsWith("/") ? baseUrl.slice(0, -1) : baseUrl
@@ -166,20 +169,56 @@ function withContentType(
   return headers
 }
 
+function handleUnauthorized(path: string) {
+  clearClientSession()
+  redirectToExpiredSessionLogin()
+
+  throw new ApiServiceError({
+    status: 401,
+    error: "Unauthorized",
+    message: "세션이 만료되었습니다. 다시 로그인해주세요.",
+    path,
+  })
+}
+
 export async function requestJson<T>(path: string, options: RequestOptions = {}) {
   const headers = withContentType(buildHeaders(options.headers), options.body)
-  const response = await fetch(buildUrl(path, options.query), {
-    method: options.method ?? "GET",
-    headers,
-    body: serializeBody(options.body),
-  })
-  const payload = await parseResponseBody(response)
+  const controller = new AbortController()
+  const timeoutId = globalThis.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
 
-  if (!response.ok) {
-    throw new ApiServiceError(toApiErrorPayload(path, response, payload))
+  try {
+    const response = await fetch(buildUrl(path, options.query), {
+      method: options.method ?? "GET",
+      headers,
+      body: serializeBody(options.body),
+      signal: controller.signal,
+    })
+
+    if (response.status === 401) {
+      handleUnauthorized(path)
+    }
+
+    const payload = await parseResponseBody(response)
+
+    if (!response.ok) {
+      throw new ApiServiceError(toApiErrorPayload(path, response, payload))
+    }
+
+    return unwrapPayload<T>(payload)
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw new ApiServiceError({
+        status: 408,
+        error: "Request Timeout",
+        message: `요청이 ${REQUEST_TIMEOUT_MS / 1000}초 이상 걸렸습니다. 네트워크 연결을 확인하세요.`,
+        path,
+      })
+    }
+
+    throw error
+  } finally {
+    globalThis.clearTimeout(timeoutId)
   }
-
-  return unwrapPayload<T>(payload)
 }
 
 export async function requestJsonWithFallback<T>(

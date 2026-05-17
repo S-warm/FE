@@ -53,11 +53,13 @@ export function IssueListSection({ issues, title = "이슈목록", pageUrl }: Is
       </section>
 
       {/* 우측 상세 패널 */}
-      <IssueDetailPanelNew
-        isOpen={isPanelOpen}
-        issue={selectedIssue}
-        onClose={handleClosePanel}
-      />
+      {isPanelOpen ? (
+        <IssueDetailPanelNew
+          key={selectedIssue?.title ?? "issue-detail-panel"}
+          issue={selectedIssue}
+          onClose={handleClosePanel}
+        />
+      ) : null}
     </>
   )
 }

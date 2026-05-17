@@ -1,0 +1,41 @@
+{
+  "total_issues": 2,
+  "issues": [
+    {
+      "url": "https://www.dbpia.co.kr/search/topSearch",
+      "category": "사용성",
+      "subCategory": "시인성 부족",
+      "severity": "high",
+      "title": "검색 결과 필터 버튼 인식 실패",
+      "description": "70대 페르소나가 검색 결과 페이지에서 필터 버튼을 반복적으로 탐색하지 못하고 declare_failure를 보였습니다. 상단 tier 요소 안의 필터가 충분히 드러나지 않는 레이아웃 문제로 추정됩니다.",
+      "targetHtml": "검색 결과 상단의 필터/정렬 버튼 영역",
+      "tags": ["필터", "검색", "고연령"],
+      "fail_count": 18,
+      "fail_rate": 0.06,
+      "session_ids": ["sess_abc123", "sess_def456"],
+      "persona_ages": ["70s", "70s"],
+      "affected_personas": [
+        { "session_id": "sess_abc123", "persona_age": "70s" },
+        { "session_id": "sess_def456", "persona_age": "70s" }
+      ]
+    },
+    {
+      "url": "https://www.dbpia.co.kr/journal/articleDetail",
+      "category": "접근성",
+      "subCategory": "클릭 영역 불명확",
+      "severity": "medium",
+      "title": "논문 다운로드 버튼 클릭 영역 축소",
+      "description": "50대와 70대 페르소나에서 다운로드 버튼 클릭 실패가 반복되었습니다. 버튼 텍스트는 시각적으로 인식되지만 실제 클릭 가능 영역이 좁아 미스클릭이 발생했습니다.",
+      "targetHtml": "논문 상세 페이지 다운로드 버튼",
+      "tags": ["다운로드", "클릭영역"],
+      "fail_count": 9,
+      "fail_rate": 0.03,
+      "session_ids": ["sess_ghi789", "sess_jkl012"],
+      "persona_ages": ["50s", "70s"],
+      "affected_personas": [
+        { "session_id": "sess_ghi789", "persona_age": "50s" },
+        { "session_id": "sess_jkl012", "persona_age": "70s" }
+      ]
+    }
+  ]
+}

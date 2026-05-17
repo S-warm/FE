@@ -4,6 +4,21 @@ import type {
   ApiIssueSeverity,
 } from "@/types/api/common/enums"
 
+export interface SimulationHeatmapBusinessPointDto {
+  issueId: string
+  url: string
+  x: number
+  y: number
+  ageBand: string
+  count: number
+  severity: ApiIssueSeverity
+  errorType: string
+}
+
+export interface SimulationHeatmapBusinessResponseDto {
+  errorPoints: SimulationHeatmapBusinessPointDto[]
+}
+
 export interface SimulationHeatmapErrorBreakdownDto {
   timeout: number
   network: number
@@ -46,3 +61,7 @@ export interface SimulationHeatmapPageDto {
 export interface SimulationHeatmapResponseDto {
   pages: SimulationHeatmapPageDto[]
 }
+
+export type SimulationHeatmapApiResponseDto =
+  | SimulationHeatmapBusinessResponseDto
+  | SimulationHeatmapResponseDto

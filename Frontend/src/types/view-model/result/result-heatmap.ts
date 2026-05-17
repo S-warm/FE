@@ -8,7 +8,7 @@ export interface ResultHeatmapPointViewModel extends ResultUxIssueLinkViewModel 
   y: number
   count: number
   severity: SeverityTokenViewModel
-  errorType: "Timeout" | "Network" | "Console"
+  errorType: string
   affectedUsersCount: number
   blockRate: number
   repeatCount: number

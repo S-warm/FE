@@ -1,5 +1,21 @@
 import type { ApiIssueSeverity } from "@/types/api/common/enums"
 
+export interface SimulationAiFixBusinessItemDto {
+  issue_title: string
+  selector: string
+  before: string
+  after: string
+  description: string
+  impact: string
+  severity?: ApiIssueSeverity | "critical" | "high" | "medium" | "low"
+  affectedUsersCount?: number
+}
+
+export interface SimulationAiFixBusinessResponseDto {
+  url: string
+  fixes: SimulationAiFixBusinessItemDto[]
+}
+
 export interface SimulationAiFixDto {
   issueId: string
   title: string
@@ -23,3 +39,7 @@ export interface SimulationAiFixPageDto {
 export interface SimulationAiFixResponseDto {
   pages: SimulationAiFixPageDto[]
 }
+
+export type SimulationAiFixApiResponseDto =
+  | SimulationAiFixBusinessResponseDto
+  | SimulationAiFixResponseDto

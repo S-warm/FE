@@ -1,11 +1,86 @@
 import { createResultPageSummary } from "@/adapters/result/result-page.adapter"
 import { adaptIssueSeverity } from "@/adapters/result/result-severity.adapter"
-import type { SimulationAiFixResponseDto } from "@/types/api/simulation/simulation-ai-fix.response"
+import { getResultPageScreenshotUrl } from "@/mocks/mock-assets"
+import type {
+  SimulationAiFixApiResponseDto,
+  SimulationAiFixBusinessItemDto,
+  SimulationAiFixResponseDto,
+} from "@/types/api/simulation/simulation-ai-fix.response"
 import type { ResultAiFixViewModel } from "@/types/view-model/result/result-ai-fix"
 
-export function adaptAiFixResponseToViewModel(
+function normalizeSeverity(
+  severity?: SimulationAiFixBusinessItemDto["severity"],
+  title?: string
+) {
+  const normalized = String(severity ?? "").trim().toUpperCase()
+
+  if (normalized === "CRITICAL") return "CRITICAL" as const
+  if (normalized === "HIGH") return "HIGH" as const
+  if (normalized === "MEDIUM") return "MEDIUM" as const
+  if (normalized === "LOW") return "LOW" as const
+
+  const issueTitle = String(title ?? "")
+  if (issueTitle.includes("실패")) return "HIGH" as const
+  if (issueTitle.includes("협소")) return "MEDIUM" as const
+  return "MEDIUM" as const
+}
+
+function resolvePageName(url: string) {
+  if (url.includes("/search")) return "검색 결과"
+  if (url.includes("/articleDetail")) return "논문 상세"
+  if (url.includes("/journal")) return "저널 상세"
+  if (url.includes("/login")) return "로그인"
+  if (url.includes("/signup")) return "회원가입"
+  return "상세 페이지"
+}
+
+function resolveScreenshotUrl(url: string) {
+  if (url.includes("/search")) return getResultPageScreenshotUrl("search")
+  if (url.includes("/articleDetail") || url.includes("/journal")) {
+    return getResultPageScreenshotUrl("product")
+  }
+  if (url.includes("/login")) return getResultPageScreenshotUrl("login")
+  if (url.includes("/signup")) return getResultPageScreenshotUrl("signup")
+  return getResultPageScreenshotUrl()
+}
+
+function toBusinessPage(
   simulationId: string,
-  raw: SimulationAiFixResponseDto
+  raw: Extract<SimulationAiFixApiResponseDto, { url: string }>
+): ResultAiFixViewModel {
+  return {
+    pages: [
+      {
+        ...createResultPageSummary({
+          simulationId,
+          order: 1,
+          pageName: resolvePageName(raw.url),
+          pageUrl: raw.url,
+          screenshotUrl: resolveScreenshotUrl(raw.url),
+          totalCount: raw.fixes.length,
+          totalCountType: "fixes",
+          metaText: `${raw.fixes.length}건 수정안`,
+        }),
+        fixes: raw.fixes.map((fix, index) => ({
+          issueType: "ux" as const,
+          issueId: `ai-fix-${index + 1}`,
+          title: fix.issue_title,
+          severity: adaptIssueSeverity(normalizeSeverity(fix.severity, fix.issue_title)),
+          impactedUsersCount: fix.affectedUsersCount ?? 0,
+          beforeCode: fix.before,
+          afterCode: fix.after,
+          impactSummary: fix.impact,
+          changeSummaryTitle: "무엇이 변경되었나",
+          changeSummaryBody: fix.description,
+        })),
+      },
+    ],
+  }
+}
+
+function toLegacyPages(
+  simulationId: string,
+  raw: Extract<SimulationAiFixApiResponseDto, SimulationAiFixResponseDto>
 ): ResultAiFixViewModel {
   return {
     pages: raw.pages.map((page) => ({
@@ -20,7 +95,7 @@ export function adaptAiFixResponseToViewModel(
         metaText: `${page.totalFixCount}건 수정 제안`,
       }),
       fixes: page.fixes.map((fix) => ({
-        issueType: "ux",
+        issueType: "ux" as const,
         issueId: fix.issueId,
         title: fix.title,
         severity: adaptIssueSeverity(fix.severity),
@@ -33,4 +108,19 @@ export function adaptAiFixResponseToViewModel(
       })),
     })),
   }
+}
+
+export function adaptAiFixResponseToViewModel(
+  simulationId: string,
+  raw: SimulationAiFixApiResponseDto
+): ResultAiFixViewModel {
+  if ("url" in raw && Array.isArray(raw.fixes)) {
+    return toBusinessPage(simulationId, raw)
+  }
+
+  if ("pages" in raw && Array.isArray(raw.pages)) {
+    return toLegacyPages(simulationId, raw)
+  }
+
+  return { pages: [] }
 }

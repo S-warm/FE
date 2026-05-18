@@ -13,10 +13,14 @@ import { AuthLayout } from "@/layouts/AuthLayout"
 import { motion } from "@/lib/motion"
 import { cn } from "@/lib/utils"
 import { useSimulationStatusQuery } from "@/queries"
+import { resultOverviewService } from "@/services"
+import { ApiServiceError } from "@/services/core/api-service-error"
 import { useSimulationDraftStore } from "@/store/simulation-draft.store"
 
 const steps = ["페이지 수집", "페르소나 생성", "시뮬레이션 실행", "결과 분석"] as const
 const REDIRECT_DELAY_MS = 1200
+const OVERVIEW_READY_RETRY_DELAY_MS = 1500
+const OVERVIEW_READY_MAX_ATTEMPTS = 8
 const TERMINAL_STATUSES = new Set(["completed", "failed", "error", "cancelled"])
 
 interface SimulationProcessLocationState {
@@ -145,11 +149,47 @@ function ProcessCard({
       return
     }
 
-    const handle = window.setTimeout(() => {
-      navigate(buildResultOverviewPath(simulationId))
-    }, REDIRECT_DELAY_MS)
+    let isCancelled = false
 
-    return () => window.clearTimeout(handle)
+    const delay = (ms: number) =>
+      new Promise<void>((resolve) => {
+        window.setTimeout(resolve, ms)
+      })
+
+    const navigateWhenOverviewReady = async () => {
+      await delay(REDIRECT_DELAY_MS)
+
+      for (let attempt = 0; attempt < OVERVIEW_READY_MAX_ATTEMPTS; attempt += 1) {
+        if (isCancelled) {
+          return
+        }
+
+        try {
+          await resultOverviewService.getOverview(simulationId)
+          navigate(buildResultOverviewPath(simulationId))
+          return
+        } catch (error) {
+          if (!(error instanceof ApiServiceError) || error.status !== 404) {
+            navigate(buildResultOverviewPath(simulationId))
+            return
+          }
+        }
+
+        if (attempt < OVERVIEW_READY_MAX_ATTEMPTS - 1) {
+          await delay(OVERVIEW_READY_RETRY_DELAY_MS)
+        }
+      }
+
+      if (!isCancelled) {
+        navigate(buildResultOverviewPath(simulationId))
+      }
+    }
+
+    void navigateWhenOverviewReady()
+
+    return () => {
+      isCancelled = true
+    }
   }, [isFailedStatus, isTerminalStatus, navigate, simulationId])
 
   if (isStatusError) {

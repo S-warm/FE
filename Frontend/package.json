@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "preflight:prod": "node ./scripts/validate-production-env.mjs",
+    "build:prod": "npm run preflight:prod && npm run build",
     "lint": "eslint .",
     "preview": "vite preview"
   },

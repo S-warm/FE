@@ -23,10 +23,53 @@ function normalizePath(path: string) {
   return path.startsWith("/") ? path : `/${path}`
 }
 
+function normalizePathname(pathname: string) {
+  if (!pathname || pathname === "/") {
+    return ""
+  }
+
+  return pathname.endsWith("/") ? pathname.slice(0, -1) : pathname
+}
+
+function joinBaseUrlAndPath(baseUrl: string, path: string) {
+  const normalizedPath = normalizePath(path)
+
+  if (baseUrl.startsWith("/")) {
+    const normalizedBasePath = normalizePathname(baseUrl)
+
+    if (
+      !normalizedBasePath ||
+      normalizedPath === normalizedBasePath ||
+      normalizedPath.startsWith(`${normalizedBasePath}/`)
+    ) {
+      return normalizedPath
+    }
+
+    return `${normalizedBasePath}${normalizedPath}`
+  }
+
+  const parsedBaseUrl = new URL(baseUrl)
+  const normalizedBasePath = normalizePathname(parsedBaseUrl.pathname)
+  const nextPath =
+    !normalizedBasePath ||
+    normalizedPath === normalizedBasePath ||
+    normalizedPath.startsWith(`${normalizedBasePath}/`)
+      ? normalizedPath
+      : `${normalizedBasePath}${normalizedPath}`
+
+  parsedBaseUrl.pathname = nextPath
+  parsedBaseUrl.search = ""
+  parsedBaseUrl.hash = ""
+
+  return parsedBaseUrl.toString()
+}
+
 function buildUrl(path: string, query?: RequestOptions["query"]) {
-  const url = new URL(
-    `${normalizeBaseUrl(SERVICE_CONFIG.apiBaseUrl)}${normalizePath(path)}`,
-  )
+  const normalizedBaseUrl = normalizeBaseUrl(SERVICE_CONFIG.apiBaseUrl)
+  const requestTarget = joinBaseUrlAndPath(normalizedBaseUrl, path)
+  const url = normalizedBaseUrl.startsWith("/")
+    ? new URL(requestTarget, window.location.origin)
+    : new URL(requestTarget)
 
   if (query) {
     Object.entries(query).forEach(([key, value]) => {

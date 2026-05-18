@@ -1,16 +1,16 @@
 import type { PropsWithChildren } from "react"
 
 /**
- * 조건부 렌더링 헬퍼 Props
+ * 조건부 렌더링 래퍼 Props
  */
 export interface ShowProps extends PropsWithChildren {
   when: boolean
 }
 
 /**
- * 조건부 렌더링 헬퍼 컴포넌트
+ * 조건부 렌더링 래퍼 컴포넌트
  *
- * 삼항 연산자(? :) 대신 더 선언적인 방식으로
+ * 삼항 연산자보다 더 선언적인 방식으로
  * 조건에 따라 자식 요소를 렌더링합니다.
  *
  * @param when - 렌더링 여부를 결정하는 boolean
@@ -35,10 +35,10 @@ export function Show({ when, children }: ShowProps) {
 }
 
 /**
- * Fragment 반환 버전의 조건부 렌더링 헬퍼
+ * Fragment 반환 버전의 조건부 렌더링 래퍼
  *
  * Show와 동일하지만 Fragment를 반환하므로
- * 여러 요소를 감싸야 할 때 유용합니다.
+ * 여러 요소를 감쌀 때도 유용합니다.
  *
  * @param when - 렌더링 여부를 결정하는 boolean
  * @param children - when이 true일 때 렌더링할 요소들

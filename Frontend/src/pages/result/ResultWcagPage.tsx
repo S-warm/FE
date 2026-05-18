@@ -13,11 +13,11 @@ import { ResultPageSidePanel } from "@/components/sections/result/page-side-pane
 import { ErrorState, ResultPageSkeleton } from "@/components/states"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
+import { getResultPageScreenshotUrl } from "@/features/result/assets"
+import { motion } from "@/lib/motion"
 import { useResultPageParam } from "@/lib/result-page-param"
 import { useResultPageSidePanelState } from "@/lib/result-page-side-panel-state"
-import { motion } from "@/lib/motion"
 import { cn } from "@/lib/utils"
-import { getResultPageScreenshotUrl } from "@/features/result/assets"
 import { useResultWcagQuery } from "@/queries"
 import type { SeverityTokenViewModel } from "@/types/view-model/common/severity"
 import type {
@@ -31,8 +31,7 @@ function getSeverityStyle(severity: SeverityTokenViewModel) {
     case "Critical":
       return {
         bar: "bg-critical-accent",
-        badge:
-          "bg-critical-accent/15 text-critical-text border-critical-accent/30",
+        badge: "bg-critical-accent/15 text-critical-text border-critical-accent/30",
         iconWrapper: "bg-danger-surface text-danger-text",
         text: "text-critical-text",
         icon: TriangleAlert,
@@ -40,8 +39,7 @@ function getSeverityStyle(severity: SeverityTokenViewModel) {
     case "Moderate":
       return {
         bar: "bg-moderate-accent",
-        badge:
-          "bg-moderate-accent/20 text-moderate-text border-moderate-accent/40",
+        badge: "bg-moderate-accent/20 text-moderate-text border-moderate-accent/40",
         iconWrapper: "bg-warning-surface text-warning-text",
         text: "text-moderate-text",
         icon: AlertCircle,
@@ -75,7 +73,7 @@ function MetricCard({
         motion.card,
       )}
     >
-      <CardContent className="grid gap-3 px-5 py-4 min-h-[120px]">
+      <CardContent className="grid min-h-[120px] gap-3 px-5 py-4">
         <div className="flex items-start justify-between gap-3 text-text-subtle">
           <div className="flex items-center gap-2">
             <span className="grid size-7 place-items-center rounded-xl bg-surface-muted text-text-muted">
@@ -86,7 +84,7 @@ function MetricCard({
           <button
             type="button"
             className="grid size-6 place-items-center rounded-lg hover:bg-surface-hover"
-            aria-label="도움말"
+            aria-label="자세히 보기"
           >
             <AlertCircle className="size-4" />
           </button>
@@ -139,6 +137,7 @@ function DistributionSummary({
     <div className="grid gap-3 md:grid-cols-3">
       {distribution.map((item) => {
         const style = getSeverityStyle(item.severity)
+
         return (
           <div
             key={item.severity.raw}
@@ -169,9 +168,7 @@ function DetailIssueRow({
   expanded: boolean
   onToggle: () => void
 }) {
-  const style = getSeverityStyle({
-    ...issue.severity,
-  })
+  const style = getSeverityStyle(issue.severity)
   const Icon = style.icon
 
   return (
@@ -212,10 +209,7 @@ function DetailIssueRow({
           <span className="inline-flex items-center gap-1 rounded-lg bg-surface-muted px-3 py-2 text-caption-12-medium text-text-muted">
             자세히 보기
             <ChevronDown
-              className={cn(
-                "size-4 transition-transform",
-                expanded ? "rotate-180" : "",
-              )}
+              className={cn("size-4 transition-transform", expanded ? "rotate-180" : "")}
             />
           </span>
         </button>
@@ -229,19 +223,21 @@ function DetailIssueRow({
           <div className="min-h-0 overflow-hidden">
             <div className="mt-4 grid gap-3">
               <div className="rounded-2xl border border-border-subtle bg-surface-subtle px-4 py-3">
-                <p className="text-caption-12-medium text-text-secondary mb-2">설명</p>
+                <p className="mb-2 text-caption-12-medium text-text-secondary">설명</p>
                 <p className="text-caption-12-regular leading-relaxed text-text-body">
                   {issue.description}
                 </p>
               </div>
-              {issue.htmlElement && (
+              {issue.htmlElement ? (
                 <div className="rounded-2xl border border-border-subtle bg-surface-subtle px-4 py-3">
-                  <p className="text-caption-12-medium text-text-secondary mb-2">관련 HTML 요소</p>
-                  <code className="block w-full overflow-x-auto rounded-xl bg-code-surface p-3 text-[12px] text-white leading-relaxed whitespace-pre-wrap break-words">
+                  <p className="mb-2 text-caption-12-medium text-text-secondary">
+                    관련 HTML 요소
+                  </p>
+                  <code className="block w-full overflow-x-auto break-words whitespace-pre-wrap rounded-xl bg-code-surface p-3 text-[12px] leading-relaxed text-white">
                     {issue.htmlElement}
                   </code>
                 </div>
-              )}
+              ) : null}
             </div>
           </div>
         </div>
@@ -297,7 +293,7 @@ function ResultWcagPage() {
     return (
       <ErrorState
         title="WCAG 데이터를 불러오지 못했습니다"
-        description="잠시 후 다시 시도해주세요."
+        description="잠시 후 다시 시도해 주세요."
         actionLabel="다시 시도"
         onAction={() => {
           void refetch()
@@ -338,13 +334,13 @@ function ResultWcagPage() {
 
         <section className="grid gap-3 md:grid-cols-3">
           <MetricCard
-            title="웹 접근성 점수"
+            title="접근성 점수"
             value={`${Math.round(selectedPage?.summary.complianceScore ?? 0)}점`}
             subtitle=""
             icon={<ShieldCheck className="size-4" />}
           />
           <MetricCard
-            title="통과된 테스트"
+            title="통과한 테스트"
             value={`${selectedPage?.summary.passedTests ?? 0}개`}
             subtitle=""
             icon={<ClipboardCheck className="size-4" />}
@@ -355,7 +351,7 @@ function ResultWcagPage() {
               motion.card,
             )}
           >
-            <CardContent className="grid gap-3 px-5 py-4 min-h-[120px]">
+            <CardContent className="grid min-h-[120px] gap-3 px-5 py-4">
               <div className="flex items-start justify-between gap-3 text-text-subtle">
                 <div className="flex items-center gap-2">
                   <span className="grid size-7 place-items-center rounded-xl bg-surface-muted text-text-muted">
@@ -366,7 +362,7 @@ function ResultWcagPage() {
                 <button
                   type="button"
                   className="grid size-6 place-items-center rounded-lg hover:bg-surface-hover"
-                  aria-label="도움말"
+                  aria-label="자세히 보기"
                 >
                   <AlertCircle className="size-4" />
                 </button>
@@ -417,8 +413,11 @@ function ResultWcagPage() {
                     onToggle={() =>
                       setExpandedIds((prev) => {
                         const next = new Set(prev)
-                        if (next.has(issue.wcagIssueId)) next.delete(issue.wcagIssueId)
-                        else next.add(issue.wcagIssueId)
+                        if (next.has(issue.wcagIssueId)) {
+                          next.delete(issue.wcagIssueId)
+                        } else {
+                          next.add(issue.wcagIssueId)
+                        }
                         return next
                       })
                     }
@@ -429,7 +428,7 @@ function ResultWcagPage() {
           ) : (
             <EmptyState
               title="상세 검사 결과가 없습니다"
-              description="표시할 상세 이슈가 없거나, 아직 검사 데이터가 연결되지 않았습니다."
+              description="표시할 상세 이슈가 없거나 아직 검사 데이터가 연결되지 않았습니다."
             />
           )}
         </section>

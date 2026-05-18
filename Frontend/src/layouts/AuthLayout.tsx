@@ -3,16 +3,16 @@ import { matchPath, useLocation, useNavigate } from "react-router-dom"
 
 import { Menu } from "lucide-react"
 
+import { ProfileMenu } from "@/components/layout/profile-menu"
 import { EmptyState } from "@/components/sections"
 import { ErrorState } from "@/components/states"
-import { ProfileMenu } from "@/components/layout/profile-menu"
 import { buildResultOverviewPath } from "@/constants/routes"
+import { cn } from "@/lib/utils"
 import { useSimulationListQuery } from "@/queries"
 import { useAuthStore } from "@/store/auth.store"
 import { useLayoutStore } from "@/store/layout.store"
 import type { SimulationListItemViewModel } from "@/types/view-model/simulation/simulation-list"
 import { formatRelativeTime } from "@/utils/format-relative-time"
-import { cn } from "@/lib/utils"
 
 function AuthSidebar({
   open,
@@ -59,7 +59,9 @@ function AuthSidebar({
       <div
         className={[
           "flex h-[calc(100%-4rem)] flex-col px-4 pb-6 transition-[opacity,transform] duration-200",
-          open ? "translate-x-0 opacity-100" : "pointer-events-none -translate-x-2 opacity-0",
+          open
+            ? "translate-x-0 opacity-100"
+            : "pointer-events-none -translate-x-2 opacity-0",
         ].join(" ")}
       >
         <div className="min-h-0 flex-1">
@@ -78,7 +80,7 @@ function AuthSidebar({
             {!isLoading && isError ? (
               <ErrorState
                 title="목록을 불러오지 못했습니다"
-                description="잠시 후 다시 시도해주세요."
+                description="잠시 후 다시 시도해 주세요."
                 actionLabel="다시 시도"
                 onAction={onRetry}
                 className="px-4 py-6"
@@ -88,7 +90,7 @@ function AuthSidebar({
             {!isLoading && !isError && simulations.length === 0 ? (
               <EmptyState
                 title="최근 프로젝트가 없습니다"
-                description="시뮬레이션을 시작하면 목록이 표시됩니다."
+                description="시뮬레이션을 시작하면 목록에 표시됩니다."
                 className="px-4 py-6"
               />
             ) : null}
@@ -113,7 +115,7 @@ function AuthSidebar({
                         {item.siteName ?? item.title}
                       </p>
                       <p className="mt-1 text-caption-12-regular text-text-muted">
-                        {formatRelativeTime(item.createdAt)} · {item.createdAt}
+                        {formatRelativeTime(item.createdAt)} 쨌 {item.createdAt}
                       </p>
                     </button>
                   )
@@ -198,9 +200,7 @@ function AuthLayout({
             mainClassName ?? "items-center",
           )}
         >
-          <div className="w-full max-w-[1560px] 2xl:max-w-[1760px]">
-            {children}
-          </div>
+          <div className="w-full max-w-[1560px] 2xl:max-w-[1760px]">{children}</div>
         </main>
       </div>
     </div>

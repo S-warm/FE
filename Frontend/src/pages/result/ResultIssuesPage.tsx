@@ -10,16 +10,13 @@ import { EmptyState, IssueListSection } from "@/components/sections"
 import { ResultPageSidePanel } from "@/components/sections/result/page-side-panel"
 import { ErrorState, ResultPageSkeleton } from "@/components/states"
 import { Card, CardContent } from "@/components/ui/card"
+import { getResultPageScreenshotUrl } from "@/features/result/assets"
+import { motion } from "@/lib/motion"
 import { useResultPageParam } from "@/lib/result-page-param"
 import { useResultPageSidePanelState } from "@/lib/result-page-side-panel-state"
-import { motion } from "@/lib/motion"
 import { cn } from "@/lib/utils"
-import { getResultPageScreenshotUrl } from "@/features/result/assets"
 import { useResultIssuesQuery } from "@/queries"
-import type {
-  ResultIssuesPageViewModel,
-  ResultIssueViewModel,
-} from "@/types/view-model/result/result-issues"
+import type { ResultIssueViewModel, ResultIssuesPageViewModel } from "@/types/view-model/result/result-issues"
 
 const filterCategories = ["접근성", "사용성", "시각요소", "기타"] as const
 type IssueCategoryFilter = (typeof filterCategories)[number]
@@ -38,7 +35,7 @@ function buildCategoryDonut(issues: ResultIssueViewModel[]) {
       acc[category] = 0
       return acc
     },
-    {} as Record<IssueCategoryFilter, number>
+    {} as Record<IssueCategoryFilter, number>,
   )
 
   for (const issue of issues) {
@@ -77,7 +74,7 @@ function ResultIssuesPage() {
     defaultPageId: pageIds[0],
   })
   const { expandedPageIds, expandPage, togglePage } = useResultPageSidePanelState(
-    selectedPageId
+    selectedPageId,
   )
   const [activeFilters, setActiveFilters] = useState<IssueCategoryFilter[]>([
     ...filterCategories,
@@ -92,10 +89,9 @@ function ResultIssuesPage() {
       pages.map((page) => ({
         id: page.pageId,
         name: page.pageName,
-        screenshotUrl:
-          page.screenshotUrl || getResultPageScreenshotUrl(page.pageId),
+        screenshotUrl: page.screenshotUrl || getResultPageScreenshotUrl(page.pageId),
       })),
-    [pages]
+    [pages],
   )
 
   const filteredIssues = useMemo(() => {
@@ -103,7 +99,7 @@ function ResultIssuesPage() {
     if (!activeFilters.length) return selectedPage.issues
 
     return selectedPage.issues.filter((issue) =>
-      activeFilters.includes(issue.category as IssueCategoryFilter)
+      activeFilters.includes(issue.category as IssueCategoryFilter),
     )
   }, [activeFilters, selectedPage])
 
@@ -159,7 +155,7 @@ function ResultIssuesPage() {
         <Card
           className={cn(
             "rounded-2xl border border-border-strong bg-card shadow-none",
-            motion.card
+            motion.card,
           )}
         >
           <CardContent className="grid gap-4 px-6 py-5">
@@ -182,7 +178,7 @@ function ResultIssuesPage() {
                             setActiveFilters((prev) =>
                               prev.includes(category)
                                 ? prev.filter((item) => item !== category)
-                                : [...prev, category]
+                                : [...prev, category],
                             )
                           }}
                         >
@@ -201,7 +197,7 @@ function ResultIssuesPage() {
                   className="rounded-xl border border-border-soft-2 bg-surface-muted text-text-secondary hover:bg-surface-muted-hover"
                   onClick={() => navigate(`/result/${resolvedId}/heatmap${search}`)}
                 >
-                  히트맵에서 보기
+                  히트맵으로 보기
                   <ArrowRight className="size-4" />
                 </CommonButton>
                 <CommonButton
@@ -232,7 +228,7 @@ function ResultIssuesPage() {
                       value: item.value,
                       color: item.color,
                     }))}
-                    emptyDescription="이슈가 연결되면 카테고리 분포가 여기 표시됩니다."
+                    emptyDescription="이슈가 연결되면 카테고리 분포가 여기에 표시됩니다."
                   />
                 </div>
                 <div className="grid gap-2">

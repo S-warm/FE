@@ -1,14 +1,11 @@
 import { requestJson } from "@/services/core/http-client"
+import type { GetSimulationHeaderParams, GetSimulationStatusParams } from "@/services/simulation/simulation.types"
 import type { SimulationCreateRequestDto } from "@/types/api/simulation/simulation-create.request"
 import type { SimulationCreateResponseDto } from "@/types/api/simulation/simulation-create.response"
+import type { SimulationListItemDto } from "@/types/api/simulation/simulation-list.response"
 import type { SimulationStatusResponseDto } from "@/types/api/simulation/simulation-status.response"
 import type { ResultHeaderViewModel } from "@/types/view-model/simulation/result-header"
 import type { SimulationListItemViewModel } from "@/types/view-model/simulation/simulation-list"
-import type {
-  GetSimulationHeaderParams,
-  GetSimulationStatusParams,
-} from "@/services/simulation/simulation.types"
-import type { SimulationListItemDto } from "@/types/api/simulation/simulation-list.response"
 
 interface SimulationCreateResponseApiDto {
   projectId: string
@@ -49,7 +46,7 @@ function mapSimulationListItemDtoToViewModel(
     simulationId?: string
     siteName?: string
     targetUrl?: string
-  }
+  },
 ): SimulationListItemViewModel {
   return {
     simulationId: dto.projectId ?? dto.id ?? dto.simulationId ?? "",
@@ -69,9 +66,7 @@ function resolveStatusStep(status: string) {
     case "running":
       return "시뮬레이션 실행"
     case "analyzing":
-      return "결과 분석"
     case "completed":
-      return "결과 분석"
     case "failed":
     case "error":
     case "cancelled":
@@ -88,11 +83,19 @@ function resolveStatusProgress(raw: SimulationStatusApiDto) {
     return 100
   }
 
-  if (normalizedStatus === "failed" || normalizedStatus === "error" || normalizedStatus === "cancelled") {
+  if (
+    normalizedStatus === "failed" ||
+    normalizedStatus === "error" ||
+    normalizedStatus === "cancelled"
+  ) {
     return 100
   }
 
-  if (typeof raw.completed === "number" && typeof raw.total === "number" && raw.total > 0) {
+  if (
+    typeof raw.completed === "number" &&
+    typeof raw.total === "number" &&
+    raw.total > 0
+  ) {
     const ratio = Math.max(0, Math.min(1, raw.completed / raw.total))
 
     if (normalizedStatus === "running") {
@@ -119,7 +122,7 @@ function resolveStatusProgress(raw: SimulationStatusApiDto) {
 
 function mapSimulationStatusResponse(
   simulationId: string,
-  raw: SimulationStatusApiDto
+  raw: SimulationStatusApiDto,
 ): SimulationStatusResponseDto {
   const normalizedStatus = String(raw.status ?? "").toLowerCase()
 
@@ -137,14 +140,11 @@ function mapSimulationStatusResponse(
 
 export const simulationService: SimulationService = {
   async createSimulation(input, userId) {
-    const raw = await requestJson<SimulationCreateResponseApiDto>(
-      "/api/simulations",
-      {
-        method: "POST",
-        query: { userId },
-        body: input,
-      }
-    )
+    const raw = await requestJson<SimulationCreateResponseApiDto>("/api/simulations", {
+      method: "POST",
+      query: { userId },
+      body: input,
+    })
 
     return {
       projectId: raw.projectId,
@@ -154,12 +154,9 @@ export const simulationService: SimulationService = {
     }
   },
   async getSimulationList(userId) {
-    const raw = await requestJson<SimulationListItemDto[]>(
-      "/api/simulations",
-      {
-        query: { userId },
-      }
-    )
+    const raw = await requestJson<SimulationListItemDto[]>("/api/simulations", {
+      query: { userId },
+    })
 
     return raw.map(mapSimulationListItemDtoToViewModel)
   },
@@ -170,7 +167,7 @@ export const simulationService: SimulationService = {
   },
   async getSimulationStatus({ simulationId }: GetSimulationStatusParams) {
     const raw = await requestJson<SimulationStatusApiDto>(
-      `/api/simulations/${simulationId}/status`
+      `/api/simulations/${simulationId}/status`,
     )
 
     return mapSimulationStatusResponse(simulationId, raw)

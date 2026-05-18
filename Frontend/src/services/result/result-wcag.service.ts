@@ -13,12 +13,21 @@ const WCAG_FALLBACK_PATH = "/_mock_wcag.json"
 
 function hasUsableWcagPayload(apiResponse: SimulationWcagApiResponseDto) {
   if ("urls" in apiResponse) {
-    return Object.values(apiResponse.urls).some(
-      (value) => Array.isArray(value.violations) && value.violations.length > 0
-    )
+    return typeof apiResponse.urls === "object" && apiResponse.urls !== null
   }
 
-  return Array.isArray(apiResponse.issues) && apiResponse.issues.length > 0
+  if ("summary" in apiResponse && "distribution" in apiResponse) {
+    return Array.isArray(apiResponse.issues)
+  }
+
+  return (
+    "score" in apiResponse &&
+    "wcagLabel" in apiResponse &&
+    "distributionCritical" in apiResponse &&
+    "distributionModerate" in apiResponse &&
+    "distributionMinor" in apiResponse &&
+    Array.isArray(apiResponse.issues)
+  )
 }
 
 async function getWcagFallback(simulationId: string) {

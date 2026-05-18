@@ -4,6 +4,7 @@ import { getResultPageScreenshotUrl } from "@/features/result/assets"
 import type {
   SimulationWcagApiResponseDto,
   SimulationWcagBusinessUrlResultDto,
+  SimulationWcagFlatResponseDto,
   SimulationWcagResponseDto,
 } from "@/types/api/simulation/simulation-wcag.response"
 import type { ResultWcagDistributionItemViewModel } from "@/types/view-model/result/result-wcag"
@@ -157,6 +158,45 @@ function toLegacyPages(
   }
 }
 
+function toFlatPages(
+  simulationId: string,
+  raw: Extract<SimulationWcagApiResponseDto, SimulationWcagFlatResponseDto>
+): ResultWcagViewModel {
+  const issues = raw.issues.map((issue) => ({
+    issueType: "wcag" as const,
+    wcagIssueId: issue.wcagIssueId,
+    title: issue.title,
+    severity: adaptWcagSeverity(issue.severity),
+    description: issue.description,
+    htmlElement: issue.html ?? issue.selector,
+    wcagCriteria: issue.wcagCriteria ?? issue.wcag_criteria,
+  }))
+
+  return {
+    pages: [
+      {
+        ...createResultPageSummary({
+          simulationId,
+          order: 1,
+          pageName: "?꾩껜 ?섏씠吏",
+          pageUrl: undefined,
+          screenshotUrl: undefined,
+          totalCount: issues.length,
+          totalCountType: "wcag-issues",
+          metaText: `${issues.length}건 WCAG 이슈`,
+        }),
+        summary: deriveSummaryFromViolations(raw.score, raw.wcagLabel, issues.length),
+        distribution: buildDistributionItems({
+          critical: raw.distributionCritical,
+          moderate: raw.distributionModerate,
+          minor: raw.distributionMinor,
+        }),
+        issues,
+      },
+    ],
+  }
+}
+
 export function adaptWcagResponseToViewModel(
   simulationId: string,
   raw: SimulationWcagApiResponseDto
@@ -167,6 +207,17 @@ export function adaptWcagResponseToViewModel(
 
   if ("summary" in raw && "distribution" in raw && Array.isArray(raw.issues)) {
     return toLegacyPages(simulationId, raw)
+  }
+
+  if (
+    "score" in raw &&
+    "wcagLabel" in raw &&
+    "distributionCritical" in raw &&
+    "distributionModerate" in raw &&
+    "distributionMinor" in raw &&
+    Array.isArray(raw.issues)
+  ) {
+    return toFlatPages(simulationId, raw)
   }
 
   return { pages: [] }

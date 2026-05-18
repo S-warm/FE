@@ -46,6 +46,9 @@ export interface SimulationWcagIssueDto {
   severity: ApiWcagSeverity
   description: string
   selector?: string
+  html?: string
+  wcagCriteria?: string
+  wcag_criteria?: string
 }
 
 export interface SimulationWcagResponseDto {
@@ -54,6 +57,16 @@ export interface SimulationWcagResponseDto {
   issues: SimulationWcagIssueDto[]
 }
 
+export interface SimulationWcagFlatResponseDto {
+  score: number
+  wcagLabel: string
+  distributionCritical: number
+  distributionModerate: number
+  distributionMinor: number
+  issues: SimulationWcagIssueDto[]
+}
+
 export type SimulationWcagApiResponseDto =
   | SimulationWcagBusinessResponseDto
   | SimulationWcagResponseDto
+  | SimulationWcagFlatResponseDto

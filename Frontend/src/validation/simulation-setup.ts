@@ -18,6 +18,7 @@ export interface SimulationSetupValidationErrors {
   projectTitle?: string
   targetUrl?: string
   endUrl?: string
+  task?: string
   successCondition?: string
   digitalLiteracy?: string
   personaDevice?: string
@@ -58,6 +59,10 @@ export function validateSimulationSetupForm(
     errors.endUrl = "종료 URL을 입력해주세요."
   } else if (!isValidHttpUrl(form.endUrl.trim())) {
     errors.endUrl = "올바른 URL 형식으로 입력해주세요."
+  }
+
+  if (!form.task.trim()) {
+    errors.task = "수행 목표를 입력해주세요."
   }
 
   if (!form.successCondition.trim()) {

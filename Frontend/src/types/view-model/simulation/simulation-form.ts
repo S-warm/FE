@@ -22,6 +22,7 @@ export interface SimulationFormViewModel {
   projectTitle: string
   targetUrl: string
   endUrl: string
+  task: string
   successCondition: string
   digitalLiteracy: SimulationFormDigitalLiteracy
   personaDevice: SimulationFormPersonaDevice

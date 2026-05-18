@@ -52,7 +52,7 @@ export function mapSimulationFormToCreateRequest(
 ): SimulationCreateRequestDto {
   return {
     title: form.projectTitle.trim(),
-    task: form.successCondition.trim(),
+    task: form.task.trim(),
     targetUrl: form.targetUrl.trim(),
     digitalLiteracy: form.digitalLiteracy,
     successCondition: buildSuccessCondition(form.endUrl, urlParams),

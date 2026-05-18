@@ -72,6 +72,7 @@ function SimulationSetupPage() {
   const urlParams = useSimulationSettingsStore((state) => state.urlParams)
 
   const [digitalLiteracy, setDigitalLiteracy] = useState<DigitalLiteracyLevel>("low")
+  const [task, setTask] = useState("")
   const [successCondition, setSuccessCondition] = useState("")
   const [errors, setErrors] = useState<SimulationSetupValidationErrors>({})
   const [ageRatioOpen, setAgeRatioOpen] = useState(true)
@@ -91,6 +92,7 @@ function SimulationSetupPage() {
     projectTitle,
     targetUrl,
     endUrl,
+    task,
     successCondition,
     digitalLiteracy,
     personaDevice,
@@ -134,12 +136,14 @@ function SimulationSetupPage() {
   const trimmedProjectTitle = projectTitle.trim()
   const trimmedTargetUrl = targetUrl.trim()
   const trimmedEndUrl = endUrl.trim()
+  const trimmedTask = task.trim()
   const trimmedSuccessCondition = successCondition.trim()
 
   const canStartSimulation =
     Boolean(trimmedProjectTitle) &&
     Boolean(trimmedTargetUrl) &&
     Boolean(trimmedEndUrl) &&
+    Boolean(trimmedTask) &&
     Boolean(trimmedSuccessCondition) &&
     !createSimulationMutation.isPending
 
@@ -216,6 +220,25 @@ function SimulationSetupPage() {
                 onChange={(event) => {
                   setProjectTitle(event.target.value)
                   setErrors((prev) => ({ ...prev, projectTitle: undefined }))
+                }}
+                variant="default"
+                size="lg"
+                className="h-11 rounded-xl border-border-soft-2 bg-card px-4 text-text-secondary placeholder:text-text-muted"
+              />
+            </div>
+          </section>
+
+          <section className="grid w-full max-w-[760px] gap-4">
+            <div className="grid gap-3">
+              <SetupSectionTitle title="수행 목표" description="AI 에이전트가 수행할 작업을 설명하세요" />
+              <TextField
+                placeholder="예: 로그인 후 상품 검색"
+                value={task}
+                state={errors.task ? "error" : "default"}
+                errorMessage={errors.task || undefined}
+                onChange={(event) => {
+                  setTask(event.target.value)
+                  setErrors((prev) => ({ ...prev, task: undefined }))
                 }}
                 variant="default"
                 size="lg"

@@ -287,4 +287,4 @@ function ResultIssuesPage() {
   )
 }
 
-export default ResultIssues
+export default ResultIssuesPage

@@ -375,4 +375,12 @@ function ResultOverviewPage() {
             heightClassName="h-[240px]"
             yAxisTickFormatter={formatDeclareFailure}
             tooltipFormatter={formatDeclareFailure}
-            emptyTitle="
+            emptyTitle="실패 후 재탐색률 데이터가 없습니다"
+          />
+        </ChartCard>
+      </section>
+    </div>
+  )
+}
+
+export default ResultOverviewPage

@@ -8,7 +8,7 @@
       "ageBand": "70s",
       "count": 11,
       "severity": "HIGH",
-      "errorType": "?ъ슜???쒖씤??遺議?"
+      "errorType": "사용성/시인성 부족"
     },
     {
       "issueId": "issue_0",
@@ -18,7 +18,7 @@
       "ageBand": "70s",
       "count": 5,
       "severity": "MEDIUM",
-      "errorType": "?ъ슜???쒖씤??遺議?"
+      "errorType": "사용성/시인성 부족"
     },
     {
       "issueId": "issue_1",
@@ -28,7 +28,7 @@
       "ageBand": "50s",
       "count": 4,
       "severity": "MEDIUM",
-      "errorType": "?묎렐???대┃ ?곸뿭 遺덈챸??"
+      "errorType": "접근성/클릭 영역 불명확"
     },
     {
       "issueId": "issue_1",
@@ -38,7 +38,7 @@
       "ageBand": "70s",
       "count": 3,
       "severity": "LOW",
-      "errorType": "?묎렐???대┃ ?곸뿭 遺덈챸??"
+      "errorType": "접근성/클릭 영역 불명확"
     }
   ]
 }

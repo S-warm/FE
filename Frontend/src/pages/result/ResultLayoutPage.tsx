@@ -233,3 +233,6 @@ function ResultLayoutPage() {
       </section>
     </AuthLayout>
   )
+}
+
+export default ResultLayoutPage

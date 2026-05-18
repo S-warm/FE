@@ -438,4 +438,4 @@ function ResultWcagPage() {
   )
 }
 
-export default ResultWcagPa
+export default ResultWcagPage

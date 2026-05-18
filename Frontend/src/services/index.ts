@@ -7,4 +7,4 @@ export {
   resultOverviewService,
   resultWcagService,
 } from "@/services/result"
-export { simulationService } from "@/services
+export { simulationService } from "@/services/simulation/simulation.service"

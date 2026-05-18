@@ -636,4 +636,4 @@ function ResultHeatmapPage() {
   )
 }
 
-export default ResultHeatmapPa
+export default ResultHeatmapPage

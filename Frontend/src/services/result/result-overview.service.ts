@@ -53,4 +53,8 @@ export const resultOverviewService: ResultOverviewService = {
       }
 
       // 404 에러는 명시적으로 throw하여 UI에서 에러 상태로 처리
-      // (pr
+      // (production에서도 에러를 알려야 함)
+      throw error
+    }
+  },
+}

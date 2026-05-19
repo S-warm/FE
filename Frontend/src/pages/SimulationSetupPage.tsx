@@ -225,7 +225,7 @@ function SimulationSetupPage() {
                 description="결과 리포트에 표시될 이름"
               />
               <TextField
-                placeholder="예: 네이버 장바구니 시나리오"
+                placeholder="예: Automation Exercise - Product Search Scenario"
                 value={projectTitle}
                 state={errors.projectTitle ? "error" : "default"}
                 errorMessage={errors.projectTitle || undefined}
@@ -235,7 +235,7 @@ function SimulationSetupPage() {
                 }}
                 variant="default"
                 size="lg"
-                className="h-11 rounded-xl border-border-soft-2 bg-card px-4 text-text-secondary placeholder:text-text-muted"
+                className="h-11 rounded-xl border-border-soft-2 bg-card px-4 text-text-secondary placeholder:text-text-muted/45"
               />
             </div>
           </section>
@@ -247,7 +247,7 @@ function SimulationSetupPage() {
                 description="시뮬레이션이 시작되는 페이지"
               />
               <TextField
-                placeholder="시작 URL 링크를 입력해 주세요"
+                placeholder="예: https://automationexercise.com"
                 value={targetUrl}
                 state={errors.targetUrl ? "error" : "default"}
                 errorMessage={errors.targetUrl || undefined}
@@ -257,7 +257,7 @@ function SimulationSetupPage() {
                 }}
                 variant="default"
                 size="lg"
-                className="h-11 rounded-xl border-border-soft-2 bg-card px-4 text-text-secondary placeholder:text-text-muted"
+                className="h-11 rounded-xl border-border-soft-2 bg-card px-4 text-text-secondary placeholder:text-text-muted/45"
               />
             </div>
             <div className="grid gap-3">
@@ -266,7 +266,7 @@ function SimulationSetupPage() {
                 description="시뮬레이션이 도달해야 하는 페이지"
               />
               <TextField
-                placeholder="종료 URL 링크를 입력해 주세요"
+                placeholder="예: https://automationexercise.com/checkout"
                 value={endUrl}
                 state={errors.endUrl ? "error" : "default"}
                 errorMessage={errors.endUrl || undefined}
@@ -276,7 +276,7 @@ function SimulationSetupPage() {
                 }}
                 variant="default"
                 size="lg"
-                className="h-11 rounded-xl border-border-soft-2 bg-card px-4 text-text-secondary placeholder:text-text-muted"
+                className="h-11 rounded-xl border-border-soft-2 bg-card px-4 text-text-secondary placeholder:text-text-muted/45"
               />
             </div>
           </section>
@@ -296,7 +296,7 @@ function SimulationSetupPage() {
                 description="AI 에이전트가 수행할 작업을 설명해 주세요"
               />
               <TextField
-                placeholder="예: 로그인 후 상품 검색"
+                placeholder="예: 홈에서 상품 목록 페이지로 이동한 뒤, 'Blue Top' 상품의 상세 페이지를 열고 장바구니에 추가한다."
                 value={task}
                 state={errors.task ? "error" : "default"}
                 errorMessage={errors.task || undefined}
@@ -306,7 +306,7 @@ function SimulationSetupPage() {
                 }}
                 variant="default"
                 size="lg"
-                className="h-11 rounded-xl border-border-soft-2 bg-card px-4 text-text-secondary placeholder:text-text-muted"
+                className="h-11 rounded-xl border-border-soft-2 bg-card px-4 text-text-secondary placeholder:text-text-muted/45"
               />
             </div>
           </section>

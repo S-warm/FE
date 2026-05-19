@@ -14,10 +14,12 @@ const literacyLabelMap: Record<DigitalLiteracyLevel, string> = {
 function SummaryRow({
   title,
   value,
+  hasValue = true,
   scrollable = false,
 }: {
   title: string
   value: string
+  hasValue?: boolean
   scrollable?: boolean
 }) {
   return (
@@ -25,7 +27,8 @@ function SummaryRow({
       <p className="text-body-14-medium font-semibold text-text-body">{title}</p>
       <p
         className={cn(
-          "rounded-xl bg-surface-muted px-3 py-1.5 text-caption-12-regular leading-5 text-text-secondary",
+          "rounded-xl bg-surface-muted px-3 py-1.5 text-caption-12-regular leading-5 transition-colors",
+          hasValue ? "text-text-secondary" : "text-text-secondary/45",
           scrollable && "h-[44px] overflow-y-auto overscroll-contain"
         )}
       >
@@ -67,12 +70,12 @@ function SimulationSummaryCard({
       )}
     >
       <CardContent className="flex flex-col gap-2.5 py-0 text-left">
-        <SummaryRow title="프로젝트 제목" value={projectTitle.trim() || "네이버 장바구니 시나리오"} />
+        <SummaryRow title="프로젝트 제목" value={projectTitle.trim() || "Automation Exercise - Product Search Scenario"} hasValue={Boolean(projectTitle.trim())} />
         <div className="h-px bg-border-subtle" />
-        <SummaryRow title="시작 URL" value={targetUrl.trim() || "타겟 URL을 입력하세요"} />
+        <SummaryRow title="시작 URL" value={targetUrl.trim() || "https://automationexercise.com"} hasValue={Boolean(targetUrl.trim())} />
         <div className="h-px bg-border-subtle" />
-        <SummaryRow title="종료 URL" value={endUrl.trim() || "종료 URL을 입력하세요"} />
-        <SummaryRow title="URL 파라미터" value={urlParams.trim() || "파라미터 없음"} />
+        <SummaryRow title="종료 URL" value={endUrl.trim() || "https://automationexercise.com/checkout"} hasValue={Boolean(endUrl.trim())} />
+        <SummaryRow title="URL 파라미터" value={urlParams.trim() || "파라미터 없음"} hasValue={Boolean(urlParams.trim())} />
         <SummaryRow title="페르소나 횟수" value={`총 ${personaCount.toLocaleString()}회 시뮬레이션`} />
         <div className="h-px bg-border-subtle" />
         <SummaryRow title="연령대별 횟수" value={ageGroupSummary} scrollable />
@@ -83,7 +86,8 @@ function SimulationSummaryCard({
         <div className="h-px bg-border-subtle" />
         <SummaryRow
           title="수행 목표"
-          value={task.trim() || "로그인 또는 구매 완료 등의 목표를 설정합니다."}
+          value={task.trim() || "홈에서 상품 목록 페이지로 이동한 뒤, 'Blue Top' 상품의 상세 페이지를 열고 장바구니에 추가한다."}
+          hasValue={Boolean(task.trim())}
           scrollable
         />
         <div className="h-px bg-border-subtle" />

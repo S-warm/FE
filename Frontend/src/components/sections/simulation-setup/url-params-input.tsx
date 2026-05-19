@@ -32,7 +32,7 @@ export function UrlParamsInput({
         placeholder={placeholder}
         variant="default"
         size="lg"
-        className="h-11 rounded-xl border-border-soft-2 bg-card px-4 text-text-secondary placeholder:text-text-muted"
+        className="h-11 rounded-xl border-border-soft-2 bg-card px-4 text-text-secondary placeholder:text-text-muted/45"
       />
     </div>
   )

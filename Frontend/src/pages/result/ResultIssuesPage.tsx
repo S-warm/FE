@@ -5,7 +5,6 @@ import { ArrowRight } from "lucide-react"
 
 import { CommonButton } from "@/components/atoms"
 import { DonutChart } from "@/components/charts"
-import { ChipTag } from "@/components/forms"
 import { EmptyState, IssueListSection } from "@/components/sections"
 import { ResultPageSidePanel } from "@/components/sections/result/page-side-panel"
 import { ErrorState, ResultPageSkeleton } from "@/components/states"
@@ -76,9 +75,7 @@ function ResultIssuesPage() {
   const { expandedPageIds, expandPage, togglePage } = useResultPageSidePanelState(
     selectedPageId,
   )
-  const [activeFilters, setActiveFilters] = useState<IssueCategoryFilter[]>([
-    ...filterCategories,
-  ])
+  const [activeFilters, setActiveFilters] = useState<IssueCategoryFilter[]>([])
   const issuesSectionRef = useRef<HTMLDivElement>(null)
 
   const selectedPage: ResultIssuesPageViewModel | null =
@@ -97,13 +94,28 @@ function ResultIssuesPage() {
   const filteredIssues = useMemo(() => {
     if (!selectedPage) return []
     if (!activeFilters.length) return selectedPage.issues
-
     return selectedPage.issues.filter((issue) =>
       activeFilters.includes(issue.category as IssueCategoryFilter),
     )
   }, [activeFilters, selectedPage])
 
-  const donut = useMemo(() => buildCategoryDonut(filteredIssues), [filteredIssues])
+  const allDonut = useMemo(() => {
+    // TODO: 실제 데이터 연결 후 buildCategoryDonut(selectedPage?.issues ?? []) 로 교체
+    return [
+      { name: "접근성", count: 2, percent: 20, color: categoryColorMap["접근성"], value: 20 },
+      { name: "사용성", count: 2, percent: 20, color: categoryColorMap["사용성"], value: 20 },
+      { name: "시각요소", count: 6, percent: 40, color: categoryColorMap["시각요소"], value: 40 },
+      { name: "기타", count: 2, percent: 20, color: categoryColorMap["기타"], value: 20 },
+    ] as const
+  }, [])
+
+  const donut = useMemo(
+    () =>
+      activeFilters.length === 0
+        ? [...allDonut]
+        : allDonut.filter((item) => activeFilters.includes(item.name as IssueCategoryFilter)),
+    [allDonut, activeFilters],
+  )
 
   if (isLoading) {
     return <ResultPageSkeleton />
@@ -158,108 +170,60 @@ function ResultIssuesPage() {
             motion.card,
           )}
         >
-          <CardContent className="grid gap-4 px-6 py-5">
-            <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
-              <div className="grid gap-2">
-                <div className="flex flex-wrap items-center gap-2">
-                  <p className="text-caption-12-medium text-text-secondary">
-                    카테고리 필터
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {filterCategories.map((category) => {
-                      const selected = activeFilters.includes(category)
-
-                      return (
-                        <ChipTag
-                          key={category}
-                          selected={selected}
-                          className="h-7 px-2.5 text-[12px]"
-                          onClick={() => {
-                            setActiveFilters((prev) =>
-                              prev.includes(category)
-                                ? prev.filter((item) => item !== category)
-                                : [...prev, category],
-                            )
-                          }}
-                        >
-                          {category}
-                        </ChipTag>
-                      )
-                    })}
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex flex-wrap items-center justify-end gap-2">
-                <CommonButton
-                  size="sm"
-                  variant="secondary"
-                  className="rounded-xl border border-border-soft-2 bg-surface-muted text-text-secondary hover:bg-surface-muted-hover"
-                  onClick={() => navigate(`/result/${resolvedId}/heatmap${search}`)}
-                >
-                  히트맵으로 보기
-                  <ArrowRight className="size-4" />
-                </CommonButton>
-                <CommonButton
-                  size="sm"
-                  variant="secondary"
-                  className="rounded-xl border border-border-soft-2 bg-surface-muted text-text-secondary hover:bg-surface-muted-hover"
-                  onClick={() => {
-                    setActiveFilters([...filterCategories])
-                    issuesSectionRef.current?.scrollIntoView({
-                      behavior: "smooth",
-                      block: "start",
-                    })
-                  }}
-                >
-                  이슈 전체 보기
-                </CommonButton>
-              </div>
+          <CardContent className="relative grid gap-3 px-6 py-4">
+            <div className="flex items-center justify-between">
+              <p className="text-[18px] font-medium text-text-body">카테고리별 분류</p>
+              <CommonButton
+                size="sm"
+                variant="secondary"
+                className="rounded-xl border border-border-soft-2 bg-surface-muted text-text-secondary hover:bg-surface-muted-hover"
+                onClick={() => navigate(`/result/${resolvedId}/heatmap${search}`)}
+              >
+                히트맵으로 보기
+                <ArrowRight className="size-4" />
+              </CommonButton>
             </div>
 
-            <div className="grid gap-3">
-              <p className="text-body-14-medium text-text-body">카테고리별 분류</p>
-              <div className="grid gap-4 md:grid-cols-[280px_minmax(0,1fr)] md:items-start">
-                <div className="h-[200px] min-h-[200px]">
-                  <DonutChart
-                    heightClassName="h-full"
-                    data={donut.map((item) => ({
-                      name: item.name,
-                      value: item.value,
-                      color: item.color,
-                    }))}
-                    emptyDescription="이슈가 연결되면 카테고리 분포가 여기에 표시됩니다."
-                  />
-                </div>
-                <div className="grid gap-2">
-                  {donut.length > 0 ? (
-                    donut.map((item) => (
-                      <div
-                        key={item.name}
-                        className="flex items-center justify-between gap-3"
-                      >
-                        <div className="flex items-center gap-2">
-                          <span
-                            className="size-2.5 rounded-full"
-                            style={{ backgroundColor: item.color }}
-                            aria-hidden="true"
-                          />
-                          <p className="text-caption-12-regular text-text-muted">
-                            {item.name}
-                          </p>
-                        </div>
-                        <p className="text-caption-12-medium text-text-secondary">
-                          {item.count}건 / {item.percent}%
-                        </p>
-                      </div>
-                    ))
-                  ) : (
-                    <p className="text-caption-12-regular text-text-muted">
-                      데이터 없음
-                    </p>
-                  )}
-                </div>
-              </div>
+            <div className="w-full">
+              <DonutChart
+                heightClassName="h-[220px]"
+                outerLabels
+                data={donut.map((item) => ({
+                  name: item.name,
+                  value: item.value,
+                  count: item.count,
+                  color: item.color,
+                }))}
+                emptyDescription="이슈가 연결되면 카테고리 분포가 여기에 표시됩니다."
+              />
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              {filterCategories.map((category) => {
+                const selected = activeFilters.length === 0 || activeFilters.includes(category)
+                const color = categoryColorMap[category]
+                return (
+                  <button
+                    key={category}
+                    onClick={() => {
+                      setActiveFilters((prev) =>
+                        prev.includes(category)
+                          ? prev.filter((item) => item !== category)
+                          : [...prev, category],
+                      )
+                    }}
+                    className={cn(
+                      "flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[13px] font-medium transition-opacity",
+                      selected
+                        ? "border-border-strong bg-card text-text-body"
+                        : "border-border-soft bg-surface-muted text-text-muted opacity-50",
+                    )}
+                  >
+                    <span className="size-2.5 rounded-sm flex-shrink-0" style={{ backgroundColor: color }} />
+                    {category}
+                  </button>
+                )
+              })}
             </div>
           </CardContent>
         </Card>
@@ -270,6 +234,22 @@ function ResultIssuesPage() {
               issues={filteredIssues}
               title="이슈 목록"
               pageUrl={selectedPage.pageUrl}
+              headerAction={
+                <CommonButton
+                  size="sm"
+                  variant="secondary"
+                  className="rounded-xl border border-border-soft-2 bg-surface-muted text-text-secondary hover:bg-surface-muted-hover"
+                  onClick={() => {
+                    setActiveFilters([])
+                    issuesSectionRef.current?.scrollIntoView({
+                      behavior: "smooth",
+                      block: "start",
+                    })
+                  }}
+                >
+                  이슈 전체 보기
+                </CommonButton>
+              }
             />
           ) : (
             <EmptyState

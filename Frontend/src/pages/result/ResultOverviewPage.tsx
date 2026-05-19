@@ -356,14 +356,14 @@ function ResultOverviewPage() {
         </ChartCard>
 
         <ChartCard
-          title="연령대별 실패 후 재탐색률"
+          title="연령대별 탐색 포기율"
           badge={buildHighlightBadge(
             ageStats.map((item) => ({
               ageBand: item.ageBand,
               value: item.avgDeclareFailure ?? 0,
             })),
             "max",
-            "%"
+            "회"
           )}
         >
           <LineTrendChart
@@ -375,7 +375,7 @@ function ResultOverviewPage() {
             heightClassName="h-[240px]"
             yAxisTickFormatter={formatDeclareFailure}
             tooltipFormatter={formatDeclareFailure}
-            emptyTitle="실패 후 재탐색률 데이터가 없습니다"
+            emptyTitle="탐색 포기율 데이터가 없습니다"
           />
         </ChartCard>
       </section>

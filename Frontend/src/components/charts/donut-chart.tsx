@@ -12,6 +12,7 @@ interface DonutChartProps {
   emptyTitle?: string
   emptyDescription?: string
   total?: number
+  outerLabels?: boolean
 }
 
 const RADIAN = Math.PI / 180
@@ -50,12 +51,73 @@ function renderCustomLabel({
   )
 }
 
+function renderOuterLabel({
+  cx,
+  cy,
+  midAngle,
+  innerRadius,
+  outerRadius,
+  name,
+  value,
+  count,
+  fill,
+}: {
+  cx: number
+  cy: number
+  midAngle: number
+  innerRadius: number
+  outerRadius: number
+  name: string
+  value: number
+  count?: number
+  fill?: string
+}) {
+  if (!value) return null
+
+  const innerR = innerRadius + (outerRadius - innerRadius) * 0.5
+  const ix = cx + innerR * Math.cos(-midAngle * RADIAN)
+  const iy = cy + innerR * Math.sin(-midAngle * RADIAN)
+
+  const outerR = outerRadius * 1.15
+  const rawOx = cx + outerR * Math.cos(-midAngle * RADIAN)
+  const rawOy = cy + outerR * Math.sin(-midAngle * RADIAN)
+
+  // 상하로 벗어나는 라벨을 좌우로 당겨옴
+  const vertLimit = outerRadius * 1.0
+  const finalOy = Math.max(cy - vertLimit, Math.min(cy + vertLimit, rawOy))
+  const isConstrained = finalOy !== rawOy
+  const hSign = rawOx >= cx ? 1 : -1
+  const finalOx = isConstrained
+    ? cx + hSign * Math.max(Math.abs(rawOx - cx), outerRadius * 0.75)
+    : rawOx
+
+  const isRight = finalOx > cx
+  const anchor = isRight ? "start" : "end"
+  const rectX = isRight ? finalOx : finalOx - 10
+  const textX = isRight ? finalOx + 14 : finalOx - 14
+  const ox = finalOx
+  const oy = finalOy
+
+  return (
+    <g>
+      <text x={ix} y={iy} textAnchor="middle" dominantBaseline="central" fontSize={11} fontWeight={600} fill="white">
+        {value}%
+      </text>
+      <rect x={rectX} y={oy - 5} width={10} height={10} fill={fill} rx={2} />
+      <text x={textX} y={oy} textAnchor={anchor} dominantBaseline="central" fontSize={14} fill="var(--color-text-muted)">
+        <tspan fontWeight={500} fill="var(--color-text-body)">{name}</tspan>{" "}({count ?? value}건 / {value}%)
+      </text>
+    </g>
+  )
+}
+
 function DonutChart({
   data,
   heightClassName = "h-[220px]",
   emptyTitle,
   emptyDescription,
   total,
+  outerLabels = false,
 }: DonutChartProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [height, setHeight] = useState(220)
@@ -92,7 +154,7 @@ function DonutChart({
   const filteredData = data.filter((d) => (d.count ?? d.value) > 0)
 
   return (
-    <div ref={containerRef} className={cn(heightClassName, "relative w-full flex items-center justify-center")}>
+    <div ref={containerRef} className={cn(heightClassName, "relative w-full flex items-center justify-center", outerLabels && "px-20 py-8")} style={{ overflow: "visible" }}>
       {total !== undefined && (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
           <div className="text-center">
@@ -101,22 +163,22 @@ function DonutChart({
           </div>
         </div>
       )}
-      <ResponsiveContainer width="100%" height={height}>
-        <PieChart style={{ outline: "none" }}>
+      <ResponsiveContainer width="100%" height={height} style={{ overflow: "visible" }}>
+        <PieChart style={{ outline: "none", overflow: "visible" }}>
           <Pie
             data={filteredData}
             dataKey="value"
             nameKey="name"
             cx="50%"
             cy="50%"
-            innerRadius="45%"
-            outerRadius="85%"
+            innerRadius="60%"
+            outerRadius={outerLabels ? "90%" : "88%"}
             stroke="transparent"
             paddingAngle={2}
             cornerRadius={4}
             isAnimationActive
             animationDuration={450}
-            label={renderCustomLabel}
+            label={outerLabels ? renderOuterLabel : renderCustomLabel}
             labelLine={false}
           >
             {filteredData.map((entry) => (

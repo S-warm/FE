@@ -44,7 +44,7 @@ function SimulationSummaryCard({
   ageGroupSummary,
   personaDevice,
   digitalLiteracy,
-  successCondition,
+  task,
   className,
 }: {
   projectTitle: string
@@ -55,7 +55,7 @@ function SimulationSummaryCard({
   ageGroupSummary: string
   personaDevice: PersonaDevice
   digitalLiteracy: DigitalLiteracyLevel
-  successCondition: string
+  task: string
   className?: string
 }) {
   return (
@@ -82,8 +82,8 @@ function SimulationSummaryCard({
         <SummaryRow title="디지털 리터러시" value={literacyLabelMap[digitalLiteracy]} />
         <div className="h-px bg-border-subtle" />
         <SummaryRow
-          title="성공조건"
-          value={successCondition.trim() || "가입 완료 또는 구매 완료를 목표로 설정합니다."}
+          title="수행 목표"
+          value={task.trim() || "로그인 또는 구매 완료 등의 목표를 설정합니다."}
           scrollable
         />
         <div className="h-px bg-border-subtle" />

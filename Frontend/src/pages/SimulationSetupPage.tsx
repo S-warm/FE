@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom"
 import { ChevronDown, Loader2 } from "lucide-react"
 
 import { mapSimulationFormToCreateRequest } from "@/adapters"
-import { TextArea, TextField } from "@/components/atoms"
+import { TextField } from "@/components/atoms"
 import { DonutChart } from "@/components/charts"
 import { RangeSlider, SelectionSelect } from "@/components/forms"
 import { BrandingHeader } from "@/components/sections/auth/branding-header"
@@ -72,7 +72,7 @@ function SimulationSetupPage() {
   const urlParams = useSimulationSettingsStore((state) => state.urlParams)
 
   const [digitalLiteracy, setDigitalLiteracy] = useState<DigitalLiteracyLevel>("low")
-  const [successCondition, setSuccessCondition] = useState("")
+  const [task, setTask] = useState("")
   const [errors, setErrors] = useState<SimulationSetupValidationErrors>({})
   const [ageRatioOpen, setAgeRatioOpen] = useState(true)
   const [advancedSettingsOpen, setAdvancedSettingsOpen] = useState(true)
@@ -92,8 +92,8 @@ function SimulationSetupPage() {
     projectTitle,
     targetUrl,
     endUrl,
-    task: successCondition,
-    successCondition,
+    task,
+    successCondition: task,
     digitalLiteracy,
     personaDevice,
     ageCounts: ageGroupCounts,
@@ -143,13 +143,13 @@ function SimulationSetupPage() {
   const trimmedProjectTitle = projectTitle.trim()
   const trimmedTargetUrl = targetUrl.trim()
   const trimmedEndUrl = endUrl.trim()
-  const trimmedSuccessCondition = successCondition.trim()
+  const trimmedTask = task.trim()
 
   const canStartSimulation =
     Boolean(trimmedProjectTitle) &&
     Boolean(trimmedTargetUrl) &&
     Boolean(trimmedEndUrl) &&
-    Boolean(trimmedSuccessCondition) &&
+    Boolean(trimmedTask) &&
     !createSimulationMutation.isPending
 
   const handleStartSimulation = async () => {
@@ -289,24 +289,26 @@ function SimulationSetupPage() {
             />
           </section>
 
-          <section className="grid w-full max-w-[760px] gap-3">
-            <SetupSectionTitle
-              title="성공 조건"
-              description="시나리오의 최종 완료 지표"
-            />
-            <TextArea
-              placeholder="예: 로그인 완료 후 /mypage 진입"
-              value={successCondition}
-              state={errors.successCondition ? "error" : "default"}
-              errorMessage={errors.successCondition || undefined}
-              onChange={(event) => {
-                setSuccessCondition(event.target.value)
-                setErrors((prev) => ({ ...prev, successCondition: undefined }))
-              }}
-              variant="default"
-              size="md"
-              className="h-[88px] resize-none overflow-y-auto overscroll-contain rounded-2xl border-border-soft-2 bg-card px-4 py-3 text-text-secondary placeholder:text-text-muted"
-            />
+          <section className="grid w-full max-w-[760px] gap-4">
+            <div className="grid gap-3">
+              <SetupSectionTitle
+                title="수행 목표"
+                description="AI 에이전트가 수행할 작업을 설명해 주세요"
+              />
+              <TextField
+                placeholder="예: 로그인 후 상품 검색"
+                value={task}
+                state={errors.task ? "error" : "default"}
+                errorMessage={errors.task || undefined}
+                onChange={(event) => {
+                  setTask(event.target.value)
+                  setErrors((prev) => ({ ...prev, task: undefined }))
+                }}
+                variant="default"
+                size="lg"
+                className="h-11 rounded-xl border-border-soft-2 bg-card px-4 text-text-secondary placeholder:text-text-muted"
+              />
+            </div>
           </section>
 
           <section className="grid w-full max-w-[760px] gap-3">
@@ -617,7 +619,7 @@ function SimulationSetupPage() {
               ageGroupSummary={ageGroupSummary}
               personaDevice={personaDevice}
               digitalLiteracy={digitalLiteracy}
-              successCondition={successCondition}
+              task={task}
               className="rounded-2xl rounded-b-none border-b-0"
             />
             <Card className="rounded-2xl rounded-t-none border border-border-strong bg-surface-subtle py-0 shadow-none ring-0">

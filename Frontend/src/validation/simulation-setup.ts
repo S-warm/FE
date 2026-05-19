@@ -19,7 +19,6 @@ export interface SimulationSetupValidationErrors {
   targetUrl?: string
   endUrl?: string
   task?: string
-  successCondition?: string
   digitalLiteracy?: string
   personaDevice?: string
   ageCounts?: string
@@ -63,10 +62,6 @@ export function validateSimulationSetupForm(
 
   if (!form.task.trim()) {
     errors.task = "수행 목표를 입력해주세요."
-  }
-
-  if (!form.successCondition.trim()) {
-    errors.successCondition = "성공 조건을 입력해주세요."
   }
 
   if (!DIGITAL_LITERACY_VALUES.includes(form.digitalLiteracy)) {

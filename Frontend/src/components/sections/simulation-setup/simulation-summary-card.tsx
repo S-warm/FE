@@ -29,11 +29,35 @@ function SummaryRow({
         className={cn(
           "rounded-xl bg-surface-muted px-3 py-1.5 text-caption-12-regular leading-5 transition-colors",
           hasValue ? "text-text-secondary" : "text-text-secondary/45",
-          scrollable && "h-[44px] overflow-y-auto overscroll-contain"
+          scrollable && "h-[44px] overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
         )}
       >
         {value}
       </p>
+    </div>
+  )
+}
+
+interface AgeGroupItem {
+  name: string
+  count: number
+  color: string
+}
+
+function AgeGroupGrid({ ageGroups }: { ageGroups: AgeGroupItem[] }) {
+  return (
+    <div className="grid gap-1.5 text-left">
+      <p className="text-body-14-medium font-semibold text-text-body">연령대별 횟수</p>
+      <div className="grid grid-cols-2 gap-x-2 gap-y-1 rounded-xl bg-surface-muted px-3 py-2">
+        {ageGroups.map((item) => (
+          <div key={item.name} className="flex items-center gap-1.5">
+            <span className="size-2 flex-shrink-0 rounded-full" style={{ backgroundColor: item.color }} />
+            <span className="text-caption-12-regular text-text-secondary">
+              {item.name}: {item.count.toLocaleString()}명
+            </span>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
@@ -45,6 +69,7 @@ function SimulationSummaryCard({
   urlParams,
   personaCount,
   ageGroupSummary,
+  ageGroups,
   personaDevice,
   digitalLiteracy,
   task,
@@ -56,6 +81,7 @@ function SimulationSummaryCard({
   urlParams: string
   personaCount: number
   ageGroupSummary: string
+  ageGroups?: AgeGroupItem[]
   personaDevice: PersonaDevice
   digitalLiteracy: DigitalLiteracyLevel
   task: string
@@ -64,7 +90,7 @@ function SimulationSummaryCard({
   return (
     <Card
       className={cn(
-        "rounded-2xl border border-border-strong bg-surface-subtle py-3 shadow-none",
+        "rounded-2xl border border-border-strong bg-surface-subtle py-[10.4px] shadow-none",
         motion.card,
         className
       )}
@@ -78,7 +104,11 @@ function SimulationSummaryCard({
         <SummaryRow title="URL 파라미터" value={urlParams.trim() || "파라미터 없음"} hasValue={Boolean(urlParams.trim())} />
         <SummaryRow title="페르소나 횟수" value={`총 ${personaCount.toLocaleString()}회 시뮬레이션`} />
         <div className="h-px bg-border-subtle" />
-        <SummaryRow title="연령대별 횟수" value={ageGroupSummary} scrollable />
+        {ageGroups ? (
+          <AgeGroupGrid ageGroups={ageGroups} />
+        ) : (
+          <SummaryRow title="연령대별 횟수" value={ageGroupSummary} scrollable />
+        )}
         <div className="h-px bg-border-subtle" />
         <SummaryRow title="디바이스" value={personaDeviceLabelMap[personaDevice]} />
         <div className="h-px bg-border-subtle" />

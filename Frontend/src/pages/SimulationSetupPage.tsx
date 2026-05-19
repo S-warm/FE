@@ -632,7 +632,7 @@ function SimulationSetupPage() {
           </section>
         </div>
 
-        <div className="flex self-stretch flex-col gap-5 pt-px xl:sticky xl:top-6">
+        <div className="flex self-stretch flex-col gap-3 pt-px xl:sticky xl:top-6">
           <SetupSectionTitle title="시뮬레이션 요약" />
           <div className="grid gap-0">
             <SimulationSummaryCard
@@ -642,6 +642,7 @@ function SimulationSetupPage() {
               urlParams={urlParams}
               personaCount={personaCount}
               ageGroupSummary={ageGroupSummary}
+              ageGroups={ageDonutData}
               personaDevice={personaDevice}
               digitalLiteracy={digitalLiteracy}
               task={task}

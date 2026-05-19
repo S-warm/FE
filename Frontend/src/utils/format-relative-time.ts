@@ -52,4 +52,22 @@ function formatDateTime(input: string | Date, locale: "ko" | "en" = "ko"): strin
   return `${year}-${month}-${day} ${hours}:${minutes}`
 }
 
-export { formatDateTime, formatRelativeTime }
+const KO_DAYS = ["일", "월", "화", "수", "목", "금", "토"] as const
+
+function formatRelativeWithDate(input: string | Date): string {
+  const date = input instanceof Date ? input : new Date(input)
+  if (Number.isNaN(date.getTime())) return "-"
+
+  const relative = formatRelativeTime(date)
+  const year = date.getFullYear()
+  const month = date.getMonth() + 1
+  const day = date.getDate()
+  const dow = KO_DAYS[date.getDay()]
+
+  const hours = String(date.getHours()).padStart(2, "0")
+  const minutes = String(date.getMinutes()).padStart(2, "0")
+
+  return `${relative} · ${year}년 ${month}월 ${day}일 (${dow}) ${hours}:${minutes}`
+}
+
+export { formatDateTime, formatRelativeTime, formatRelativeWithDate }

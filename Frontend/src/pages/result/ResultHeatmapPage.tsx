@@ -402,6 +402,7 @@ function ResultHeatmapPage() {
       pages.map((page) => ({
         id: page.pageId,
         name: page.pageName,
+        url: page.pageUrl,
         screenshotUrl: page.screenshotUrl || getResultPageScreenshotUrl(page.pageId),
       })),
     [pages],

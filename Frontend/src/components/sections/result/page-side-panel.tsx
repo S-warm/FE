@@ -8,8 +8,22 @@ import { cn } from "@/lib/utils"
 export interface ResultPageSidePanelItem {
   id: string
   name: string
+  url?: string
   screenshotUrl?: string
   metaText?: string
+}
+
+function getDisplayPath(url: string): string {
+  try {
+    const pathname = new URL(url).pathname
+    return decodeURIComponent(pathname)
+  } catch {
+    try {
+      return decodeURIComponent(url)
+    } catch {
+      return url
+    }
+  }
 }
 
 function ScreenshotPreview({
@@ -107,13 +121,15 @@ function ResultPageSidePanel({
                       }
                     }}
                   >
-                    <span
-                      className={cn(
-                        "truncate text-body-14-medium",
-                        isSelected && "font-semibold",
-                      )}
-                    >
-                      {page.name}
+                    <span className="min-w-0 flex flex-col">
+                      <span
+                        className={cn(
+                          "truncate text-body-14-medium",
+                          isSelected && "font-semibold",
+                        )}
+                      >
+                        {page.url ? getDisplayPath(page.url) : page.name}
+                      </span>
                     </span>
                     <button
                       type="button"

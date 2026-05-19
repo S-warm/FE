@@ -12,7 +12,7 @@ import { useSimulationListQuery } from "@/queries"
 import { useAuthStore } from "@/store/auth.store"
 import { useLayoutStore } from "@/store/layout.store"
 import type { SimulationListItemViewModel } from "@/types/view-model/simulation/simulation-list"
-import { formatRelativeTime } from "@/utils/format-relative-time"
+import { formatRelativeWithDate } from "@/utils/format-relative-time"
 
 function AuthSidebar({
   open,
@@ -115,7 +115,7 @@ function AuthSidebar({
                         {item.siteName ?? item.title}
                       </p>
                       <p className="mt-1 text-caption-12-regular text-text-muted">
-                        {formatRelativeTime(item.createdAt)} 쨌 {item.createdAt}
+                        {formatRelativeWithDate(item.createdAt)}
                       </p>
                     </button>
                   )

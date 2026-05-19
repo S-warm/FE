@@ -442,20 +442,15 @@ function SimulationSetupPage() {
                         motion.card,
                       )}
                     >
-                      <CardContent className="grid gap-5">
-                        <div className="flex items-end justify-between gap-3">
-                          <p className="text-body-14-medium text-text-secondary-2">
-                            연령대별 비율
-                          </p>
-                          <p className="text-caption-12-medium text-text-muted">
-                            총 시나리오 {personaCount.toLocaleString()}명
-                          </p>
-                        </div>
-                        <div className="grid gap-3">
+                      <CardContent className="flex h-full flex-col gap-4">
+                        <p className="text-body-14-medium text-text-secondary-2">
+                          연령대별 비율
+                        </p>
+                        <div className="grid gap-2">
                           {ageDonutData.map((item) => (
                             <div key={item.name} className="flex items-center gap-2.5">
                               <span
-                                className="size-2.5 rounded-full"
+                                className="size-2.5 rounded-full flex-shrink-0"
                                 style={{ backgroundColor: item.color }}
                                 aria-hidden
                               />
@@ -465,8 +460,8 @@ function SimulationSetupPage() {
                             </div>
                           ))}
                         </div>
-                        <div className="mx-auto w-full max-w-[220px]">
-                          <DonutChart data={ageDonutData} heightClassName="h-[220px]" />
+                        <div className="mx-auto w-full max-w-[220px] flex-1">
+                          <DonutChart data={ageDonutData} heightClassName="h-full min-h-[160px]" total={personaCount} />
                         </div>
                       </CardContent>
                     </Card>

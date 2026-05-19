@@ -11,6 +11,43 @@ interface DonutChartProps {
   heightClassName?: string
   emptyTitle?: string
   emptyDescription?: string
+  total?: number
+}
+
+const RADIAN = Math.PI / 180
+
+function renderCustomLabel({
+  cx,
+  cy,
+  midAngle,
+  innerRadius,
+  outerRadius,
+  count,
+}: {
+  cx: number
+  cy: number
+  midAngle: number
+  innerRadius: number
+  outerRadius: number
+  count?: number
+}) {
+  if (!count) return null
+  const radius = innerRadius + (outerRadius - innerRadius) * 0.5
+  const x = cx + radius * Math.cos(-midAngle * RADIAN)
+  const y = cy + radius * Math.sin(-midAngle * RADIAN)
+  return (
+    <text
+      x={x}
+      y={y}
+      fill="white"
+      textAnchor="middle"
+      dominantBaseline="central"
+      fontSize={11}
+      fontWeight={600}
+    >
+      {count}명
+    </text>
+  )
 }
 
 function DonutChart({
@@ -18,6 +55,7 @@ function DonutChart({
   heightClassName = "h-[220px]",
   emptyTitle,
   emptyDescription,
+  total,
 }: DonutChartProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [height, setHeight] = useState(220)
@@ -26,15 +64,12 @@ function DonutChart({
     const updateHeight = () => {
       if (containerRef.current) {
         const rect = containerRef.current.getBoundingClientRect()
-        // Ensure minimum height of 200px
         setHeight(Math.max(200, Math.round(rect.height)))
       }
     }
 
-    // Initial measurement
     const timer = setTimeout(updateHeight, 0)
 
-    // Add resize observer
     const resizeObserver = new ResizeObserver(updateHeight)
     if (containerRef.current) {
       resizeObserver.observe(containerRef.current)
@@ -54,32 +89,43 @@ function DonutChart({
     )
   }
 
+  const filteredData = data.filter((d) => (d.count ?? d.value) > 0)
+
   return (
-    <div ref={containerRef} className={cn(heightClassName, "w-full flex items-center justify-center")}>
+    <div ref={containerRef} className={cn(heightClassName, "relative w-full flex items-center justify-center")}>
       <ResponsiveContainer width="100%" height={height}>
         <PieChart>
           <Pie
-            data={data}
+            data={filteredData}
             dataKey="value"
             nameKey="name"
             cx="50%"
-            cy="56%"
-            innerRadius="50%"
-            outerRadius="92%"
+            cy="50%"
+            innerRadius="45%"
+            outerRadius="85%"
             stroke="transparent"
-            paddingAngle={2}
+            paddingAngle={4}
+            cornerRadius={6}
             isAnimationActive
             animationDuration={450}
+            label={renderCustomLabel}
+            labelLine={false}
           >
-            {data.map((entry) => (
+            {filteredData.map((entry) => (
               <Cell key={entry.name} fill={entry.color} />
             ))}
           </Pie>
-          <Tooltip
-            contentStyle={chartTooltipContentStyle}
-          />
+          <Tooltip contentStyle={chartTooltipContentStyle} />
         </PieChart>
       </ResponsiveContainer>
+      {total !== undefined && (
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+          <div className="text-center">
+            <p className="text-[11px] text-text-muted">총 페르소나</p>
+            <p className="mt-1 text-[18px] font-bold leading-none text-text-primary">{total.toLocaleString()}명</p>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -2,6 +2,7 @@ export interface DonutChartDatumViewModel {
   name: string
   value: number
   color?: string
+  count?: number
 }
 
 export interface BarChartDatumViewModel {

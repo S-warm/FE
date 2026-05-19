@@ -104,8 +104,8 @@ function DonutChart({
             innerRadius="45%"
             outerRadius="85%"
             stroke="transparent"
-            paddingAngle={4}
-            cornerRadius={6}
+            paddingAngle={3}
+            cornerRadius={4}
             isAnimationActive
             animationDuration={450}
             label={renderCustomLabel}

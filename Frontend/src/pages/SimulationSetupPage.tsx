@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react"
 import { useNavigate } from "react-router-dom"
 
-import { ChevronDown, Loader2 } from "lucide-react"
+import { ChevronDown, Loader2, Minus, Plus } from "lucide-react"
 
 import { mapSimulationFormToCreateRequest } from "@/adapters"
 import { TextField } from "@/components/atoms"
@@ -362,7 +362,7 @@ function SimulationSetupPage() {
                             <div
                               key={ageGroup.key}
                               className={cn(
-                                "grid gap-2.5 rounded-2xl border px-4 py-2.5 transition-colors md:grid-cols-[minmax(0,1fr)_88px] md:items-center",
+                                "grid gap-2.5 rounded-2xl border px-4 py-2.5 transition-colors md:grid-cols-[minmax(0,1fr)_auto] md:items-center",
                                 isEmpty
                                   ? "border-border-subtle bg-surface-subtle/70"
                                   : "border-border-soft bg-surface-subtle",
@@ -385,50 +385,74 @@ function SimulationSetupPage() {
                                   </p>
                                 </div>
 
-                                <div className="grid items-center gap-3 md:grid-cols-[minmax(0,1fr)_52px]">
-                                  <div className="h-1.5 w-full min-w-0 overflow-hidden rounded-full bg-border-subtle">
-                                    <div
-                                      className={cn(
-                                        "h-full rounded-full transition-[width,opacity] duration-300",
-                                        isEmpty && "opacity-35",
-                                      )}
-                                      style={{
-                                        width: `${percent}%`,
-                                        backgroundColor: ageGroup.color,
-                                      }}
-                                    />
-                                  </div>
-                                  <span className="sr-only">{percent.toFixed(1)}%</span>
+                                <div className="h-1.5 w-full min-w-0 overflow-hidden rounded-full bg-border-subtle">
+                                  <div
+                                    className={cn(
+                                      "h-full rounded-full transition-[width,opacity] duration-300",
+                                      isEmpty && "opacity-35",
+                                    )}
+                                    style={{
+                                      width: `${percent}%`,
+                                      backgroundColor: ageGroup.color,
+                                    }}
+                                  />
                                 </div>
                               </div>
 
-                              <div className="relative md:w-[88px] md:justify-self-end">
-                                <TextField
-                                  type="number"
-                                  min={0}
-                                  step={1}
-                                  inputMode="numeric"
-                                  value={String(ageGroupCounts[ageGroup.key])}
-                                  onChange={(event) =>
-                                    updateAgeGroupCount(ageGroup.key, event.target.value)
+                              <div
+                                className={cn(
+                                  "flex h-9 items-center overflow-hidden rounded-lg border bg-card md:justify-self-end",
+                                  isEmpty ? "border-border-subtle" : "border-border-soft-2",
+                                )}
+                              >
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    updateAgeGroupCount(
+                                      ageGroup.key,
+                                      String(Math.max(0, ageGroupCounts[ageGroup.key] - 1)),
+                                    )
                                   }
-                                  variant="default"
-                                  size="md"
-                                  className={cn(
-                                    "h-9 rounded-lg bg-card px-2.5 pr-7 text-right text-body-14-medium tabular-nums [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-inner-spin-button]:m-0 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-outer-spin-button]:m-0",
-                                    isEmpty
-                                      ? "border-border-subtle text-text-subtle"
-                                      : "border-border-soft-2 text-text-secondary",
-                                  )}
-                                />
-                                <span
-                                  className={cn(
-                                    "pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-caption-12-medium",
-                                    isEmpty ? "text-text-subtle" : "text-text-muted",
-                                  )}
+                                  className="flex h-full w-7 flex-shrink-0 items-center justify-center text-text-muted transition-colors hover:bg-surface-hover-2 hover:text-text-secondary"
                                 >
-                                  명
-                                </span>
+                                  <Minus className="size-3" />
+                                </button>
+                                <div className="relative flex items-center">
+                                  <input
+                                    type="number"
+                                    min={0}
+                                    step={1}
+                                    inputMode="numeric"
+                                    value={String(ageGroupCounts[ageGroup.key])}
+                                    onChange={(event) =>
+                                      updateAgeGroupCount(ageGroup.key, event.target.value)
+                                    }
+                                    className={cn(
+                                      "w-10 bg-transparent text-center text-body-14-medium tabular-nums outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-inner-spin-button]:m-0 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-outer-spin-button]:m-0",
+                                      isEmpty ? "text-text-subtle" : "text-text-secondary",
+                                    )}
+                                  />
+                                  <span
+                                    className={cn(
+                                      "text-caption-12-medium",
+                                      isEmpty ? "text-text-subtle" : "text-text-muted",
+                                    )}
+                                  >
+                                    명
+                                  </span>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    updateAgeGroupCount(
+                                      ageGroup.key,
+                                      String(ageGroupCounts[ageGroup.key] + 1),
+                                    )
+                                  }
+                                  className="flex h-full w-7 flex-shrink-0 items-center justify-center text-text-muted transition-colors hover:bg-surface-hover-2 hover:text-text-secondary"
+                                >
+                                  <Plus className="size-3" />
+                                </button>
                               </div>
                             </div>
                           )

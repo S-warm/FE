@@ -19,20 +19,20 @@ function buildDistributionItems(input: {
     {
       severity: adaptWcagSeverity("Critical"),
       count: input.critical,
-      label: "심각",
+      label: "치명",
       description: "즉시 수정이 필요한 문제",
     },
     {
       severity: adaptWcagSeverity("Moderate"),
       count: input.moderate,
-      label: "중요",
+      label: "보통",
       description: "접근성 저하를 유발하는 문제",
     },
     {
       severity: adaptWcagSeverity("Minor"),
       count: input.minor,
-      label: "경미",
-      description: "개선 시 품질이 높아지는 문제",
+      label: "낮음",
+      description: "개선 여지가 있지만 영향이 낮은 문제",
     },
   ]
 }
@@ -178,7 +178,7 @@ function toFlatPages(
         ...createResultPageSummary({
           simulationId,
           order: 1,
-          pageName: "?꾩껜 ?섏씠吏",
+          pageName: "전체 페이지",
           pageUrl: undefined,
           screenshotUrl: undefined,
           totalCount: issues.length,

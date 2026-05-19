@@ -29,7 +29,8 @@ function BrandingHeader({
         to={homePath}
         aria-label="메인 화면으로 이동"
         className={cn(
-          "inline-flex items-center gap-3 rounded-xl focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50",
+          "group inline-flex items-center gap-3 rounded-xl px-2 py-1.5 transition-all duration-200 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50",
+          "hover:bg-brand-subtle/60 focus-visible:bg-brand-subtle/60",
           align === "left" ? "justify-start" : "justify-center"
         )}
       >
@@ -37,7 +38,10 @@ function BrandingHeader({
           src={swarmIconUrl}
           alt=""
           aria-hidden
-          className={cn(compact ? "h-7 w-7" : "h-10 w-10 sm:h-12 sm:w-12")}
+          className={cn(
+            "transition-transform duration-200 group-hover:scale-[1.02] group-focus-visible:scale-[1.02]",
+            compact ? "h-7 w-7" : "h-10 w-10 sm:h-12 sm:w-12"
+          )}
         />
         <h1
           className={cn(

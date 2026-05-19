@@ -10,7 +10,6 @@ import type { ResultAiFixViewModel } from "@/types/view-model/result/result-ai-f
 
 function normalizeSeverity(
   severity?: SimulationAiFixBusinessItemDto["severity"],
-  title?: string
 ) {
   const normalized = String(severity ?? "").trim().toUpperCase()
 
@@ -18,11 +17,7 @@ function normalizeSeverity(
   if (normalized === "HIGH") return "HIGH" as const
   if (normalized === "MEDIUM") return "MEDIUM" as const
   if (normalized === "LOW") return "LOW" as const
-
-  const issueTitle = String(title ?? "")
-  if (issueTitle.includes("실패")) return "HIGH" as const
-  if (issueTitle.includes("협소")) return "MEDIUM" as const
-  return "MEDIUM" as const
+  return null
 }
 
 function resolvePageName(url: string) {
@@ -65,7 +60,7 @@ function toBusinessPage(
           issueType: "ux" as const,
           issueId: `ai-fix-${index + 1}`,
           title: fix.issue_title,
-          severity: adaptIssueSeverity(normalizeSeverity(fix.severity, fix.issue_title)),
+          severity: adaptIssueSeverity(normalizeSeverity(fix.severity)),
           impactedUsersCount: fix.affectedUsersCount ?? 0,
           beforeCode: fix.before,
           afterCode: fix.after,

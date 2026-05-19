@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useParams } from "react-router-dom"
 import {
   AlertCircle,
@@ -26,30 +26,64 @@ import type {
   ResultWcagPageViewModel,
 } from "@/types/view-model/result/result-wcag"
 
+function resolveErrorDescription(error: unknown, fallback: string) {
+  if (error instanceof Error && error.message.trim()) {
+    return error.message
+  }
+
+  return fallback
+}
+
+function MetricHelpTooltip({
+  label,
+  description,
+}: {
+  label: string
+  description: string
+}) {
+  return (
+    <div className="group/metric-help relative">
+      <button
+        type="button"
+        className="grid size-6 place-items-center rounded-lg transition-colors hover:bg-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+        aria-label={`${label} 설명 보기`}
+      >
+        <AlertCircle className="size-4" />
+      </button>
+      <div className="pointer-events-none absolute right-0 top-8 z-20 w-64 rounded-2xl border border-border-strong bg-card px-3 py-3 text-left opacity-0 shadow-xl transition-all duration-150 group-hover/metric-help:translate-y-0 group-hover/metric-help:opacity-100 group-focus-within/metric-help:translate-y-0 group-focus-within/metric-help:opacity-100 translate-y-1">
+        <p className="text-caption-12-medium text-text-body">{label}</p>
+        <p className="mt-1 text-caption-12-regular leading-relaxed text-text-muted">
+          {description}
+        </p>
+      </div>
+    </div>
+  )
+}
+
 function getSeverityStyle(severity: SeverityTokenViewModel) {
-  switch (severity.raw) {
-    case "Critical":
+  switch (severity.rank) {
+    case 3:
       return {
         bar: "bg-critical-accent",
-        badge: "bg-critical-accent/15 text-critical-text border-critical-accent/30",
-        iconWrapper: "bg-danger-surface text-danger-text",
+        badge: "border-critical-accent/40 bg-danger-surface text-critical-text",
+        iconWrapper: "bg-danger-surface text-critical-text",
         text: "text-critical-text",
         icon: TriangleAlert,
       }
-    case "Moderate":
+    case 2:
       return {
         bar: "bg-moderate-accent",
-        badge: "bg-moderate-accent/20 text-moderate-text border-moderate-accent/40",
-        iconWrapper: "bg-warning-surface text-warning-text",
+        badge: "border-moderate-accent/50 bg-warning-surface text-moderate-text",
+        iconWrapper: "bg-warning-surface text-moderate-text",
         text: "text-moderate-text",
         icon: AlertCircle,
       }
     default:
       return {
-        bar: "bg-minor-accent",
-        badge: "bg-surface-hover text-text-muted border-border-soft-2",
-        iconWrapper: "bg-surface-hover text-text-muted",
-        text: "text-text-muted",
+        bar: "bg-border-soft",
+        badge: "border-border-soft bg-surface-muted text-text-secondary",
+        iconWrapper: "bg-surface-muted text-text-secondary",
+        text: "text-text-secondary",
         icon: ShieldCheck,
       }
   }
@@ -60,11 +94,13 @@ function MetricCard({
   value,
   subtitle,
   icon,
+  helpText,
 }: {
   title: string
   value: string
   subtitle: string
   icon: React.ReactNode
+  helpText: string
 }) {
   return (
     <Card
@@ -81,13 +117,7 @@ function MetricCard({
             </span>
             <p className="text-caption-12-medium">{title}</p>
           </div>
-          <button
-            type="button"
-            className="grid size-6 place-items-center rounded-lg hover:bg-surface-hover"
-            aria-label="자세히 보기"
-          >
-            <AlertCircle className="size-4" />
-          </button>
+          <MetricHelpTooltip label={title} description={helpText} />
         </div>
         <div className="grid gap-1">
           <p className="text-title-24-bold text-text-strong">{value}</p>
@@ -117,7 +147,10 @@ function DistributionBar({
           return (
             <div
               key={item.severity.raw}
-              className={cn("h-full", style.bar)}
+              className={cn(
+                "h-full transition-[width] duration-500 ease-out",
+                style.bar
+              )}
               style={{ width: `${(item.count / total) * 100}%` }}
               aria-label={`${item.label} ${item.count}`}
             />
@@ -130,18 +163,31 @@ function DistributionBar({
 
 function DistributionSummary({
   distribution,
+  activeSeverityRaws,
+  onToggleSeverity,
 }: {
   distribution: ResultWcagDistributionItemViewModel[]
+  activeSeverityRaws: Set<string>
+  onToggleSeverity: (severityRaw: string) => void
 }) {
   return (
     <div className="grid gap-3 md:grid-cols-3">
       {distribution.map((item) => {
         const style = getSeverityStyle(item.severity)
+        const isActive = activeSeverityRaws.has(item.severity.raw)
 
         return (
-          <div
+          <button
+            type="button"
             key={item.severity.raw}
-            className="grid place-items-center gap-1 rounded-2xl border border-border-subtle bg-card px-4 py-3"
+            onClick={() => onToggleSeverity(item.severity.raw)}
+            aria-pressed={isActive}
+            className={cn(
+              "grid place-items-center gap-1 rounded-2xl border bg-card px-4 py-3 text-center transition-all",
+              isActive
+                ? "border-border-focus ring-2 ring-ring/30"
+                : "border-border-subtle hover:border-border-strong hover:bg-surface-subtle"
+            )}
           >
             <p className="text-title-24-bold text-text-strong">{item.count}</p>
             <p className={cn("text-caption-12-medium", style.text)}>{item.label}</p>
@@ -152,7 +198,7 @@ function DistributionSummary({
               className={cn("mt-2 h-0.5 w-8 rounded-full", style.bar)}
               aria-hidden="true"
             />
-          </div>
+          </button>
         )
       })}
     </div>
@@ -170,6 +216,37 @@ function DetailIssueRow({
 }) {
   const style = getSeverityStyle(issue.severity)
   const Icon = style.icon
+  const [isCodeExpanded, setIsCodeExpanded] = useState(false)
+  const [copyFeedback, setCopyFeedback] = useState<"idle" | "success" | "error">("idle")
+  const hasLongHtml = (issue.htmlElement?.length ?? 0) > 220
+
+  useEffect(() => {
+    if (copyFeedback === "idle") return
+
+    const timeoutId = window.setTimeout(() => {
+      setCopyFeedback("idle")
+    }, 1500)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [copyFeedback])
+
+  useEffect(() => {
+    if (!expanded) {
+      setIsCodeExpanded(false)
+      setCopyFeedback("idle")
+    }
+  }, [expanded])
+
+  async function handleCopyHtml() {
+    if (!issue.htmlElement) return
+
+    try {
+      await navigator.clipboard.writeText(issue.htmlElement)
+      setCopyFeedback("success")
+    } catch {
+      setCopyFeedback("error")
+    }
+  }
 
   return (
     <Card className="rounded-2xl border border-border-strong bg-card shadow-none">
@@ -230,10 +307,40 @@ function DetailIssueRow({
               </div>
               {issue.htmlElement ? (
                 <div className="rounded-2xl border border-border-subtle bg-surface-subtle px-4 py-3">
-                  <p className="mb-2 text-caption-12-medium text-text-secondary">
-                    관련 HTML 요소
-                  </p>
-                  <code className="block w-full overflow-x-auto break-words whitespace-pre-wrap rounded-xl bg-code-surface p-3 text-[12px] leading-relaxed text-white">
+                  <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-caption-12-medium text-text-secondary">
+                      관련 HTML 요소
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={handleCopyHtml}
+                        className="rounded-lg border border-border-soft bg-card px-2.5 py-1 text-[11px] font-medium text-text-secondary transition-colors hover:bg-surface-hover"
+                      >
+                        {copyFeedback === "success"
+                          ? "복사됨"
+                          : copyFeedback === "error"
+                            ? "복사 실패"
+                            : "복사"}
+                      </button>
+                      {hasLongHtml ? (
+                        <button
+                          type="button"
+                          onClick={() => setIsCodeExpanded((prev) => !prev)}
+                          className="rounded-lg border border-border-soft bg-card px-2.5 py-1 text-[11px] font-medium text-text-secondary transition-colors hover:bg-surface-hover"
+                          aria-expanded={isCodeExpanded}
+                        >
+                          {isCodeExpanded ? "접기" : "펼치기"}
+                        </button>
+                      ) : null}
+                    </div>
+                  </div>
+                  <code
+                    className={cn(
+                      "block w-full overflow-x-auto overflow-y-auto break-words whitespace-pre-wrap rounded-xl bg-code-surface p-3 text-[12px] leading-relaxed text-white transition-[max-height] duration-300",
+                      isCodeExpanded ? "max-h-[420px]" : "max-h-[160px]"
+                    )}
+                  >
                     {issue.htmlElement}
                   </code>
                 </div>
@@ -250,7 +357,8 @@ function ResultWcagPage() {
   const { simulationId } = useParams()
   const resolvedId = simulationId ?? "unknown"
   const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set())
-  const { data, isLoading, isError, refetch } = useResultWcagQuery(resolvedId)
+  const [activeSeverityRaws, setActiveSeverityRaws] = useState<Set<string>>(() => new Set())
+  const { data, error, isLoading, isError, refetch } = useResultWcagQuery(resolvedId)
   const pages = useMemo(() => data?.pages ?? [], [data])
   const pageIds = pages.map((page) => page.pageId)
   const { selectedPageId, setSelectedPageId } = useResultPageParam({
@@ -275,6 +383,41 @@ function ResultWcagPage() {
     [selectedPage],
   )
 
+  const filteredIssues = useMemo(() => {
+    const issues = selectedPage?.issues ?? []
+
+    if (!activeSeverityRaws.size) {
+      return issues
+    }
+
+    return issues.filter((issue) => activeSeverityRaws.has(issue.severity.raw))
+  }, [activeSeverityRaws, selectedPage])
+
+  useEffect(() => {
+    setActiveSeverityRaws(new Set())
+    setExpandedIds(new Set())
+  }, [selectedPageId])
+
+  function handleToggleSeverity(severityRaw: string) {
+    setActiveSeverityRaws((prev) => {
+      const next = new Set(prev)
+
+      if (next.has(severityRaw)) {
+        next.delete(severityRaw)
+      } else {
+        next.add(severityRaw)
+      }
+
+      return next
+    })
+    setExpandedIds(new Set())
+  }
+
+  function handleResetSeverityFilter() {
+    setActiveSeverityRaws(new Set())
+    setExpandedIds(new Set())
+  }
+
   const sidePages = useMemo(
     () =>
       pages.map((page) => ({
@@ -294,7 +437,10 @@ function ResultWcagPage() {
     return (
       <ErrorState
         title="WCAG 데이터를 불러오지 못했습니다"
-        description="잠시 후 다시 시도해 주세요."
+        description={resolveErrorDescription(
+          error,
+          "잠시 후 다시 시도해 주세요."
+        )}
         actionLabel="다시 시도"
         onAction={() => {
           void refetch()
@@ -337,14 +483,16 @@ function ResultWcagPage() {
           <MetricCard
             title="접근성 점수"
             value={`${Math.round(selectedPage?.summary.complianceScore ?? 0)}점`}
-            subtitle=""
+            subtitle="사이트를 누구나 쓸 수 있는 정도"
             icon={<ShieldCheck className="size-4" />}
+            helpText="WCAG 2.1 위반 항목의 심각도를 반영해 계산한 100점 만점 지표"
           />
           <MetricCard
             title="통과한 테스트"
             value={`${selectedPage?.summary.passedTests ?? 0}개`}
-            subtitle=""
+            subtitle="기준을 충족한 항목 수"
             icon={<ClipboardCheck className="size-4" />}
+            helpText="axe-core 검사에서 기준을 충족한 항목 수"
           />
           <Card
             className={cn(
@@ -360,19 +508,18 @@ function ResultWcagPage() {
                   </span>
                   <p className="text-caption-12-medium">발견된 이슈</p>
                 </div>
-                <button
-                  type="button"
-                  className="grid size-6 place-items-center rounded-lg hover:bg-surface-hover"
-                  aria-label="자세히 보기"
-                >
-                  <AlertCircle className="size-4" />
-                </button>
+                <MetricHelpTooltip
+                  label="발견된 이슈"
+                  description="가이드라인 위반으로 탐지된 항목 수"
+                />
               </div>
               <div className="grid gap-1">
                 <p className="text-title-24-bold text-text-strong">
                   {`${selectedPage?.summary.foundIssues ?? 0}개`}
                 </p>
-                <div className="h-5" />
+                <p className="text-caption-12-regular text-text-subtle">
+                  개선이 필요한 항목 수
+                </p>
               </div>
             </CardContent>
           </Card>
@@ -396,15 +543,30 @@ function ResultWcagPage() {
             </div>
 
             <DistributionBar distribution={selectedPage?.distribution ?? []} />
-            <DistributionSummary distribution={selectedPage?.distribution ?? []} />
+            <DistributionSummary
+              distribution={selectedPage?.distribution ?? []}
+              activeSeverityRaws={activeSeverityRaws}
+              onToggleSeverity={handleToggleSeverity}
+            />
           </CardContent>
         </Card>
 
         <section className="grid gap-3">
-          <p className="text-body-14-medium text-text-body">상세 검사 결과</p>
-          {selectedPage && selectedPage.issues.length > 0 ? (
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-body-14-medium text-text-body">상세 검사 결과</p>
+            {activeSeverityRaws.size ? (
+              <button
+                type="button"
+                onClick={handleResetSeverityFilter}
+                className="rounded-full border border-border-soft px-3 py-1.5 text-caption-12-medium text-text-secondary transition-colors hover:bg-surface-hover"
+              >
+                필터 초기화
+              </button>
+            ) : null}
+          </div>
+          {selectedPage && filteredIssues.length > 0 ? (
             <div className="grid gap-3">
-              {selectedPage.issues.map((issue) => {
+              {filteredIssues.map((issue) => {
                 const expanded = expandedIds.has(issue.wcagIssueId)
                 return (
                   <DetailIssueRow
@@ -428,8 +590,12 @@ function ResultWcagPage() {
             </div>
           ) : (
             <EmptyState
-              title="상세 검사 결과가 없습니다"
-              description="표시할 상세 이슈가 없거나 아직 검사 데이터가 연결되지 않았습니다."
+              title={activeSeverityRaws.size ? "선택한 심각도의 이슈가 없습니다" : "상세 검사 결과가 없습니다"}
+              description={
+                activeSeverityRaws.size
+                  ? "다른 심각도 카드를 선택하거나 필터를 해제해 전체 이슈를 확인해 보세요."
+                  : "표시할 상세 이슈가 없거나 아직 검사 데이터가 연결되지 않았습니다."
+              }
             />
           )}
         </section>

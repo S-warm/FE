@@ -46,15 +46,13 @@ function ScreenshotPreview({
   }
 
   return (
-    <div
-      className="flex h-[140px] items-center justify-center overflow-hidden rounded-xl border border-border-strong bg-surface-subtle"
-    >
+    <div className="aspect-[16/10] overflow-hidden rounded-xl border border-border-soft">
       <img
         src={screenshotUrl}
         alt={alt}
         loading="lazy"
         decoding="async"
-        className="max-h-full max-w-full object-contain"
+        className="h-full w-full object-cover"
         onError={() => setFailedScreenshotUrl(screenshotUrl)}
       />
     </div>
@@ -81,11 +79,11 @@ function ResultPageSidePanel({
   return (
     <Card
       className={cn(
-        "h-fit rounded-2xl border border-border-strong bg-card shadow-none",
+        "min-h-full rounded-2xl border-none bg-surface-app shadow-none",
         motion.card,
       )}
     >
-      <CardContent className="grid gap-4 px-4 py-5">
+      <CardContent className="grid gap-3 px-3 py-4">
         {topSlot ? <div>{topSlot}</div> : null}
 
         <div className="grid gap-2">
@@ -101,13 +99,13 @@ function ResultPageSidePanel({
                   className={cn(
                     "rounded-2xl border transition-colors",
                     isSelected
-                      ? "border-border-soft-2 bg-surface-muted hover:bg-surface-muted-hover"
-                      : "border-border-soft bg-surface-subtle hover:bg-surface-hover-2",
+                      ? "border-border-soft-3 bg-card shadow-sm"
+                      : "border-border-soft bg-card hover:bg-surface-hover-2",
                   )}
                 >
                   <div
                     className={cn(
-                      "flex w-full cursor-pointer items-center gap-2 rounded-2xl px-3 py-2 text-left transition-colors",
+                      "flex w-full cursor-pointer items-center gap-2 rounded-2xl px-3 py-3 text-left transition-colors",
                       isSelected
                         ? "text-text-strong"
                         : "text-text-secondary hover:text-text-strong",
@@ -124,8 +122,8 @@ function ResultPageSidePanel({
                     <span className="min-w-0 flex flex-col">
                       <span
                         className={cn(
-                          "truncate text-body-14-medium",
-                          isSelected && "font-semibold",
+                          "truncate text-[16px] font-semibold",
+                          isSelected ? "text-text-strong" : "text-text-body",
                         )}
                       >
                         {page.url ? getDisplayPath(page.url) : page.name}

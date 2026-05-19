@@ -93,8 +93,16 @@ function DonutChart({
 
   return (
     <div ref={containerRef} className={cn(heightClassName, "relative w-full flex items-center justify-center")}>
+      {total !== undefined && (
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+          <div className="text-center">
+            <p className="text-[11px] text-text-muted">총 페르소나</p>
+            <p className="mt-1 text-[18px] font-bold leading-none text-text-primary">{total.toLocaleString()}명</p>
+          </div>
+        </div>
+      )}
       <ResponsiveContainer width="100%" height={height}>
-        <PieChart>
+        <PieChart style={{ outline: "none" }}>
           <Pie
             data={filteredData}
             dataKey="value"
@@ -118,14 +126,6 @@ function DonutChart({
           <Tooltip contentStyle={chartTooltipContentStyle} />
         </PieChart>
       </ResponsiveContainer>
-      {total !== undefined && (
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-          <div className="text-center">
-            <p className="text-[11px] text-text-muted">총 페르소나</p>
-            <p className="mt-1 text-[18px] font-bold leading-none text-text-primary">{total.toLocaleString()}명</p>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

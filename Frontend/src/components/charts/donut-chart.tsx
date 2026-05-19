@@ -25,14 +25,14 @@ function renderCustomLabel({
   outerRadius,
   count,
 }: {
-  cx: number
-  cy: number
-  midAngle: number
-  innerRadius: number
-  outerRadius: number
+  cx?: number
+  cy?: number
+  midAngle?: number
+  innerRadius?: number
+  outerRadius?: number
   count?: number
 }) {
-  if (!count) return null
+  if (!count || cx === undefined || cy === undefined || midAngle === undefined || innerRadius === undefined || outerRadius === undefined) return null
   const radius = innerRadius + (outerRadius - innerRadius) * 0.5
   const x = cx + radius * Math.cos(-midAngle * RADIAN)
   const y = cy + radius * Math.sin(-midAngle * RADIAN)
@@ -62,17 +62,17 @@ function renderOuterLabel({
   count,
   fill,
 }: {
-  cx: number
-  cy: number
-  midAngle: number
-  innerRadius: number
-  outerRadius: number
-  name: string
-  value: number
+  cx?: number
+  cy?: number
+  midAngle?: number
+  innerRadius?: number
+  outerRadius?: number
+  name?: string
+  value?: number
   count?: number
   fill?: string
 }) {
-  if (!value) return null
+  if (!value || cx === undefined || cy === undefined || midAngle === undefined || innerRadius === undefined || outerRadius === undefined || !name) return null
 
   const innerR = innerRadius + (outerRadius - innerRadius) * 0.5
   const ix = cx + innerR * Math.cos(-midAngle * RADIAN)
@@ -95,7 +95,6 @@ function renderOuterLabel({
   const anchor = isRight ? "start" : "end"
   const rectX = isRight ? finalOx : finalOx - 10
   const textX = isRight ? finalOx + 14 : finalOx - 14
-  const ox = finalOx
   const oy = finalOy
 
   return (

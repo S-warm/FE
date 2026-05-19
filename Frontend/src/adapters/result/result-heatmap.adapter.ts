@@ -162,21 +162,27 @@ function toLegacyViewModel(
         metaText: `${page.totalErrorCount}건 오류`,
       }),
       currentAgeGroup: page.currentAgeGroup ?? "all",
-      points: (page.errorPoints ?? []).map((point) => ({
-        issueType: "ux" as const,
-        issueId: point.issueId,
-        x: normalizeAxis(point.x),
-        y: normalizeAxis(point.y),
-        count: point.count,
-        severity: adaptIssueSeverity(point.severity),
-        errorType: point.errorType,
-        affectedUsersCount: point.affectedUsersCount,
-        blockRate: point.blockRate,
-        repeatCount: point.repeatCount,
-        description: point.description,
-        ageBand: point.ageBand,
-        errorBreakdown: point.errorBreakdown,
-      })),
+      points: (page.errorPoints ?? []).map((point) => {
+        const count = point.count ?? 0
+        const errorType = point.errorType ?? ""
+        const ageBand = normalizeAgeBand(point.ageBand ?? "")
+        const maxCount = Math.max(...(page.errorPoints ?? []).map((p) => p.count ?? 0), 1)
+        return {
+          issueType: "ux" as const,
+          issueId: point.issueId,
+          x: normalizeAxis(point.x),
+          y: normalizeAxis(point.y),
+          count,
+          severity: adaptIssueSeverity(point.severity),
+          errorType,
+          affectedUsersCount: point.affectedUsersCount ?? count,
+          blockRate: point.blockRate ?? Number(((count / maxCount) * 100).toFixed(1)),
+          repeatCount: point.repeatCount ?? Number((count / Math.max(1, count / 2)).toFixed(1)),
+          description: point.description ?? `${ageBand === "all" ? "전체" : ageBand} 페르소나에서 ${errorType} 이슈가 ${count}회 관측되었습니다.`,
+          ageBand,
+          errorBreakdown: point.errorBreakdown ?? buildErrorBreakdown(errorType, count),
+        }
+      }),
       pagination: page.pagination ?? {
         totalCount: page.totalErrorCount,
         currentPage: 0,

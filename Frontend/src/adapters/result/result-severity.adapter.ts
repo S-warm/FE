@@ -27,7 +27,7 @@ export function adaptIssueSeverity(severity: unknown): SeverityTokenViewModel {
     case "HIGH":
       return { raw: normalized, tone: "error", label: "높음", rank: 3 }
     case "MEDIUM":
-      return { raw: normalized, tone: "warning", label: "중간", rank: 2 }
+      return { raw: normalized, tone: "warning", label: "보통", rank: 2 }
     case "LOW":
     default:
       return { raw: normalized, tone: "info", label: "낮음", rank: 1 }
@@ -44,6 +44,6 @@ export function adaptWcagSeverity(severity: unknown): SeverityTokenViewModel {
       return { raw: normalized, tone: "warning", label: "보통", rank: 2 }
     case "Minor":
     default:
-      return { raw: normalized, tone: "info", label: "경미", rank: 1 }
+      return { raw: normalized, tone: "info", label: "낮음", rank: 1 }
   }
 }

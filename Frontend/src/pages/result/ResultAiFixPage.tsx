@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react"
 import { useLocation, useParams } from "react-router-dom"
-import { Sparkles, TrendingUp } from "lucide-react"
+import { Check, Copy, Sparkles, TrendingUp } from "lucide-react"
 
 import { StatusBadge } from "@/components/atoms"
 import { EmptyState } from "@/components/sections"
@@ -18,6 +18,14 @@ import type {
   ResultAiFixPageViewModel,
 } from "@/types/view-model/result/result-ai-fix"
 
+function resolveErrorDescription(error: unknown, fallback: string) {
+  if (error instanceof Error && error.message.trim()) {
+    return error.message
+  }
+
+  return fallback
+}
+
 function CodePanel({
   title,
   active,
@@ -27,6 +35,34 @@ function CodePanel({
   active?: boolean
   code: string
 }) {
+  const [isExpanded, setIsExpanded] = useState(false)
+  const [copyFeedback, setCopyFeedback] = useState<"idle" | "success" | "error">("idle")
+  const hasLongCode = code.length > 360
+
+  useEffect(() => {
+    if (copyFeedback === "idle") return
+
+    const timeoutId = window.setTimeout(() => {
+      setCopyFeedback("idle")
+    }, 1500)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [copyFeedback])
+
+  useEffect(() => {
+    setIsExpanded(false)
+    setCopyFeedback("idle")
+  }, [code])
+
+  async function handleCopyCode() {
+    try {
+      await navigator.clipboard.writeText(code)
+      setCopyFeedback("success")
+    } catch {
+      setCopyFeedback("error")
+    }
+  }
+
   return (
     <Card
       className={cn(
@@ -36,15 +72,46 @@ function CodePanel({
       )}
     >
       <CardContent className="flex flex-1 flex-col gap-3 px-5 py-4">
-        <p
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p
+            className={cn(
+              "text-body-14-medium",
+              active ? "text-text-link" : "text-text-body"
+            )}
+          >
+            {title}
+          </p>
+          <div className="flex items-center gap-2">
+            {hasLongCode ? (
+              <button
+                type="button"
+                onClick={() => setIsExpanded((prev) => !prev)}
+                aria-expanded={isExpanded}
+                className="rounded-lg border border-border-soft bg-card px-2.5 py-1 text-[11px] font-medium text-text-secondary transition-colors hover:bg-surface-hover"
+              >
+                {isExpanded ? "접기" : "펼치기"}
+              </button>
+            ) : null}
+          </div>
+        </div>
+        <div
           className={cn(
-            "text-body-14-medium",
-            active ? "text-text-link" : "text-text-body"
+            "relative flex-1 overflow-x-auto overflow-y-auto rounded-2xl bg-code-surface transition-[max-height] duration-300",
+            isExpanded ? "max-h-[520px]" : "max-h-[280px]"
           )}
         >
-          {title}
-        </p>
-        <div className="flex-1 overflow-x-auto overflow-y-auto rounded-2xl bg-code-surface">
+          <button
+            type="button"
+            onClick={handleCopyCode}
+            aria-label="코드 복사"
+            className="absolute right-3 top-3 z-10 grid size-8 place-items-center rounded-lg border border-white/5 bg-white/0 text-white/65 backdrop-blur-sm transition-colors hover:bg-white/5 hover:text-white/90"
+          >
+            {copyFeedback === "success" ? (
+              <Check className="size-4" />
+            ) : (
+              <Copy className="size-4" />
+            )}
+          </button>
           <pre className="h-full whitespace-pre-wrap break-words p-5 text-[13px] leading-relaxed text-white">
             <code>{code}</code>
           </pre>
@@ -71,7 +138,7 @@ function ResultAiFixPage() {
   const location = useLocation()
   const resolvedId = simulationId ?? "unknown"
 
-  const { data, isLoading, isError, refetch } = useResultAiFixQuery(resolvedId)
+  const { data, error, isLoading, isError, refetch } = useResultAiFixQuery(resolvedId)
   const pages = useMemo(() => data?.pages ?? [], [data])
   const pageIds = pages.map((page) => page.pageId)
 
@@ -142,7 +209,10 @@ function ResultAiFixPage() {
     return (
       <ErrorState
         title="AI 수정 제안 데이터를 불러오지 못했습니다"
-        description="잠시 후 다시 시도해 주세요."
+        description={resolveErrorDescription(
+          error,
+          "잠시 후 다시 시도해 주세요."
+        )}
         actionLabel="다시 시도"
         onAction={() => {
           void refetch()
@@ -223,7 +293,10 @@ function ResultAiFixPage() {
                           )}
                         >
                           <div className="flex min-w-0 items-start justify-between gap-3">
-                            <p className="min-w-0 flex-1 truncate text-body-14-medium text-text-body">
+                            <p
+                              title={fix.title}
+                              className="min-w-0 flex-1 text-body-14-medium leading-5 text-text-body line-clamp-2"
+                            >
                               {fix.title}
                             </p>
                             <StatusBadge

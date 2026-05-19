@@ -10,6 +10,16 @@ export interface ResultWcagService {
 }
 
 const WCAG_FALLBACK_PATH = "/_mock_wcag.json"
+const WCAG_ENDPOINT = "/api/simulations/:simulationId/wcag"
+
+function createWcagPayloadError(message: string) {
+  return new ApiServiceError({
+    status: 502,
+    error: "Invalid WCAG Payload",
+    message,
+    path: WCAG_ENDPOINT,
+  })
+}
 
 function hasUsableWcagPayload(apiResponse: SimulationWcagApiResponseDto) {
   if ("urls" in apiResponse) {
@@ -28,6 +38,17 @@ function hasUsableWcagPayload(apiResponse: SimulationWcagApiResponseDto) {
     "distributionMinor" in apiResponse &&
     Array.isArray(apiResponse.issues)
   )
+}
+
+function hasRecognizableWcagPayload(apiResponse: SimulationWcagApiResponseDto) {
+  return ("urls" in apiResponse && typeof apiResponse.urls === "object" && apiResponse.urls !== null) ||
+    ("summary" in apiResponse && "distribution" in apiResponse && Array.isArray(apiResponse.issues)) ||
+    ("score" in apiResponse &&
+      "wcagLabel" in apiResponse &&
+      "distributionCritical" in apiResponse &&
+      "distributionModerate" in apiResponse &&
+      "distributionMinor" in apiResponse &&
+      Array.isArray(apiResponse.issues))
 }
 
 async function getWcagFallback(simulationId: string) {
@@ -49,6 +70,12 @@ export const resultWcagService: ResultWcagService = {
         `/api/simulations/${simulationId}/results/wcag`,
         `/simulations/${simulationId}/wcag`,
       ])
+
+      if (!hasRecognizableWcagPayload(apiResponse)) {
+        throw createWcagPayloadError(
+          "WCAG 응답 형식이 예상과 다릅니다. 서버 payload 구조를 확인해 주세요."
+        )
+      }
 
       if (!hasUsableWcagPayload(apiResponse)) {
         if (import.meta.env.DEV) {

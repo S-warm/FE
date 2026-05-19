@@ -10,13 +10,38 @@ export interface ResultAiFixService {
 }
 
 const AI_FIX_FALLBACK_PATH = "/_mock_AI수정.json"
+const AI_FIX_ENDPOINT = "/api/simulations/:simulationId/ai-fix"
+
+function createAiFixPayloadError(message: string) {
+  return new ApiServiceError({
+    status: 502,
+    error: "Invalid AI Fix Payload",
+    message,
+    path: AI_FIX_ENDPOINT,
+  })
+}
 
 function hasUsableAiFixPayload(apiResponse: SimulationAiFixApiResponseDto) {
   if ("url" in apiResponse) {
-    return Array.isArray(apiResponse.fixes) && apiResponse.fixes.length > 0
+    return Array.isArray(apiResponse.fixes)
   }
 
-  return Array.isArray(apiResponse.pages) && apiResponse.pages.some((page) => page.fixes.length > 0)
+  return Array.isArray(apiResponse.pages)
+}
+
+function hasRecognizableAiFixPayload(apiResponse: SimulationAiFixApiResponseDto) {
+  return ("url" in apiResponse && Array.isArray(apiResponse.fixes)) ||
+    ("pages" in apiResponse && Array.isArray(apiResponse.pages))
+}
+
+function hasCompleteAiFixSeverity(apiResponse: SimulationAiFixApiResponseDto) {
+  if ("url" in apiResponse) {
+    return apiResponse.fixes.every((fix) => typeof fix.severity === "string" && fix.severity.trim())
+  }
+
+  return apiResponse.pages.every((page) =>
+    page.fixes.every((fix) => typeof fix.severity === "string" && fix.severity.trim())
+  )
 }
 
 async function getAiFixFallback(simulationId: string) {
@@ -39,6 +64,18 @@ export const resultAiFixService: ResultAiFixService = {
         `/api/simulations/${simulationId}/ai`,
         `/simulations/${simulationId}/ai-fix`,
       ])
+
+      if (!hasRecognizableAiFixPayload(apiResponse)) {
+        throw createAiFixPayloadError(
+          "AI 수정 응답 형식이 예상과 다릅니다. 서버 payload 구조를 확인해 주세요."
+        )
+      }
+
+      if (!hasCompleteAiFixSeverity(apiResponse)) {
+        throw createAiFixPayloadError(
+          "AI 수정 응답에 severity 값이 누락되었습니다. 서버에서 각 수정안의 severity를 반드시 내려줘야 합니다."
+        )
+      }
 
       if (!hasUsableAiFixPayload(apiResponse)) {
         if (import.meta.env.DEV) {

@@ -210,11 +210,11 @@ function ProcessCard({
       <CardContent className="grid gap-4 px-6 py-5">
         <div className="grid gap-2 md:grid-cols-[auto_1fr_auto] md:items-center">
           <div className="grid gap-1">
-            <p className="text-caption-12-regular text-muted-foreground">시뮬레이션</p>
+            <p className="text-caption-12-regular text-foreground">시뮬레이션</p>
             <p className="text-body-16-medium text-foreground">{simulationTitle}</p>
           </div>
           <div className="grid gap-1">
-            <p className="text-caption-12-regular text-muted-foreground">생성일</p>
+            <p className="text-caption-12-regular text-foreground">생성일</p>
             <p className="text-body-16-regular text-foreground">{simulationCreatedAt}</p>
           </div>
           <div

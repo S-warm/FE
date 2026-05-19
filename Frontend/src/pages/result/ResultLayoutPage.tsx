@@ -67,7 +67,7 @@ function MetaRow({
 }) {
   return (
     <div className="grid grid-cols-[84px_minmax(0,1fr)] items-center gap-3">
-      <p className="text-caption-12-regular text-text-subtle">{label}</p>
+      <p className="text-caption-12-regular text-text-body">{label}</p>
       <div className="min-w-0">{children}</div>
     </div>
   )

@@ -112,7 +112,7 @@ function DonutChart({
             innerRadius="45%"
             outerRadius="85%"
             stroke="transparent"
-            paddingAngle={3}
+            paddingAngle={2}
             cornerRadius={4}
             isAnimationActive
             animationDuration={450}

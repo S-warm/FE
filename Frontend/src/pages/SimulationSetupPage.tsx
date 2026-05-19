@@ -485,7 +485,7 @@ function SimulationSetupPage() {
                                 aria-hidden
                               />
                               <span className="text-caption-12-medium text-text-muted">
-                                {item.name} / {item.count.toLocaleString()}명 / {item.value.toFixed(1)}%
+                                {item.name}: {item.count.toLocaleString()}명 ({item.value.toFixed(1)}%)
                               </span>
                             </div>
                           ))}

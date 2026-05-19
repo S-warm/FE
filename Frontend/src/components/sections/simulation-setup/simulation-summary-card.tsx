@@ -50,7 +50,7 @@ function AgeGroupGrid({ ageGroups }: { ageGroups: AgeGroupItem[] }) {
       <p className="text-body-14-medium font-semibold text-text-body">연령대별 횟수</p>
       <div className="grid grid-cols-2 gap-x-2 gap-y-1 rounded-xl bg-surface-muted px-3 py-2">
         {ageGroups.map((item) => (
-          <div key={item.name} className="flex items-center gap-1.5">
+          <div key={item.name} className={cn("flex items-center gap-1.5 transition-opacity duration-300", item.count === 0 && "opacity-40")}>
             <span className="size-2 flex-shrink-0 rounded-full" style={{ backgroundColor: item.color }} />
             <span className="text-caption-12-regular text-text-secondary">
               {item.name}: {item.count.toLocaleString()}명

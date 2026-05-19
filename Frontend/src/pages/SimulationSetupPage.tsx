@@ -364,7 +364,7 @@ function SimulationSetupPage() {
                               className={cn(
                                 "grid gap-2.5 rounded-2xl border px-4 py-2.5 transition-colors md:grid-cols-[minmax(0,1fr)_auto] md:items-center",
                                 isEmpty
-                                  ? "border-border-subtle bg-surface-subtle/70"
+                                  ? "border-border-subtle bg-surface-subtle/70 opacity-75"
                                   : "border-border-soft bg-surface-subtle",
                               )}
                             >
@@ -472,7 +472,13 @@ function SimulationSetupPage() {
                         </p>
                         <div className="grid gap-2">
                           {ageDonutData.map((item) => (
-                            <div key={item.name} className="flex items-center gap-2.5">
+                            <div
+                              key={item.name}
+                              className={cn(
+                                "flex items-center gap-2.5 transition-opacity duration-300",
+                                item.count === 0 && "opacity-40",
+                              )}
+                            >
                               <span
                                 className="size-2.5 rounded-full flex-shrink-0"
                                 style={{ backgroundColor: item.color }}

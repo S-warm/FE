@@ -353,6 +353,13 @@
   --text-caption-12-regular--font-weight: 400;
 }
 
+@utility scrollbar-hide {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 /* 3) Base layer defaults */
 @layer base {
   * {

@@ -177,7 +177,8 @@ function ResultAiFixPage() {
   }, [pageUrlParam, defaultPageId, pageIds, setSelectedPageId])
 
   const { expandedPageIds, expandPage, togglePage } = useResultPageSidePanelState(
-    selectedPageId
+    selectedPageId,
+    pageIds,
   )
   const selectedPage: ResultAiFixPageViewModel | null =
     pages.find((page) => page.pageId === selectedPageId) ?? pages[0] ?? null

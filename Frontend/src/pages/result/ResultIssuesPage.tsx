@@ -1,7 +1,7 @@
-import { useMemo, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { useLocation, useNavigate, useParams } from "react-router-dom"
 
-import { ArrowRight } from "lucide-react"
+import { ArrowRight, X } from "lucide-react"
 
 import { CommonButton } from "@/components/atoms"
 import { DonutChart } from "@/components/charts"
@@ -58,6 +58,124 @@ function buildCategoryDonut(issues: ResultIssueViewModel[]) {
   })
 }
 
+const severityToneColorMap: Record<string, string> = {
+  error: "#ef4444",
+  warning: "#f59e0b",
+  neutral: "#94a3b8",
+  info: "#94a3b8",
+}
+
+function CategoryPopup({
+  category,
+  issues,
+  color,
+  onClose,
+}: {
+  category: string
+  issues: ResultIssueViewModel[]
+  color: string
+  onClose: () => void
+}) {
+  const severityBar = useMemo(() => {
+    if (!issues.length) return []
+    const groups: Record<string, { label: string; tone: string; count: number }> = {}
+    let total = 0
+    for (const issue of issues) {
+      const { label, tone } = issue.severity
+      if (!groups[label]) groups[label] = { label, tone, count: 0 }
+      groups[label].count += issue.totalFailures
+      total += issue.totalFailures
+    }
+    if (total === 0) return []
+    return Object.values(groups)
+      .sort((a, b) => b.count - a.count)
+      .map((g) => ({
+        name: g.label,
+        value: Math.round((g.count / total) * 100),
+        count: g.count,
+        color: severityToneColorMap[g.tone] ?? "#94a3b8",
+      }))
+  }, [issues])
+
+  const [barAnimated, setBarAnimated] = useState(false)
+  useEffect(() => {
+    setBarAnimated(false)
+    let id2: number
+    const id1 = requestAnimationFrame(() => {
+      id2 = requestAnimationFrame(() => setBarAnimated(true))
+    })
+    return () => {
+      cancelAnimationFrame(id1)
+      cancelAnimationFrame(id2)
+    }
+  }, [category])
+
+  return (
+    <div className="animate-in fade-in-0 slide-in-from-right-3 absolute right-0 top-1/2 z-10 w-[300px] -translate-y-1/2 rounded-2xl border border-border-strong bg-card p-4 shadow-lg duration-200 ease-out">
+      <div className="mb-3 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="size-3 rounded-sm" style={{ backgroundColor: color }} />
+          <p className="text-subtitle-16-semibold text-text-body">{category}</p>
+        </div>
+        <button
+          type="button"
+          onClick={onClose}
+          className="grid size-6 place-items-center rounded-lg text-text-muted transition-colors hover:bg-surface-muted hover:text-text-body"
+        >
+          <X className="size-4" />
+        </button>
+      </div>
+
+      <div className="mb-3">
+          <div className="flex h-2.5 w-full overflow-hidden rounded-full border border-border-strong bg-surface-subtle">
+            {severityBar.length === 0 ? (
+              <div className="h-full w-1 bg-border-strong" />
+            ) : (
+              severityBar.map((item) => (
+                <div
+                  key={item.name}
+                  style={{
+                    width: barAnimated ? `${item.value}%` : "0%",
+                    backgroundColor: item.color,
+                    transition: "width 0.6s cubic-bezier(0.4, 0, 0.2, 1)",
+                  }}
+                />
+              ))
+            )}
+          </div>
+          <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
+            {severityBar.map((item) => (
+              <span key={item.name} className="flex items-center gap-1 text-[12px] text-text-muted">
+                <span className="size-2 shrink-0 rounded-full" style={{ backgroundColor: item.color }} />
+                {item.name} ({item.value}%)
+              </span>
+            ))}
+          </div>
+        </div>
+
+      <div className="grid gap-1.5">
+        {issues.length === 0 ? (
+          <p className="text-caption-12-regular text-text-muted">이슈가 없습니다.</p>
+        ) : (
+          issues.map((issue) => (
+            <div
+              key={issue.issueId}
+              className="flex items-center gap-2 rounded-lg bg-surface-subtle px-2.5 py-2"
+            >
+              <span
+                className="size-2.5 shrink-0 rounded-full"
+                style={{ backgroundColor: severityToneColorMap[issue.severity.tone] ?? "#94a3b8" }}
+              />
+              <p className="min-w-0 flex-1 truncate text-[12px] text-text-body">{issue.title}</p>
+              <span className="shrink-0 text-[11px] text-text-muted">{issue.totalFailures}건</span>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  )
+}
+
 function ResultIssuesPage() {
   const { simulationId } = useParams()
   const navigate = useNavigate()
@@ -74,9 +192,12 @@ function ResultIssuesPage() {
   })
   const { expandedPageIds, expandPage, togglePage } = useResultPageSidePanelState(
     selectedPageId,
+    pageIds,
   )
   const [activeFilters, setActiveFilters] = useState<IssueCategoryFilter[]>([])
+  const [activeCategory, setActiveCategory] = useState<string | null>(null)
   const issuesSectionRef = useRef<HTMLDivElement>(null)
+
 
   const selectedPage: ResultIssuesPageViewModel | null =
     pages.find((page) => page.pageId === selectedPageId) ?? pages[0] ?? null
@@ -100,15 +221,19 @@ function ResultIssuesPage() {
     )
   }, [activeFilters, selectedPage])
 
-  const allDonut = useMemo(() => {
-    // TODO: 실제 데이터 연결 후 buildCategoryDonut(selectedPage?.issues ?? []) 로 교체
-    return [
-      { name: "접근성", count: 2, percent: 20, color: categoryColorMap["접근성"], value: 20 },
-      { name: "사용성", count: 2, percent: 20, color: categoryColorMap["사용성"], value: 20 },
-      { name: "시각요소", count: 6, percent: 40, color: categoryColorMap["시각요소"], value: 40 },
-      { name: "기타", count: 2, percent: 20, color: categoryColorMap["기타"], value: 20 },
-    ] as const
-  }, [])
+  const allDonut = useMemo(
+    () => buildCategoryDonut(selectedPage?.issues ?? []),
+    [selectedPage],
+  )
+
+  const categoryIssues = useMemo(() => {
+    if (!activeCategory || !selectedPage) return []
+    return selectedPage.issues.filter((issue) => issue.category === activeCategory)
+  }, [activeCategory, selectedPage])
+
+  const handleSegmentClick = (name: string | null) => {
+    setActiveCategory(name)
+  }
 
   const donut = useMemo(
     () =>
@@ -185,7 +310,7 @@ function ResultIssuesPage() {
               </CommonButton>
             </div>
 
-            <div className="w-full">
+            <div className="relative">
               <DonutChart
                 heightClassName="h-[220px]"
                 outerLabels
@@ -196,7 +321,17 @@ function ResultIssuesPage() {
                   color: item.color,
                 }))}
                 emptyDescription="이슈가 연결되면 카테고리 분포가 여기에 표시됩니다."
+                activeSegmentName={activeCategory}
+                onSegmentClick={handleSegmentClick}
               />
+              {activeCategory ? (
+                <CategoryPopup
+                  category={activeCategory}
+                  issues={categoryIssues}
+                  color={categoryColorMap[activeCategory as IssueCategoryFilter] ?? "#ccc"}
+                  onClose={() => setActiveCategory(null)}
+                />
+              ) : null}
             </div>
 
             <div className="flex flex-wrap gap-2">

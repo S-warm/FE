@@ -367,6 +367,7 @@ function ResultWcagPage() {
   })
   const { expandedPageIds, expandPage, togglePage } = useResultPageSidePanelState(
     selectedPageId,
+    pageIds,
   )
 
   const selectedPage = useMemo<ResultWcagPageViewModel | null>(

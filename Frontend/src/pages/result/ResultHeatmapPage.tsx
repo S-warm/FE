@@ -376,6 +376,7 @@ function ResultHeatmapPage() {
   })
   const { expandedPageIds, expandPage, togglePage } = useResultPageSidePanelState(
     selectedPageId,
+    pageIds,
   )
 
   const selectedPage = useMemo<ResultHeatmapPageViewModel | null>(

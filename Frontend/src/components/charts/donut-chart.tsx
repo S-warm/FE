@@ -1,8 +1,7 @@
 import { useRef, useEffect, useState } from "react"
-import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts"
+import { Cell, Pie, PieChart, ResponsiveContainer, Sector } from "recharts"
 
 import { cn } from "@/lib/utils"
-import { chartTooltipContentStyle } from "@/components/charts/chart-tooltip"
 import { EmptyState } from "@/components/sections/empty-state"
 import type { DonutChartDatumViewModel } from "@/types/view-model/common/chart"
 
@@ -13,6 +12,8 @@ interface DonutChartProps {
   emptyDescription?: string
   total?: number
   outerLabels?: boolean
+  activeSegmentName?: string | null
+  onSegmentClick?: (name: string | null) => void
 }
 
 const RADIAN = Math.PI / 180
@@ -110,6 +111,30 @@ function renderOuterLabel({
   )
 }
 
+function renderActiveShape(props: {
+  cx: number
+  cy: number
+  innerRadius: number
+  outerRadius: number
+  startAngle: number
+  endAngle: number
+  fill: string
+  [key: string]: unknown
+}) {
+  const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill } = props
+  return (
+    <Sector
+      cx={cx}
+      cy={cy}
+      innerRadius={innerRadius - 2}
+      outerRadius={outerRadius + 10}
+      startAngle={startAngle}
+      endAngle={endAngle}
+      fill={fill}
+    />
+  )
+}
+
 function DonutChart({
   data,
   heightClassName = "h-[220px]",
@@ -117,6 +142,8 @@ function DonutChart({
   emptyDescription,
   total,
   outerLabels = false,
+  activeSegmentName,
+  onSegmentClick,
 }: DonutChartProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [height, setHeight] = useState(220)
@@ -152,8 +179,28 @@ function DonutChart({
 
   const filteredData = data.filter((d) => (d.count ?? d.value) > 0)
 
+  const activeIndex =
+    activeSegmentName != null
+      ? filteredData.findIndex((d) => d.name === activeSegmentName)
+      : -1
+
+  const handleClick = (_: unknown, index: number) => {
+    if (!onSegmentClick) return
+    const clickedName = filteredData[index]?.name
+    onSegmentClick(activeIndex === index ? null : (clickedName ?? null))
+  }
+
   return (
-    <div ref={containerRef} className={cn(heightClassName, "relative w-full flex items-center justify-center", outerLabels && "px-20 py-8")} style={{ overflow: "visible" }}>
+    <div
+      ref={containerRef}
+      className={cn(
+        heightClassName,
+        "relative w-full flex items-center justify-center",
+        outerLabels && "px-20 py-8",
+        onSegmentClick && "cursor-pointer",
+      )}
+      style={{ overflow: "visible" }}
+    >
       {total !== undefined && (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
           <div className="text-center">
@@ -179,12 +226,14 @@ function DonutChart({
             animationDuration={200}
             label={outerLabels ? renderOuterLabel : renderCustomLabel}
             labelLine={false}
+            activeIndex={activeIndex >= 0 ? activeIndex : undefined}
+            activeShape={renderActiveShape}
+            onClick={onSegmentClick ? handleClick : undefined}
           >
             {filteredData.map((entry) => (
               <Cell key={entry.name} fill={entry.color} />
             ))}
           </Pie>
-          <Tooltip contentStyle={chartTooltipContentStyle} />
         </PieChart>
       </ResponsiveContainer>
     </div>

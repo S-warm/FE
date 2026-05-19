@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { AlertCircle, Globe, TrendingUp, X, Zap } from "lucide-react"
 
 import { DonutChart } from "@/components/charts"
@@ -37,10 +37,21 @@ export function IssueDetailPanelNew({
   issue,
   onClose,
 }: IssueDetailPanelNewProps) {
-  const [isAnimating, setIsAnimating] = useState(true)
+  const [isOpen, setIsOpen] = useState(false)
+
+  useEffect(() => {
+    let id2: number
+    const id1 = requestAnimationFrame(() => {
+      id2 = requestAnimationFrame(() => setIsOpen(true))
+    })
+    return () => {
+      cancelAnimationFrame(id1)
+      cancelAnimationFrame(id2)
+    }
+  }, [])
 
   const handleClose = () => {
-    setIsAnimating(false)
+    setIsOpen(false)
     window.setTimeout(() => {
       onClose()
     }, 300)
@@ -59,15 +70,15 @@ export function IssueDetailPanelNew({
       <div
         className={cn(
           "fixed inset-0 z-40 bg-black transition-opacity duration-300",
-          isAnimating ? "opacity-20" : "opacity-0"
+          isOpen ? "opacity-20" : "opacity-0"
         )}
         onClick={handleClose}
       />
 
       <div
         className={cn(
-          "fixed right-0 top-0 z-50 h-full w-full max-w-[600px] overflow-y-auto border-l border-border-strong bg-card shadow-2xl transition-transform duration-300 ease-out",
-          isAnimating ? "translate-x-0" : "translate-x-full"
+          "fixed right-4 top-4 z-50 h-[calc(100%-2rem)] w-full max-w-[600px] overflow-y-auto overscroll-y-contain scrollbar-hide rounded-2xl border border-border-strong bg-card shadow-2xl transition-transform duration-300 ease-out",
+          isOpen ? "translate-x-0" : "translate-x-[calc(100%+2rem)]"
         )}
       >
         <div className="sticky top-0 z-10 border-b border-border-strong bg-card">

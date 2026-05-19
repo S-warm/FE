@@ -177,7 +177,7 @@ function DonutChart({
             paddingAngle={2}
             cornerRadius={4}
             isAnimationActive
-            animationDuration={450}
+            animationDuration={200}
             label={outerLabels ? renderOuterLabel : renderCustomLabel}
             labelLine={false}
           >

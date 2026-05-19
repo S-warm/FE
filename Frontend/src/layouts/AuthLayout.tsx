@@ -36,7 +36,7 @@ function AuthSidebar({
   return (
     <aside
       className={[
-        "fixed inset-y-0 left-0 z-30 overflow-hidden border-r border-border-strong bg-surface-app transition-all duration-300",
+        "fixed inset-y-0 left-0 z-30 overflow-hidden border-r border-border-strong bg-[#fafafa] transition-all duration-300",
         open ? "w-72 sm:w-80" : "w-16 sm:w-[4.5rem]",
       ].join(" ")}
     >
@@ -66,6 +66,7 @@ function AuthSidebar({
       >
         <div className="min-h-0 flex-1">
           <p className="text-caption-12-regular text-text-muted">최근 프로젝트</p>
+          <div className="mt-2 border-b border-border-strong" />
           <div className="mt-3 grid gap-3 overflow-y-auto pr-1">
             {isLoading
               ? Array.from({ length: 4 }).map((_, index) => (

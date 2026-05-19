@@ -97,10 +97,10 @@ function ResultPageSidePanel({
                 <div
                   key={page.id}
                   className={cn(
-                    "rounded-2xl border transition-colors",
+                    "rounded-2xl border-2 transition-colors",
                     isSelected
-                      ? "border-border-soft-3 bg-card shadow-sm"
-                      : "border-border-soft bg-card hover:bg-surface-hover-2",
+                      ? "border-border-focus bg-card shadow-sm"
+                      : "border-transparent bg-card hover:border-border-soft hover:bg-surface-hover-2",
                   )}
                 >
                   <div

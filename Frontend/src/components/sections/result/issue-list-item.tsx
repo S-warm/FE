@@ -54,14 +54,14 @@ export function IssueListItem({
   return (
     <div
       onClick={() => onDetailClick(issue)}
-      className="group grid gap-3 rounded-2xl border border-border-strong bg-card px-5 py-4 shadow-none transition-shadow hover:shadow-md cursor-pointer"
+      className="group grid gap-3 rounded-2xl border border-border-strong bg-card py-4 pl-7 pr-5 shadow-none transition-shadow hover:shadow-md cursor-pointer"
     >
       <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-start">
         <div className="grid gap-2">
-          <div className="flex items-start gap-2">
+          <div className="flex items-start gap-3">
             <span
               className={cn(
-                "mt-0.5 grid size-7 shrink-0 place-items-center rounded-full",
+                "grid size-6 shrink-0 place-items-center rounded-full",
                 severityIconColor
               )}
             >

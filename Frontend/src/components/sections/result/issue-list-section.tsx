@@ -43,9 +43,9 @@ export function IssueListSection({ issues, title = "이슈목록", pageUrl, head
 
   return (
     <>
-      <section className="grid gap-3">
+      <section className="grid gap-2">
         <div className="flex items-center justify-between">
-          <p className="text-body-14-medium text-text-body">{title}</p>
+          <p className="pl-3 text-body-14-medium text-text-body">{title}</p>
           {headerAction}
         </div>
         <div className="grid grid-cols-1 gap-3">

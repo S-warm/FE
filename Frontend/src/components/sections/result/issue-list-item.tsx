@@ -94,7 +94,7 @@ export function IssueListItem({
             </div>
           </div>
 
-          <p className="text-caption-12-regular text-text-muted">
+          <p className="pl-9 text-caption-12-regular text-text-secondary">
             {issue.description}
           </p>
         </div>
@@ -111,9 +111,9 @@ export function IssueListItem({
         </div>
       </div>
 
-      <div className="grid gap-1">
+      <div className="grid gap-1.5 pl-9">
         <p className="text-caption-12-medium text-text-subtle">영향받는 요소</p>
-        <code className="w-full rounded-lg bg-[#fafafa] px-3 py-2 text-[12px] text-text-body">
+        <code className="w-full rounded-lg bg-surface-muted px-3 py-2 text-[12px] font-medium text-text-secondary">
           {issue.selector}
         </code>
       </div>

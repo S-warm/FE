@@ -153,6 +153,7 @@ function StackedBarChart({
           <XAxis
             type="number"
             domain={[0, 100]}
+            ticks={[0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]}
             tick={{ fill: "var(--color-muted-foreground)", fontSize: 11, opacity: 0.6 }}
             tickFormatter={(v) => `${v}%`}
             tickLine={false}
@@ -167,6 +168,14 @@ function StackedBarChart({
             axisLine={false}
           />
           <Tooltip content={<StackedTooltip />} cursor={{ fill: "var(--color-border)", opacity: 0.3 }} />
+          {[10, 20, 30, 40, 50, 60, 70, 80, 90].map((tick) => (
+            <ReferenceLine
+              key={tick}
+              x={tick}
+              stroke="rgba(255,255,255,0.35)"
+              strokeWidth={1.5}
+            />
+          ))}
           {activeSuccess !== null && activeSuccess > 0 && activeSuccess < 100 && (
             <ReferenceLine
               x={activeSuccess}

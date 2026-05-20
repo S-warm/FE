@@ -1,4 +1,4 @@
-import { useMemo } from "react"
+import { useMemo, useState } from "react"
 import { useParams } from "react-router-dom"
 
 import { AlertCircle, Clock, Flag, Users } from "lucide-react"
@@ -8,11 +8,20 @@ import type { StackedBarDatumViewModel } from "@/components/charts"
 import { EmptyState } from "@/components/sections"
 import { ErrorState, PageSkeleton } from "@/components/states"
 import { Card, CardContent } from "@/components/ui/card"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { getAgeBandColor } from "@/lib/age-band-colors"
 import { motion } from "@/lib/motion"
 import { cn } from "@/lib/utils"
 import { useResultOverviewQuery } from "@/queries"
 import type { BarChartDatumViewModel } from "@/types/view-model/common/chart"
+
+type SuccessFailureMode = "all" | "success" | "failure"
 
 
 function MetricCard({
@@ -61,10 +70,12 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 function ChartCard({
   title,
   badge,
+  controls,
   children,
 }: {
   title: string
   badge?: string
+  controls?: React.ReactNode
   children: React.ReactNode
 }) {
   return (
@@ -72,11 +83,14 @@ function ChartCard({
       <CardContent className="grid gap-4 px-6 py-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <p className="text-body-14-medium text-text-body">{title}</p>
-          {badge ? (
-            <div className="rounded-full border border-border-soft bg-surface-subtle px-3 py-1">
-              <p className="text-caption-12-medium text-text-secondary">{badge}</p>
-            </div>
-          ) : null}
+          <div className="flex items-center gap-2">
+            {controls}
+            {badge ? (
+              <div className="rounded-full border border-border-soft bg-surface-subtle px-3 py-1">
+                <p className="text-caption-12-medium text-text-secondary">{badge}</p>
+              </div>
+            ) : null}
+          </div>
         </div>
         {children}
       </CardContent>
@@ -121,6 +135,8 @@ function ResultOverviewPage() {
   const { simulationId } = useParams()
   const resolvedId = simulationId ?? ""
   const { data, isLoading, isError, refetch } = useResultOverviewQuery(resolvedId)
+  const [successFailureMode, setSuccessFailureMode] = useState<SuccessFailureMode>("all")
+  const successFailureModeLabel: Record<SuccessFailureMode, string> = { all: "전체", success: "성공률", failure: "실패율" }
 
   const ageStats = useMemo(() => data?.ageStats ?? [], [data])
 
@@ -132,6 +148,26 @@ function ResultOverviewPage() {
         failure: item.failureRate ?? 0,
         successColor: getAgeBandColor(item.ageBand, "primary"),
         failureColor: getAgeBandColor(item.ageBand, "muted"),
+      })),
+    [ageStats]
+  )
+
+  const successOnlyBars = useMemo<BarChartDatumViewModel[]>(
+    () =>
+      ageStats.map((item) => ({
+        label: item.ageBand,
+        score: item.successRate,
+        color: getAgeBandColor(item.ageBand, "primary"),
+      })),
+    [ageStats]
+  )
+
+  const failureOnlyBars = useMemo<BarChartDatumViewModel[]>(
+    () =>
+      ageStats.map((item) => ({
+        label: item.ageBand,
+        score: item.failureRate ?? 0,
+        color: getAgeBandColor(item.ageBand, "muted"),
       })),
     [ageStats]
   )
@@ -228,12 +264,50 @@ function ResultOverviewPage() {
             "min",
             "%"
           )}
+          controls={
+            <Select value={successFailureMode} onValueChange={(v) => setSuccessFailureMode(v as SuccessFailureMode)}>
+              <SelectTrigger size="sm">
+                <SelectValue>{successFailureModeLabel[successFailureMode]}</SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">전체</SelectItem>
+                <SelectItem value="success">성공률</SelectItem>
+                <SelectItem value="failure">실패율</SelectItem>
+              </SelectContent>
+            </Select>
+          }
         >
-          <StackedBarChart
-            data={successFailureData}
-            heightClassName="h-[280px]"
-            emptyTitle="성공/실패 데이터가 없습니다"
-          />
+          {successFailureMode === "all" && (
+            <StackedBarChart
+              data={successFailureData}
+              heightClassName="h-[280px]"
+              emptyTitle="성공/실패 데이터가 없습니다"
+            />
+          )}
+          {successFailureMode === "success" && (
+            <HorizontalBarChart
+              data={successOnlyBars}
+              heightClassName="h-[280px]"
+              highlightMode="none"
+              domain={[0, 100]}
+              ticks={[0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]}
+              gaugeTicks={[10, 20, 30, 40, 50, 60, 70, 80, 90]}
+              xAxisTickFormatter={(v) => `${v}%`}
+              emptyTitle="성공 데이터가 없습니다"
+            />
+          )}
+          {successFailureMode === "failure" && (
+            <HorizontalBarChart
+              data={failureOnlyBars}
+              heightClassName="h-[280px]"
+              highlightMode="none"
+              domain={[0, 100]}
+              ticks={[0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]}
+              gaugeTicks={[10, 20, 30, 40, 50, 60, 70, 80, 90]}
+              xAxisTickFormatter={(v) => `${v}%`}
+              emptyTitle="실패 데이터가 없습니다"
+            />
+          )}
         </ChartCard>
       </section>
 

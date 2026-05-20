@@ -1,5 +1,5 @@
 import { useRef, useEffect, useState } from "react"
-import { Bar, BarChart, CartesianGrid, Cell, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
+import { Bar, BarChart, CartesianGrid, Cell, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis, type XAxisProps } from "recharts"
 
 import { chartTooltipContentStyle } from "@/components/charts/chart-tooltip"
 import { EmptyState } from "@/components/sections/empty-state"
@@ -13,6 +13,8 @@ interface HorizontalBarChartProps {
   barSize?: number
   highlightMode?: "none" | "min" | "max"
   domain?: [number, number]
+  ticks?: number[]
+  gaugeTicks?: number[]
   xAxisTickFormatter?: (v: number) => string
   emptyTitle?: string
   emptyDescription?: string
@@ -26,6 +28,8 @@ function HorizontalBarChart({
   barSize,
   highlightMode = "none",
   domain,
+  ticks,
+  gaugeTicks,
   xAxisTickFormatter,
   emptyTitle,
   emptyDescription,
@@ -88,6 +92,7 @@ function HorizontalBarChart({
           <XAxis
             type="number"
             domain={domain ?? [0, 100]}
+            ticks={ticks}
             tick={{ fill: "var(--color-muted-foreground)", fontSize: 11, opacity: 0.6 }}
             tickFormatter={xAxisTickFormatter}
             tickLine={false}
@@ -100,6 +105,14 @@ function HorizontalBarChart({
             tick={{ fill: "var(--color-foreground)", fontSize: 12 }}
           />
           <Tooltip contentStyle={chartTooltipContentStyle} />
+          {(gaugeTicks ?? []).map((tick) => (
+            <ReferenceLine
+              key={tick}
+              x={tick}
+              stroke="rgba(255,255,255,0.35)"
+              strokeWidth={1.5}
+            />
+          ))}
           {activeScore !== null && (
             <ReferenceLine
               x={activeScore}

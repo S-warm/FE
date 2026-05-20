@@ -21,8 +21,8 @@ import { cn } from "@/lib/utils"
 import { useResultOverviewQuery } from "@/queries"
 import type { BarChartDatumViewModel } from "@/types/view-model/common/chart"
 
-type SuccessFailureMode = "all" | "success" | "failure"
-
+type ChartLayout = "split" | "combined"
+type ChartType = "bar" | "line"
 
 function MetricCard({
   title,
@@ -38,7 +38,7 @@ function MetricCard({
   icon: React.ReactNode
 }) {
   return (
-    <Card className={cn("rounded-2xl border border-border-strong bg-card shadow-none !overflow-visible", motion.card)}>
+    <Card className={cn("rounded-2xl border border-border-strong bg-card shadow-[0_1px_3px_rgba(0,0,0,0.04)] !overflow-visible", motion.card)}>
       <CardContent className="grid gap-3 px-5 py-4">
         <div className="flex items-center justify-between text-text-subtle">
           <div className="flex items-center gap-2">
@@ -84,11 +84,11 @@ function ChartCard({
   children: React.ReactNode
 }) {
   return (
-    <Card className={cn("rounded-2xl border border-border-strong bg-card shadow-none", motion.card)}>
+    <Card className={cn("rounded-2xl border border-border-strong bg-card shadow-[0_1px_3px_rgba(0,0,0,0.04)]", motion.card)}>
       <CardContent className="grid gap-4 px-6 py-5">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <p className="text-body-14-medium text-text-body">{title}</p>
-          <div className="flex items-center gap-2">
+        <div className="flex items-start justify-between gap-3">
+          <p className="min-w-0 text-body-14-medium text-text-body">{title}</p>
+          <div className="flex shrink-0 items-center gap-2">
             {controls}
             {badge ? (
               <div className="rounded-full border border-border-soft bg-surface-subtle px-3 py-1">
@@ -100,6 +100,20 @@ function ChartCard({
         {children}
       </CardContent>
     </Card>
+  )
+}
+
+function ChartTypeSelect({ value, onChange }: { value: ChartType; onChange: (v: ChartType) => void }) {
+  return (
+    <Select value={value} onValueChange={(v) => onChange(v as ChartType)}>
+      <SelectTrigger size="sm">
+        <SelectValue>{value === "bar" ? "막대형" : "라인형"}</SelectValue>
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="bar">막대형</SelectItem>
+        <SelectItem value="line">라인형</SelectItem>
+      </SelectContent>
+    </Select>
   )
 }
 
@@ -149,8 +163,10 @@ function ResultOverviewPage() {
   const { simulationId } = useParams()
   const resolvedId = simulationId ?? ""
   const { data, isLoading, isError, refetch } = useResultOverviewQuery(resolvedId)
-  const [successFailureMode, setSuccessFailureMode] = useState<SuccessFailureMode>("all")
-  const successFailureModeLabel: Record<SuccessFailureMode, string> = { all: "전체", success: "성공률", failure: "실패율" }
+  const [chartLayout, setChartLayout] = useState<ChartLayout>("split")
+  const [durationChartType, setDurationChartType] = useState<ChartType>("bar")
+  const [actionChartType, setActionChartType] = useState<ChartType>("bar")
+  const [declareChartType, setDeclareChartType] = useState<ChartType>("line")
   const [highlightedBand, setHighlightedBand] = useState<string | null>(null)
 
   const ageStats = useMemo(() => data?.ageStats ?? [], [data])
@@ -162,7 +178,7 @@ function ResultOverviewPage() {
         success: item.successRate,
         failure: item.failureRate ?? 0,
         successColor: getAgeBandColor(item.ageBand, "primary"),
-        failureColor: getAgeBandColor(item.ageBand, "muted"),
+        failureColor: getAgeBandColor(item.ageBand, "failure"),
       })),
     [ageStats]
   )
@@ -182,7 +198,7 @@ function ResultOverviewPage() {
       ageStats.map((item) => ({
         label: item.ageBand,
         score: item.failureRate ?? 0,
-        color: getAgeBandColor(item.ageBand, "muted"),
+        color: getAgeBandColor(item.ageBand, "failure"),
       })),
     [ageStats]
   )
@@ -214,6 +230,33 @@ function ResultOverviewPage() {
         score: item.avgDeclareFailure ?? 0,
         color: getAgeBandColor(item.ageBand, "primary"),
       })),
+    [ageStats]
+  )
+
+  const durationLineData = useMemo(
+    () => ageStats.map((item) => ({
+      label: item.ageBand,
+      value: item.avgDurationMinutes ?? 0,
+      color: getAgeBandColor(item.ageBand, "primary"),
+    })),
+    [ageStats]
+  )
+
+  const actionLineData = useMemo(
+    () => ageStats.map((item) => ({
+      label: item.ageBand,
+      value: item.avgActions ?? 0,
+      color: getAgeBandColor(item.ageBand, "primary"),
+    })),
+    [ageStats]
+  )
+
+  const declareLineData = useMemo(
+    () => ageStats.map((item) => ({
+      label: item.ageBand,
+      avgDeclareFailure: item.avgDeclareFailure ?? 0,
+      color: getAgeBandColor(item.ageBand, "primary"),
+    })),
     [ageStats]
   )
 
@@ -278,64 +321,79 @@ function ResultOverviewPage() {
         <SectionLabel>성과 지표</SectionLabel>
         <ChartCard
           title="연령대별 성공 / 실패율"
-          badge={buildHighlightBadge(
-            ageStats.map((item) => ({ ageBand: item.ageBand, value: item.successRate })),
-            "min",
-            "%"
-          )}
+          badge={
+            chartLayout === "combined"
+              ? buildHighlightBadge(
+                  ageStats.map((item) => ({ ageBand: item.ageBand, value: item.successRate })),
+                  "min",
+                  "%"
+                )
+              : undefined
+          }
           controls={
-            <Select value={successFailureMode} onValueChange={(v) => setSuccessFailureMode(v as SuccessFailureMode)}>
+            <Select value={chartLayout} onValueChange={(v) => setChartLayout(v as ChartLayout)}>
               <SelectTrigger size="sm">
-                <SelectValue>{successFailureModeLabel[successFailureMode]}</SelectValue>
+                <SelectValue>{chartLayout === "split" ? "분리" : "통합"}</SelectValue>
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">전체</SelectItem>
-                <SelectItem value="success">성공률</SelectItem>
-                <SelectItem value="failure">실패율</SelectItem>
+                <SelectItem value="split">분리</SelectItem>
+                <SelectItem value="combined">통합</SelectItem>
               </SelectContent>
             </Select>
           }
         >
-          {successFailureMode === "all" && (
+          {chartLayout === "combined" && (
             <StackedBarChart
               data={successFailureData}
-              heightClassName="h-[280px]"
+              heightClassName="h-[360px]"
               emptyTitle="성공/실패 데이터가 없습니다"
               highlightedLabel={highlightedBand}
               onLabelClick={setHighlightedBand}
             />
           )}
-          {successFailureMode === "success" && (
-            <HorizontalBarChart
-              data={successOnlyBars}
-              heightClassName="h-[280px]"
-              highlightMode="none"
-              domain={[0, 100]}
-              ticks={[0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]}
-              gaugeTicks={[10, 20, 30, 40, 50, 60, 70, 80, 90]}
-              xAxisTickFormatter={(v) => `${v}%`}
-              tooltipLabel="성공률"
-              tooltipFormatter={(v) => `${v}%`}
-              emptyTitle="성공 데이터가 없습니다"
-              highlightedLabel={highlightedBand}
-              onLabelClick={setHighlightedBand}
-            />
-          )}
-          {successFailureMode === "failure" && (
-            <HorizontalBarChart
-              data={failureOnlyBars}
-              heightClassName="h-[280px]"
-              highlightMode="none"
-              domain={[0, 100]}
-              ticks={[0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]}
-              gaugeTicks={[10, 20, 30, 40, 50, 60, 70, 80, 90]}
-              xAxisTickFormatter={(v) => `${v}%`}
-              tooltipLabel="실패율"
-              tooltipFormatter={(v) => `${v}%`}
-              emptyTitle="실패 데이터가 없습니다"
-              highlightedLabel={highlightedBand}
-              onLabelClick={setHighlightedBand}
-            />
+          {chartLayout === "split" && (
+            <div className="grid gap-10 md:grid-cols-2">
+              <div className="grid gap-2">
+                <div className="flex items-center gap-1.5">
+                  <span className="size-2.5 rounded-full" style={{ backgroundColor: getAgeBandColor("40대", "primary") }} />
+                  <p className="text-caption-12-medium text-text-subtle">성공률</p>
+                </div>
+                <HorizontalBarChart
+                  data={successOnlyBars}
+                  heightClassName="h-[280px]"
+                  highlightMode="none"
+                  domain={[0, 100]}
+                  ticks={[0, 25, 50, 75, 100]}
+                  xAxisTickFormatter={(v) => `${v}%`}
+                  tooltipLabel="성공률"
+                  tooltipFormatter={(v) => `${v}%`}
+                  barSize={18}
+                  emptyTitle="성공 데이터가 없습니다"
+                  highlightedLabel={highlightedBand}
+                  onLabelClick={setHighlightedBand}
+                />
+              </div>
+              <div className="grid gap-2">
+                <div className="flex items-center gap-1.5">
+                  <span className="size-2.5 rounded-full" style={{ backgroundColor: getAgeBandColor("40대", "failure") }} />
+                  <p className="text-caption-12-medium text-text-subtle">실패율</p>
+                </div>
+                <HorizontalBarChart
+                  data={failureOnlyBars}
+                  heightClassName="h-[280px]"
+                  highlightMode="none"
+                  domain={[0, 100]}
+                  ticks={[0, 25, 50, 75, 100]}
+                  xAxisTickFormatter={(v) => `${v}%`}
+                  tooltipLabel="실패율"
+                  tooltipFormatter={(v) => `${v}%`}
+                  barSize={18}
+                  emptyTitle="실패 데이터가 없습니다"
+                  highlightedLabel={highlightedBand}
+                  onLabelClick={setHighlightedBand}
+                />
+              </div>
+            </div>
           )}
         </ChartCard>
       </section>
@@ -351,19 +409,37 @@ function ResultOverviewPage() {
               "가장 오래 걸림",
               formatMinutes
             )}
+            controls={<ChartTypeSelect value={durationChartType} onChange={setDurationChartType} />}
           >
-            <HorizontalBarChart
-              data={durationBars}
-              heightClassName="h-[240px]"
-              highlightMode="none"
-              domain={[0, resolveUpperBound(durationBars.map((d) => d.score), 1)]}
-              xAxisTickFormatter={formatMinutes}
-              tooltipLabel="완료 시간"
-              tooltipFormatter={formatDuration}
-              emptyTitle="완료 시간 데이터가 없습니다"
-              highlightedLabel={highlightedBand}
-              onLabelClick={setHighlightedBand}
-            />
+            {durationChartType === "bar" ? (
+              <HorizontalBarChart
+                data={durationBars}
+                heightClassName="h-[240px]"
+                barSize={16}
+                highlightMode="none"
+                domain={[0, resolveUpperBound(durationBars.map((d) => d.score), 1)]}
+                xAxisTickFormatter={formatMinutes}
+                tooltipLabel="완료 시간"
+                tooltipFormatter={formatDuration}
+                emptyTitle="완료 시간 데이터가 없습니다"
+                highlightedLabel={highlightedBand}
+                onLabelClick={setHighlightedBand}
+              />
+            ) : (
+              <LineTrendChart
+                data={durationLineData}
+                dataKey="label"
+                valueKey="value"
+                heightClassName="h-[240px]"
+                domain={[0, resolveUpperBound(durationBars.map((d) => d.score), 1)]}
+                yAxisTickFormatter={formatMinutes}
+                tooltipLabel="완료 시간"
+                tooltipFormatter={formatDuration}
+                emptyTitle="완료 시간 데이터가 없습니다"
+                highlightedLabel={highlightedBand}
+                onLabelClick={setHighlightedBand}
+              />
+            )}
           </ChartCard>
 
           <ChartCard
@@ -373,18 +449,37 @@ function ResultOverviewPage() {
               "가장 많음",
               formatActions
             )}
+            controls={<ChartTypeSelect value={actionChartType} onChange={setActionChartType} />}
           >
-            <LollipopChart
-              data={actionBars}
-              heightClassName="h-[240px]"
-              xAxisTickFormatter={formatActions}
-              valueLabel="평균 액션 수"
-              valueFormatter={formatActions}
-              domain={[0, resolveUpperBound(actionBars.map((d) => d.score), 1)]}
-              emptyTitle="액션 수 데이터가 없습니다"
-              highlightedLabel={highlightedBand}
-              onLabelClick={setHighlightedBand}
-            />
+            {actionChartType === "bar" ? (
+              <HorizontalBarChart
+                data={actionBars}
+                heightClassName="h-[240px]"
+                barSize={16}
+                highlightMode="none"
+                domain={[0, resolveUpperBound(actionBars.map((d) => d.score), 1)]}
+                xAxisTickFormatter={formatActions}
+                tooltipLabel="평균 액션 수"
+                tooltipFormatter={formatActions}
+                emptyTitle="액션 수 데이터가 없습니다"
+                highlightedLabel={highlightedBand}
+                onLabelClick={setHighlightedBand}
+              />
+            ) : (
+              <LineTrendChart
+                data={actionLineData}
+                dataKey="label"
+                valueKey="value"
+                heightClassName="h-[240px]"
+                domain={[0, resolveUpperBound(actionBars.map((d) => d.score), 1)]}
+                yAxisTickFormatter={formatActions}
+                tooltipLabel="평균 액션 수"
+                tooltipFormatter={formatActions}
+                emptyTitle="액션 수 데이터가 없습니다"
+                highlightedLabel={highlightedBand}
+                onLabelClick={setHighlightedBand}
+              />
+            )}
           </ChartCard>
 
           <ChartCard
@@ -394,25 +489,37 @@ function ResultOverviewPage() {
               "max",
               "회"
             )}
+            controls={<ChartTypeSelect value={declareChartType} onChange={setDeclareChartType} />}
           >
-            <LineTrendChart
-              data={ageStats.map((item) => ({
-                label: item.ageBand,
-                avgDeclareFailure: item.avgDeclareFailure ?? 0,
-                color: getAgeBandColor(item.ageBand, "primary"),
-              }))}
-              dataKey="label"
-              valueKey="avgDeclareFailure"
-              stroke="var(--color-primary-main)"
-              domain={[0, resolveUpperBound(ageStats.map((item) => item.avgDeclareFailure ?? 0), 1)]}
-              heightClassName="h-[240px]"
-              yAxisTickFormatter={formatDeclareFailure}
-              tooltipLabel="포기 횟수"
-              tooltipFormatter={formatDeclareFailure}
-              emptyTitle="탐색 포기율 데이터가 없습니다"
-              highlightedLabel={highlightedBand}
-              onLabelClick={setHighlightedBand}
-            />
+            {declareChartType === "line" ? (
+              <LineTrendChart
+                data={declareLineData}
+                dataKey="label"
+                valueKey="avgDeclareFailure"
+                stroke="var(--color-primary-main)"
+                domain={[0, resolveUpperBound(ageStats.map((item) => item.avgDeclareFailure ?? 0), 1)]}
+                heightClassName="h-[240px]"
+                yAxisTickFormatter={formatDeclareFailure}
+                tooltipLabel="포기 횟수"
+                tooltipFormatter={formatDeclareFailure}
+                emptyTitle="탐색 포기율 데이터가 없습니다"
+                highlightedLabel={highlightedBand}
+                onLabelClick={setHighlightedBand}
+              />
+            ) : (
+              <LollipopChart
+                data={declareFailureBars}
+                heightClassName="h-[240px]"
+                barSize={16}
+                xAxisTickFormatter={formatDeclareFailure}
+                valueLabel="포기 횟수"
+                valueFormatter={formatDeclareFailure}
+                domain={[0, resolveUpperBound(declareFailureBars.map((d) => d.score), 1)]}
+                emptyTitle="탐색 포기율 데이터가 없습니다"
+                highlightedLabel={highlightedBand}
+                onLabelClick={setHighlightedBand}
+              />
+            )}
           </ChartCard>
         </div>
       </section>

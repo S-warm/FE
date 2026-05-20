@@ -40,7 +40,7 @@
   --color-neutral-900: #1f1f1f;
 
   /* shadcn-compatible semantic tokens */
-  --background: var(--color-neutral-00);
+  --background: var(--color-neutral-50);
   --foreground: var(--color-neutral-900);
   --card: var(--color-neutral-00);
   --card-foreground: var(--color-neutral-900);

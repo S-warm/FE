@@ -111,14 +111,14 @@ function StackedBarChart({
   const activeSuccess = activeIndex !== null ? data[activeIndex]?.success : null
 
   const renderSuccessLabel = (props: { x?: number; y?: number; width?: number; height?: number; value?: number; index?: number }) => {
-    const { x = 0, y = 0, height: h = 0, value = 0, index = 0 } = props
+    const { x = 0, y = 0, width: w = 0, height: h = 0, value = 0, index = 0 } = props
     if (value < 10) return null
     const entry = data[index]
     if (!entry) return null
     const dimmed = !!highlightedLabel && highlightedLabel !== entry.label
     const textColor = isLightColor(entry.successColor) ? "rgba(0,0,0,0.7)" : "#ffffff"
     return (
-      <text x={x + 8} y={y + h / 2} dy={4} fill={textColor} fontSize={11} fontWeight={600} opacity={dimmed ? 0 : 1}>
+      <text x={x + w / 2} y={y + h / 2} dy={4} textAnchor="middle" fill={textColor} fontSize={11} fontWeight={600} opacity={dimmed ? 0 : 1}>
         {`${value}%`}
       </text>
     )
@@ -132,7 +132,7 @@ function StackedBarChart({
     const dimmed = !!highlightedLabel && highlightedLabel !== entry.label
     const textColor = isLightColor(entry.failureColor) ? "rgba(0,0,0,0.7)" : "#ffffff"
     return (
-      <text x={x + w - 6} y={y + h / 2} dy={4} fill={textColor} fontSize={10} fontWeight={600} textAnchor="end" opacity={dimmed ? 0 : 1}>
+      <text x={x + w / 2} y={y + h / 2} dy={4} textAnchor="middle" fill={textColor} fontSize={10} fontWeight={600} opacity={dimmed ? 0 : 1}>
         {`${value}%`}
       </text>
     )
@@ -145,7 +145,7 @@ function StackedBarChart({
           data={data}
           layout="vertical"
           margin={{ top: 4, right: 8, left: 8, bottom: 4 }}
-          barCategoryGap={10}
+          barCategoryGap="60%"
           onMouseMove={(state) => {
             if (state.activeTooltipIndex !== undefined) setActiveIndex(state.activeTooltipIndex)
           }}
@@ -157,11 +157,11 @@ function StackedBarChart({
           style={{ cursor: onLabelClick ? "pointer" : "default" }}
         >
           <CartesianGrid
-            strokeDasharray="4 4"
+            strokeDasharray="3 3"
             stroke="var(--color-border)"
             horizontal={false}
             vertical={true}
-            opacity={0.85}
+            opacity={0.4}
           />
           <XAxis
             type="number"
@@ -181,32 +181,40 @@ function StackedBarChart({
             axisLine={false}
           />
           <Tooltip content={<StackedTooltip />} cursor={{ fill: "var(--color-border)", opacity: 0.3 }} />
-          {[10, 20, 30, 40, 50, 60, 70, 80, 90].map((tick) => (
-            <ReferenceLine
-              key={tick}
-              x={tick}
-              stroke="rgba(255,255,255,0.35)"
-              strokeWidth={1.5}
-            />
-          ))}
           {activeSuccess !== null && activeSuccess > 0 && activeSuccess < 100 && (
             <ReferenceLine
               x={activeSuccess}
-              stroke="rgba(255,255,255,0.9)"
-              strokeWidth={2}
+              stroke="var(--color-primary-main)"
+              strokeWidth={1.5}
+              strokeDasharray="4 3"
             />
           )}
           <Bar
             dataKey="success"
             stackId="a"
             name="성공"
-            barSize={barSize ?? 22}
+            barSize={barSize ?? 24}
             radius={[8, 0, 0, 8]}
             isAnimationActive={animatedRef.current}
             animationDuration={450}
             onAnimationEnd={() => { animatedRef.current = false }}
             onClick={(barData: StackedBarDatumViewModel) => onLabelClick?.(highlightedLabel === barData.label ? null : barData.label)}
             style={{ cursor: onLabelClick ? "pointer" : "default" }}
+            background={(bgProps: { x?: number; y?: number; width?: number; height?: number; index?: number }) => {
+              const { x = 0, y = 0, width = 0, height = 0, index = 0 } = bgProps
+              if (index % 2 !== 0) return <rect key={index} width={0} height={0} />
+              return (
+                <rect
+                  key={index}
+                  x={x}
+                  y={y - 8}
+                  width={width}
+                  height={height + 16}
+                  fill="rgba(0,0,0,0.03)"
+                  rx={6}
+                />
+              )
+            }}
           >
             {data.map((entry) => (
               <Cell
@@ -223,7 +231,7 @@ function StackedBarChart({
             dataKey="failure"
             stackId="a"
             name="실패"
-            barSize={barSize ?? 22}
+            barSize={barSize ?? 24}
             radius={[0, 8, 8, 0]}
             isAnimationActive={animatedRef.current}
             animationDuration={450}

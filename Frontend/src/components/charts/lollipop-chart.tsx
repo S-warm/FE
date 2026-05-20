@@ -75,6 +75,7 @@ function LollipopTooltip({
 interface LollipopChartProps {
   data: BarChartDatumViewModel[]
   heightClassName?: string
+  barSize?: number
   domain?: [number, number]
   xAxisTickFormatter?: (v: number) => string
   valueLabel?: string
@@ -88,6 +89,7 @@ interface LollipopChartProps {
 function LollipopChart({
   data,
   heightClassName = "h-[240px]",
+  barSize,
   domain,
   xAxisTickFormatter,
   valueLabel,
@@ -138,7 +140,7 @@ function LollipopChart({
           data={data}
           layout="vertical"
           margin={{ top: 4, right: 16, left: 8, bottom: 4 }}
-          barCategoryGap={10}
+          barCategoryGap="30%"
           onMouseMove={(state) => {
             if (state.activeTooltipIndex !== undefined) setActiveIndex(state.activeTooltipIndex)
           }}
@@ -180,7 +182,7 @@ function LollipopChart({
           )}
           <Bar
             dataKey="score"
-            barSize={20}
+            barSize={barSize ?? 24}
             shape={(shapeProps: { x?: number; y?: number; width?: number; height?: number; fill?: string; label?: string }) => (
               <LollipopShape
                 {...shapeProps}

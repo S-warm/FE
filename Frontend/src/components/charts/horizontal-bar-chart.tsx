@@ -1,5 +1,5 @@
 import { useRef, useEffect, useState } from "react"
-import { Bar, BarChart, CartesianGrid, Cell, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis, type XAxisProps } from "recharts"
+import { Bar, BarChart, CartesianGrid, Cell, LabelList, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis, type XAxisProps } from "recharts"
 
 import { chartTooltipContentStyle } from "@/components/charts/chart-tooltip"
 import { EmptyState } from "@/components/sections/empty-state"
@@ -18,6 +18,8 @@ interface HorizontalBarChartProps {
   xAxisTickFormatter?: (v: number) => string
   tooltipLabel?: string
   tooltipFormatter?: (v: number) => string
+  showValueLabel?: boolean
+  valueLabelFormatter?: (v: number) => string
   emptyTitle?: string
   emptyDescription?: string
   highlightedLabel?: string | null
@@ -37,6 +39,8 @@ function HorizontalBarChart({
   xAxisTickFormatter,
   tooltipLabel,
   tooltipFormatter,
+  showValueLabel = false,
+  valueLabelFormatter,
   emptyTitle,
   emptyDescription,
   highlightedLabel,
@@ -90,7 +94,7 @@ function HorizontalBarChart({
           data={data}
           layout="vertical"
           margin={{ top: 4, right: 8, left: 8, bottom: 4 }}
-          barCategoryGap={10}
+          barCategoryGap="30%"
           onMouseMove={(state) => {
             if (state.activeTooltipIndex !== undefined) setActiveIndex(state.activeTooltipIndex)
           }}
@@ -114,8 +118,10 @@ function HorizontalBarChart({
           <YAxis
             type="category"
             dataKey="label"
-            width={92}
+            width={46}
             tick={{ fill: "var(--color-foreground)", fontSize: 12 }}
+            tickLine={false}
+            axisLine={false}
           />
           <Tooltip
             contentStyle={chartTooltipContentStyle}
@@ -144,7 +150,7 @@ function HorizontalBarChart({
             dataKey="score"
             fill={barColor}
             radius={[8, 8, 8, 8]}
-            barSize={barSize}
+            barSize={barSize ?? 24}
             isAnimationActive
             animationDuration={450}
             onClick={(barData: BarChartDatumViewModel) => onLabelClick?.(highlightedLabel === barData.label ? null : barData.label)}
@@ -159,11 +165,46 @@ function HorizontalBarChart({
                   key={`${entry.label}-${index}`}
                   fill={fill}
                   opacity={highlightedLabel && highlightedLabel !== entry.label ? 0.12 : 1}
-                stroke={highlightedLabel === entry.label ? "rgba(255,255,255,0.4)" : "none"}
-                strokeWidth={highlightedLabel === entry.label ? 1.5 : 0}
+                  stroke={highlightedLabel === entry.label ? "rgba(255,255,255,0.4)" : "none"}
+                  strokeWidth={highlightedLabel === entry.label ? 1.5 : 0}
                 />
               )
             })}
+            {showValueLabel && (
+              <LabelList
+                dataKey="score"
+                position="center"
+                content={(props) => {
+                  const { x = 0, y = 0, width: w = 0, height: h = 0, value, index = 0 } = props as { x?: number; y?: number; width?: number; height?: number; value?: number; index?: number }
+                  if (!value || (w as number) < 30) return null
+                  const entry = data[index]
+                  const dimmed = !!highlightedLabel && highlightedLabel !== entry?.label
+                  const fill = entry?.color ?? barColor
+                  const isLight = (() => {
+                    const hex = fill.replace("#", "")
+                    if (hex.length !== 6) return false
+                    const r = parseInt(hex.slice(0, 2), 16)
+                    const g = parseInt(hex.slice(2, 4), 16)
+                    const b = parseInt(hex.slice(4, 6), 16)
+                    return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.55
+                  })()
+                  return (
+                    <text
+                      x={(x as number) + (w as number) / 2}
+                      y={(y as number) + (h as number) / 2}
+                      dy={4}
+                      textAnchor="middle"
+                      fill={isLight ? "rgba(0,0,0,0.7)" : "#ffffff"}
+                      fontSize={11}
+                      fontWeight={600}
+                      opacity={dimmed ? 0 : 1}
+                    >
+                      {valueLabelFormatter ? valueLabelFormatter(value) : value}
+                    </text>
+                  )
+                }}
+              />
+            )}
           </Bar>
         </BarChart>
       </ResponsiveContainer>

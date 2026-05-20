@@ -196,6 +196,7 @@ function ResultIssuesPage() {
   )
   const [activeFilters, setActiveFilters] = useState<IssueCategoryFilter[]>([])
   const [activeCategory, setActiveCategory] = useState<string | null>(null)
+  const [popupCategory, setPopupCategory] = useState<string | null>(null)
   const issuesSectionRef = useRef<HTMLDivElement>(null)
 
 
@@ -227,12 +228,13 @@ function ResultIssuesPage() {
   )
 
   const categoryIssues = useMemo(() => {
-    if (!activeCategory || !selectedPage) return []
-    return selectedPage.issues.filter((issue) => issue.category === activeCategory)
-  }, [activeCategory, selectedPage])
+    if (!popupCategory || !selectedPage) return []
+    return selectedPage.issues.filter((issue) => issue.category === popupCategory)
+  }, [popupCategory, selectedPage])
 
   const handleSegmentClick = (name: string | null) => {
     setActiveCategory(name)
+    setPopupCategory(name)
   }
 
   const donut = useMemo(
@@ -324,12 +326,12 @@ function ResultIssuesPage() {
                 activeSegmentName={activeCategory}
                 onSegmentClick={handleSegmentClick}
               />
-              {activeCategory ? (
+              {popupCategory ? (
                 <CategoryPopup
-                  category={activeCategory}
+                  category={popupCategory}
                   issues={categoryIssues}
-                  color={categoryColorMap[activeCategory as IssueCategoryFilter] ?? "#ccc"}
-                  onClose={() => setActiveCategory(null)}
+                  color={categoryColorMap[popupCategory as IssueCategoryFilter] ?? "#ccc"}
+                  onClose={() => { setPopupCategory(null); setActiveCategory(null) }}
                 />
               ) : null}
             </div>

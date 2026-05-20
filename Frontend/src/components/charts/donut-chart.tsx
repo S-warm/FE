@@ -111,29 +111,6 @@ function renderOuterLabel({
   )
 }
 
-function renderActiveShape(props: {
-  cx: number
-  cy: number
-  innerRadius: number
-  outerRadius: number
-  startAngle: number
-  endAngle: number
-  fill: string
-  [key: string]: unknown
-}) {
-  const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill } = props
-  return (
-    <Sector
-      cx={cx}
-      cy={cy}
-      innerRadius={innerRadius - 2}
-      outerRadius={outerRadius + 10}
-      startAngle={startAngle}
-      endAngle={endAngle}
-      fill={fill}
-    />
-  )
-}
 
 function DonutChart({
   data,
@@ -147,6 +124,8 @@ function DonutChart({
 }: DonutChartProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [height, setHeight] = useState(220)
+  const [animationActive, setAnimationActive] = useState(true)
+  const [hoverIndex, setHoverIndex] = useState(-1)
 
   useEffect(() => {
     const updateHeight = () => {
@@ -190,6 +169,33 @@ function DonutChart({
     onSegmentClick(activeIndex === index ? null : (clickedName ?? null))
   }
 
+  const renderShape = (props: {
+    cx: number
+    cy: number
+    innerRadius: number
+    outerRadius: number
+    startAngle: number
+    endAngle: number
+    fill: string
+    index: number
+    [key: string]: unknown
+  }) => {
+    const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill, index } = props
+    const isActive = index === activeIndex
+    const isHovered = !isActive && index === hoverIndex
+    return (
+      <Sector
+        cx={cx}
+        cy={cy}
+        innerRadius={isActive ? innerRadius - 2 : innerRadius}
+        outerRadius={isActive ? outerRadius + 10 : isHovered ? outerRadius + 4 : outerRadius}
+        startAngle={startAngle}
+        endAngle={endAngle}
+        fill={fill}
+      />
+    )
+  }
+
   return (
     <div
       ref={containerRef}
@@ -222,12 +228,14 @@ function DonutChart({
             stroke="transparent"
             paddingAngle={2}
             cornerRadius={4}
-            isAnimationActive
-            animationDuration={200}
+            isAnimationActive={animationActive}
+            animationDuration={300}
+            onAnimationEnd={() => setAnimationActive(false)}
             label={outerLabels ? renderOuterLabel : renderCustomLabel}
             labelLine={false}
-            activeIndex={activeIndex >= 0 ? activeIndex : undefined}
-            activeShape={renderActiveShape}
+            shape={renderShape}
+            onMouseEnter={(_: unknown, index: number) => setHoverIndex(index)}
+            onMouseLeave={() => setHoverIndex(-1)}
             onClick={onSegmentClick ? handleClick : undefined}
           >
             {filteredData.map((entry) => (

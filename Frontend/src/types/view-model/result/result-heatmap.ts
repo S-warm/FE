@@ -3,6 +3,12 @@ import type { ResultAgeFilter } from "@/types/view-model/common/result-meta"
 import type { ResultPageSummaryViewModel } from "@/types/view-model/common/result-page"
 import type { SeverityTokenViewModel } from "@/types/view-model/common/severity"
 
+export type ResultHeatmapCoordinateMode =
+  | "pixel"
+  | "percent"
+  | "ratio"
+  | "pixel-scaled-thousand"
+
 export interface ResultHeatmapPointViewModel extends ResultUxIssueLinkViewModel {
   x: number
   y: number
@@ -23,6 +29,7 @@ export interface ResultHeatmapPointViewModel extends ResultUxIssueLinkViewModel 
 
 export interface ResultHeatmapPageViewModel extends ResultPageSummaryViewModel {
   currentAgeGroup: ResultAgeFilter
+  coordinateMode: ResultHeatmapCoordinateMode
   points: ResultHeatmapPointViewModel[]
   pagination: {
     totalCount: number

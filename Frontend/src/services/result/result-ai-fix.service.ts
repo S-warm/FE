@@ -2,6 +2,7 @@ import { adaptAiFixResponseToViewModel } from "@/adapters/result/result-ai-fix.a
 import { tryLoadDevFallbackJson } from "@/services/core/dev-fallback-json"
 import { ApiServiceError } from "@/services/core/api-service-error"
 import { requestJsonWithFallback } from "@/services/core/http-client"
+import { SERVICE_CONFIG } from "@/services/core/service-config"
 import type { SimulationAiFixApiResponseDto } from "@/types/api/simulation/simulation-ai-fix.response"
 import type { ResultAiFixViewModel } from "@/types/view-model/result/result-ai-fix"
 
@@ -57,6 +58,11 @@ async function getAiFixFallback(simulationId: string) {
 
 export const resultAiFixService: ResultAiFixService = {
   async getAiFix(simulationId) {
+    if (SERVICE_CONFIG.useSimulationMock) {
+      const fallbackViewModel = await getAiFixFallback(simulationId)
+      return fallbackViewModel ?? { pages: [] }
+    }
+
     try {
       const apiResponse = await requestJsonWithFallback<SimulationAiFixApiResponseDto>([
         `/api/simulations/${simulationId}/ai-fix`,

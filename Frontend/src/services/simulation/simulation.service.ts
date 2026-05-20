@@ -1,4 +1,5 @@
 import { requestJson } from "@/services/core/http-client"
+import { SERVICE_CONFIG } from "@/services/core/service-config"
 import type { GetSimulationHeaderParams, GetSimulationStatusParams } from "@/services/simulation/simulation.types"
 import type { SimulationCreateRequestDto } from "@/types/api/simulation/simulation-create.request"
 import type { SimulationCreateResponseDto } from "@/types/api/simulation/simulation-create.response"
@@ -26,6 +27,89 @@ export interface SimulationService {
   getSimulationList(userId: string): Promise<SimulationListItemViewModel[]>
   getSimulationHeader(params: GetSimulationHeaderParams): Promise<ResultHeaderViewModel | null>
   getSimulationStatus(params: GetSimulationStatusParams): Promise<SimulationStatusResponseDto>
+}
+
+interface MockSimulationRecord {
+  projectId: string
+  title: string
+  createdAt: string
+  targetUrl?: string
+}
+
+const MOCK_SIMULATION_STORAGE_KEY = "swarm:simulation-mock"
+const MOCK_SIMULATION_ID = "mock-simulation"
+const MOCK_RUNNING_DURATION_MS = 6_000
+
+function isSimulationMockEnabled() {
+  return SERVICE_CONFIG.useSimulationMock
+}
+
+function readMockSimulationRecord(): MockSimulationRecord | null {
+  if (typeof window === "undefined") {
+    return null
+  }
+
+  const raw = window.localStorage.getItem(MOCK_SIMULATION_STORAGE_KEY)
+  if (!raw) {
+    return null
+  }
+
+  try {
+    const parsed = JSON.parse(raw) as Partial<MockSimulationRecord>
+    if (
+      typeof parsed.projectId !== "string" ||
+      typeof parsed.title !== "string" ||
+      typeof parsed.createdAt !== "string"
+    ) {
+      return null
+    }
+
+    return {
+      projectId: parsed.projectId,
+      title: parsed.title,
+      createdAt: parsed.createdAt,
+      targetUrl: typeof parsed.targetUrl === "string" ? parsed.targetUrl : undefined,
+    }
+  } catch {
+    return null
+  }
+}
+
+function writeMockSimulationRecord(record: MockSimulationRecord) {
+  if (typeof window === "undefined") {
+    return
+  }
+
+  window.localStorage.setItem(MOCK_SIMULATION_STORAGE_KEY, JSON.stringify(record))
+}
+
+function buildMockSimulationStatus(record: MockSimulationRecord): SimulationStatusResponseDto {
+  const elapsedMs = Date.now() - new Date(record.createdAt).getTime()
+  const progressRatio = Math.max(0, Math.min(1, elapsedMs / MOCK_RUNNING_DURATION_MS))
+  const isCompleted = progressRatio >= 1
+  const completed = Math.max(1, Math.min(5, Math.round(progressRatio * 5)))
+  const total = 5
+
+  return {
+    id: record.projectId,
+    status: isCompleted ? "completed" : "running",
+    progress: isCompleted ? 100 : Math.max(12, Math.round(progressRatio * 92)),
+    currentStep: isCompleted ? "결과 분석" : "시뮬레이션 실행",
+    completed,
+    total,
+    failed: 0,
+    createdAt: record.createdAt,
+    updatedAt: new Date().toISOString(),
+  }
+}
+
+function getDefaultMockSimulationRecord(): MockSimulationRecord {
+  return {
+    projectId: MOCK_SIMULATION_ID,
+    title: "Mock Simulation",
+    createdAt: new Date(Date.now() - MOCK_RUNNING_DURATION_MS).toISOString(),
+    targetUrl: "https://example.com",
+  }
 }
 
 function deriveSiteName(targetUrl?: string | null) {
@@ -140,6 +224,26 @@ function mapSimulationStatusResponse(
 
 export const simulationService: SimulationService = {
   async createSimulation(input, userId) {
+    if (isSimulationMockEnabled()) {
+      void userId
+
+      const record: MockSimulationRecord = {
+        projectId: MOCK_SIMULATION_ID,
+        title: input.title,
+        createdAt: new Date().toISOString(),
+        targetUrl: input.targetUrl,
+      }
+
+      writeMockSimulationRecord(record)
+
+      return {
+        projectId: record.projectId,
+        title: record.title,
+        status: "running",
+        createdAt: record.createdAt,
+      }
+    }
+
     const raw = await requestJson<SimulationCreateResponseApiDto>("/api/simulations", {
       method: "POST",
       query: { userId },
@@ -154,6 +258,24 @@ export const simulationService: SimulationService = {
     }
   },
   async getSimulationList(userId) {
+    if (isSimulationMockEnabled()) {
+      void userId
+
+      const record = readMockSimulationRecord() ?? getDefaultMockSimulationRecord()
+      const status = buildMockSimulationStatus(record)
+
+      return [
+        {
+          simulationId: record.projectId,
+          title: record.title,
+          status: status.status,
+          createdAt: record.createdAt,
+          relativeCreatedAtLabel: record.createdAt,
+          siteName: deriveSiteName(record.targetUrl),
+        },
+      ]
+    }
+
     const raw = await requestJson<SimulationListItemDto[]>("/api/simulations", {
       query: { userId },
     })
@@ -166,6 +288,15 @@ export const simulationService: SimulationService = {
     return null
   },
   async getSimulationStatus({ simulationId }: GetSimulationStatusParams) {
+    if (isSimulationMockEnabled()) {
+      const record = readMockSimulationRecord() ?? getDefaultMockSimulationRecord()
+
+      return buildMockSimulationStatus({
+        ...record,
+        projectId: simulationId || record.projectId,
+      })
+    }
+
     const raw = await requestJson<SimulationStatusApiDto>(
       `/api/simulations/${simulationId}/status`,
     )

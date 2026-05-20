@@ -8,12 +8,39 @@ import type {
   SimulationHeatmapPageDto,
 } from "@/types/api/simulation/simulation-heatmap.response"
 import type { ResultAgeFilter } from "@/types/view-model/common/result-meta"
-import type { ResultHeatmapViewModel } from "@/types/view-model/result/result-heatmap"
+import type {
+  ResultHeatmapCoordinateMode,
+  ResultHeatmapViewModel,
+} from "@/types/view-model/result/result-heatmap"
 
 function normalizeAxis(value: number) {
   if (!Number.isFinite(value)) return 0
-  const normalized = value <= 1 ? value * 100 : value
-  return Math.max(0, Math.min(100, Number(normalized.toFixed(2))))
+  return Number(value.toFixed(4))
+}
+
+function detectCoordinateMode(
+  points: Array<{ x: number; y: number }>,
+): ResultHeatmapCoordinateMode {
+  if (!points.length) {
+    return "pixel"
+  }
+
+  const maxX = Math.max(...points.map((point) => point.x))
+  const maxY = Math.max(...points.map((point) => point.y))
+
+  if (maxX < 1 && maxY < 1) {
+    return "pixel-scaled-thousand"
+  }
+
+  if (maxX <= 1 && maxY <= 1) {
+    return "ratio"
+  }
+
+  if (maxX <= 100 && maxY <= 100) {
+    return "percent"
+  }
+
+  return "pixel"
 }
 
 function normalizeAgeBand(ageBand: string): ResultAgeFilter {
@@ -108,20 +135,21 @@ function toBusinessViewModel(
       const maxCount = Math.max(...points.map((point) => point.count), 1)
 
       return {
-        ...createResultPageSummary({
-          simulationId,
-          order: index + 1,
-          pageName: resolvePageName(url),
-          pageUrl: url,
+      ...createResultPageSummary({
+        simulationId,
+        order: index + 1,
+        pageName: resolvePageName(url),
+        pageUrl: url,
           screenshotUrl: resolveScreenshotUrl(url),
           totalCount,
-          totalCountType: "errors",
-          metaText: `${points.length}개 포인트`,
-        }),
-        currentAgeGroup: params.ageGroup,
-        points: pagedPoints.map((point) => ({
-          issueType: "ux" as const,
-          issueId: point.issueId,
+        totalCountType: "errors",
+        metaText: `${points.length}개 포인트`,
+      }),
+      currentAgeGroup: params.ageGroup,
+      coordinateMode: detectCoordinateMode(pagedPoints),
+      points: pagedPoints.map((point) => ({
+        issueType: "ux" as const,
+        issueId: point.issueId,
           x: normalizeAxis(point.x),
           y: normalizeAxis(point.y),
           count: point.count,
@@ -162,6 +190,7 @@ function toLegacyViewModel(
         metaText: `${page.totalErrorCount}건 오류`,
       }),
       currentAgeGroup: page.currentAgeGroup ?? "all",
+      coordinateMode: detectCoordinateMode(page.errorPoints ?? []),
       points: (page.errorPoints ?? []).map((point) => {
         const count = point.count ?? 0
         const errorType = point.errorType ?? ""

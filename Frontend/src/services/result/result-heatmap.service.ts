@@ -2,6 +2,7 @@ import { adaptHeatmapResponseToViewModel } from "@/adapters/result/result-heatma
 import { tryLoadDevFallbackJson } from "@/services/core/dev-fallback-json"
 import { ApiServiceError } from "@/services/core/api-service-error"
 import { requestJsonWithFallback } from "@/services/core/http-client"
+import { SERVICE_CONFIG } from "@/services/core/service-config"
 import type { GetResultHeatmapParams } from "@/services/result/result.types"
 import type { SimulationHeatmapApiResponseDto } from "@/types/api/simulation/simulation-heatmap.response"
 import type { ResultHeatmapViewModel } from "@/types/view-model/result/result-heatmap"
@@ -46,6 +47,11 @@ async function getHeatmapFallback(params: GetResultHeatmapParams) {
 
 export const resultHeatmapService: ResultHeatmapService = {
   async getHeatmap(params) {
+    if (SERVICE_CONFIG.useSimulationMock) {
+      const fallbackViewModel = await getHeatmapFallback(params)
+      return fallbackViewModel ?? { pages: [] }
+    }
+
     try {
       const apiResponse = await requestHeatmap(params)
 

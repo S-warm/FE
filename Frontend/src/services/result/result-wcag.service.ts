@@ -2,6 +2,7 @@ import { adaptWcagResponseToViewModel } from "@/adapters/result/result-wcag.adap
 import { tryLoadDevFallbackJson } from "@/services/core/dev-fallback-json"
 import { ApiServiceError } from "@/services/core/api-service-error"
 import { requestJsonWithFallback } from "@/services/core/http-client"
+import { SERVICE_CONFIG } from "@/services/core/service-config"
 import type { SimulationWcagApiResponseDto } from "@/types/api/simulation/simulation-wcag.response"
 import type { ResultWcagViewModel } from "@/types/view-model/result/result-wcag"
 
@@ -64,6 +65,11 @@ async function getWcagFallback(simulationId: string) {
 
 export const resultWcagService: ResultWcagService = {
   async getWcag(simulationId) {
+    if (SERVICE_CONFIG.useSimulationMock) {
+      const fallbackViewModel = await getWcagFallback(simulationId)
+      return fallbackViewModel ?? { pages: [] }
+    }
+
     try {
       const apiResponse = await requestJsonWithFallback<SimulationWcagApiResponseDto>([
         `/api/simulations/${simulationId}/wcag`,

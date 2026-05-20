@@ -11,7 +11,7 @@ export function useCreateSimulationMutation(userId = SERVICE_CONFIG.defaultUserI
     mutationFn: async (input: SimulationCreateRequestDto) => {
       const resolvedUserId = userId.trim()
 
-      if (!resolvedUserId) {
+      if (!resolvedUserId && !SERVICE_CONFIG.useSimulationMock) {
         throw createNotImplementedServiceError(
           "/api/simulations",
           "실제 API 연동 모드에서는 VITE_DEFAULT_USER_ID 설정이 필요합니다.",

@@ -221,6 +221,28 @@
   --shadow-heatmap-info: 0 10px 30px rgba(68, 99, 208, 0.14);
 }
 
+.ai-fix-code-content .shiki {
+  margin: 0;
+  min-height: 100%;
+  overflow: auto;
+  background: transparent !important;
+  padding: 1.25rem;
+  font-size: 13px;
+  line-height: 1.75;
+  font-family: "SFMono-Regular", "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+}
+
+.ai-fix-code-content .shiki code {
+  display: grid;
+}
+
+.ai-fix-code-content .shiki .line {
+  display: block;
+  min-height: 1.75em;
+}
+
 /* 2) Tailwind v4 mapping layer:
    map CSS vars -> utility tokens */
 @theme inline {

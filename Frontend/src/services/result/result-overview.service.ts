@@ -2,6 +2,7 @@ import { adaptOverviewResponseToViewModel } from "@/adapters/result/result-overv
 import { ApiServiceError } from "@/services/core/api-service-error"
 import { tryLoadDevFallbackJson } from "@/services/core/dev-fallback-json"
 import { requestJsonWithFallback } from "@/services/core/http-client"
+import { SERVICE_CONFIG } from "@/services/core/service-config"
 import type { SimulationOverviewResponseDto } from "@/types/api/simulation/simulation-overview.response"
 import type { ResultOverviewViewModel } from "@/types/view-model/result/result-overview"
 
@@ -24,6 +25,10 @@ async function getOverviewFallback(simulationId: string) {
 
 export const resultOverviewService: ResultOverviewService = {
   async getOverview(simulationId) {
+    if (SERVICE_CONFIG.useSimulationMock) {
+      return getOverviewFallback(simulationId)
+    }
+
     try {
       const apiResponse = await requestJsonWithFallback<SimulationOverviewResponseDto>([
         `/api/simulations/${simulationId}/overview`,

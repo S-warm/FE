@@ -7,6 +7,7 @@ import { EmptyState } from "@/components/sections"
 import { ResultPageSidePanel } from "@/components/sections/result/page-side-panel"
 import { ErrorState, ResultPageSkeleton } from "@/components/states"
 import { Card, CardContent } from "@/components/ui/card"
+import { formatCodeForDisplay, highlightCodeToHtml } from "@/lib/code-highlighting"
 import { useResultPageParam } from "@/lib/result-page-param"
 import { useResultPageSidePanelState } from "@/lib/result-page-side-panel-state"
 import { motion } from "@/lib/motion"
@@ -37,6 +38,8 @@ function CodePanel({
 }) {
   const [isExpanded, setIsExpanded] = useState(false)
   const [copyFeedback, setCopyFeedback] = useState<"idle" | "success" | "error">("idle")
+  const [highlightedHtml, setHighlightedHtml] = useState<string>("")
+  const displayCode = useMemo(() => formatCodeForDisplay(code), [code])
   const hasLongCode = code.length > 360
 
   useEffect(() => {
@@ -54,9 +57,32 @@ function CodePanel({
     setCopyFeedback("idle")
   }, [code])
 
+  useEffect(() => {
+    let isCancelled = false
+
+    async function runHighlight() {
+      try {
+        const result = await highlightCodeToHtml(code)
+        if (isCancelled) return
+
+        setHighlightedHtml(result.html)
+      } catch {
+        if (isCancelled) return
+
+        setHighlightedHtml("")
+      }
+    }
+
+    void runHighlight()
+
+    return () => {
+      isCancelled = true
+    }
+  }, [code])
+
   async function handleCopyCode() {
     try {
-      await navigator.clipboard.writeText(code)
+      await navigator.clipboard.writeText(displayCode)
       setCopyFeedback("success")
     } catch {
       setCopyFeedback("error")
@@ -97,7 +123,7 @@ function CodePanel({
         <div
           className={cn(
             "relative flex-1 overflow-x-auto overflow-y-auto rounded-2xl bg-code-surface transition-[max-height] duration-300",
-            isExpanded ? "max-h-[520px]" : "max-h-[280px]"
+            isExpanded ? "max-h-[640px]" : "max-h-[340px]"
           )}
         >
           <button
@@ -112,9 +138,16 @@ function CodePanel({
               <Copy className="size-4" />
             )}
           </button>
-          <pre className="h-full whitespace-pre-wrap break-words p-5 text-[13px] leading-relaxed text-white">
-            <code>{code}</code>
-          </pre>
+          {highlightedHtml ? (
+            <div
+              className="ai-fix-code-content"
+              dangerouslySetInnerHTML={{ __html: highlightedHtml }}
+            />
+          ) : (
+            <pre className="h-full whitespace-pre-wrap break-words p-5 text-[13px] leading-relaxed text-white">
+              <code>{displayCode}</code>
+            </pre>
+          )}
         </div>
       </CardContent>
     </Card>

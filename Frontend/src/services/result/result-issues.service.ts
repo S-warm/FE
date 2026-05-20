@@ -2,6 +2,7 @@ import { adaptIssuesResponseToViewModel } from "@/adapters/result/result-issues.
 import { tryLoadDevFallbackJson } from "@/services/core/dev-fallback-json"
 import { ApiServiceError } from "@/services/core/api-service-error"
 import { requestJsonWithFallback } from "@/services/core/http-client"
+import { SERVICE_CONFIG } from "@/services/core/service-config"
 import type { SimulationIssuesApiResponseDto } from "@/types/api/simulation/simulation-issues.response"
 import type { ResultIssuesViewModel } from "@/types/view-model/result/result-issues"
 
@@ -35,6 +36,11 @@ async function getIssuesFallback(simulationId: string) {
 
 export const resultIssuesService: ResultIssuesService = {
   async getIssues(simulationId) {
+    if (SERVICE_CONFIG.useSimulationMock) {
+      const fallbackViewModel = await getIssuesFallback(simulationId)
+      return fallbackViewModel ?? { pages: [] }
+    }
+
     try {
       const apiResponse = await requestJsonWithFallback<SimulationIssuesApiResponseDto>([
         `/api/simulations/${simulationId}/issues`,

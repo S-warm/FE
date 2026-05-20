@@ -1,5 +1,5 @@
 import { useRef, useEffect, useState } from "react"
-import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
+import { Bar, BarChart, CartesianGrid, Cell, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
 
 import { chartTooltipContentStyle } from "@/components/charts/chart-tooltip"
 import { EmptyState } from "@/components/sections/empty-state"
@@ -12,6 +12,8 @@ interface HorizontalBarChartProps {
   mutedBarColor?: string
   barSize?: number
   highlightMode?: "none" | "min" | "max"
+  domain?: [number, number]
+  xAxisTickFormatter?: (v: number) => string
   emptyTitle?: string
   emptyDescription?: string
 }
@@ -23,11 +25,14 @@ function HorizontalBarChart({
   mutedBarColor = "var(--color-primary-100)",
   barSize,
   highlightMode = "none",
+  domain,
+  xAxisTickFormatter,
   emptyTitle,
   emptyDescription,
 }: HorizontalBarChartProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [height, setHeight] = useState(240)
+  const [activeIndex, setActiveIndex] = useState<number | null>(null)
 
   useEffect(() => {
     const updateHeight = () => {
@@ -64,6 +69,8 @@ function HorizontalBarChart({
         ? Math.min(...data.map((item) => item.score))
         : Math.max(...data.map((item) => item.score))
 
+  const activeScore = activeIndex !== null ? data[activeIndex]?.score : null
+
   return (
     <div ref={containerRef} className={`${heightClassName} w-full flex items-center justify-center`}>
       <ResponsiveContainer width="100%" height={height}>
@@ -72,18 +79,35 @@ function HorizontalBarChart({
           layout="vertical"
           margin={{ top: 4, right: 8, left: 8, bottom: 4 }}
           barCategoryGap={10}
+          onMouseMove={(state) => {
+            if (state.activeTooltipIndex !== undefined) setActiveIndex(state.activeTooltipIndex)
+          }}
+          onMouseLeave={() => setActiveIndex(null)}
         >
           <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-          <XAxis type="number" domain={[0, 100]} tick={{ fill: "var(--color-muted-foreground)", fontSize: 12 }} />
+          <XAxis
+            type="number"
+            domain={domain ?? [0, 100]}
+            tick={{ fill: "var(--color-muted-foreground)", fontSize: 11, opacity: 0.6 }}
+            tickFormatter={xAxisTickFormatter}
+            tickLine={false}
+            axisLine={false}
+          />
           <YAxis
             type="category"
             dataKey="label"
             width={92}
             tick={{ fill: "var(--color-foreground)", fontSize: 12 }}
           />
-          <Tooltip
-            contentStyle={chartTooltipContentStyle}
-          />
+          <Tooltip contentStyle={chartTooltipContentStyle} />
+          {activeScore !== null && (
+            <ReferenceLine
+              x={activeScore}
+              stroke="var(--color-primary-main)"
+              strokeWidth={1.5}
+              strokeDasharray="4 3"
+            />
+          )}
           <Bar
             dataKey="score"
             fill={barColor}

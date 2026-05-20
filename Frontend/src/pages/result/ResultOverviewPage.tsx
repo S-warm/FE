@@ -3,14 +3,17 @@ import { useParams } from "react-router-dom"
 
 import { AlertCircle, Clock, Flag, Users } from "lucide-react"
 
-import { HorizontalBarChart, LineTrendChart } from "@/components/charts"
+import { HorizontalBarChart, LineTrendChart, LollipopChart, StackedBarChart } from "@/components/charts"
+import type { StackedBarDatumViewModel } from "@/components/charts"
 import { EmptyState } from "@/components/sections"
 import { ErrorState, PageSkeleton } from "@/components/states"
 import { Card, CardContent } from "@/components/ui/card"
+import { getAgeBandColor } from "@/lib/age-band-colors"
 import { motion } from "@/lib/motion"
 import { cn } from "@/lib/utils"
 import { useResultOverviewQuery } from "@/queries"
 import type { BarChartDatumViewModel } from "@/types/view-model/common/chart"
+
 
 function MetricCard({
   title,
@@ -46,6 +49,15 @@ function MetricCard({
   )
 }
 
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex items-center gap-3">
+      <p className="text-caption-12-medium text-text-secondary whitespace-nowrap">{children}</p>
+      <div className="h-px flex-1 bg-border-strong" />
+    </div>
+  )
+}
+
 function ChartCard({
   title,
   badge,
@@ -59,9 +71,7 @@ function ChartCard({
     <Card className={cn("rounded-2xl border border-border-strong bg-card shadow-none", motion.card)}>
       <CardContent className="grid gap-4 px-6 py-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="grid gap-1">
-            <p className="text-body-14-medium text-text-body">{title}</p>
-          </div>
+          <p className="text-body-14-medium text-text-body">{title}</p>
           {badge ? (
             <div className="rounded-full border border-border-soft bg-surface-subtle px-3 py-1">
               <p className="text-caption-12-medium text-text-secondary">{badge}</p>
@@ -74,40 +84,16 @@ function ChartCard({
   )
 }
 
-function buildMetricBars(
-  source: Array<{ ageBand: string; value: number }>,
-  highlightMode: "min" | "max",
-  highlightColor: string,
-  mutedColor: string
-) {
-  if (!source.length) {
-    return []
-  }
-
-  const scores = source.map((item) => item.value)
-  const target = highlightMode === "min" ? Math.min(...scores) : Math.max(...scores)
-
-  return source.map<BarChartDatumViewModel>((item) => ({
-    label: item.ageBand,
-    score: item.value,
-    color: item.value === target ? highlightColor : mutedColor,
-  }))
-}
-
 function buildHighlightBadge(
   source: Array<{ ageBand: string; value: number }>,
   mode: "min" | "max",
   suffix: string
 ) {
-  if (!source.length) {
-    return undefined
-  }
-
+  if (!source.length) return undefined
   const target =
     mode === "min"
-      ? source.reduce((prev, current) => (current.value < prev.value ? current : prev))
-      : source.reduce((prev, current) => (current.value > prev.value ? current : prev))
-
+      ? source.reduce((prev, cur) => (cur.value < prev.value ? cur : prev))
+      : source.reduce((prev, cur) => (cur.value > prev.value ? cur : prev))
   return `${mode === "min" ? "가장 낮음" : "가장 높음"} ${target.ageBand} ${target.value}${suffix}`
 }
 
@@ -116,37 +102,20 @@ function buildMaxBadge(
   prefix: string,
   formatter: (value: number) => string
 ) {
-  if (!source.length) {
-    return undefined
-  }
-
-  const target = source.reduce((prev, current) =>
-    current.value > prev.value ? current : prev
-  )
-
+  if (!source.length) return undefined
+  const target = source.reduce((prev, cur) => (cur.value > prev.value ? cur : prev))
   return `${prefix} ${target.ageBand} ${formatter(target.value)}`
 }
 
-function formatMinutes(value: number) {
-  return `${value.toFixed(1)}분`
-}
-
-function formatActions(value: number) {
-  return `${value.toFixed(1)}회`
-}
-
-function formatDeclareFailure(value: number) {
-  return `${value.toFixed(2)}회`
-}
-
 function resolveUpperBound(values: number[], fallback: number) {
-  if (!values.length) {
-    return fallback
-  }
-
+  if (!values.length) return fallback
   const maxValue = Math.max(...values)
-  return Math.max(fallback, Number((maxValue * 1.15).toFixed(1)))
+  return Math.max(fallback, Number((maxValue * 1.2).toFixed(1)))
 }
+
+const formatMinutes = (v: number) => `${v.toFixed(1)}분`
+const formatActions = (v: number) => `${v.toFixed(1)}회`
+const formatDeclareFailure = (v: number) => `${v.toFixed(2)}회`
 
 function ResultOverviewPage() {
   const { simulationId } = useParams()
@@ -155,71 +124,57 @@ function ResultOverviewPage() {
 
   const ageStats = useMemo(() => data?.ageStats ?? [], [data])
 
-  const successRateBars = useMemo(
-    () =>
-      buildMetricBars(
-        ageStats.map((item) => ({ ageBand: item.ageBand, value: item.successRate })),
-        "min",
-        "var(--color-chart-landing)",
-        "var(--color-primary-100)"
-      ),
-    [ageStats]
-  )
-
-  const failureRateBars = useMemo(
-    () =>
-      buildMetricBars(
-        ageStats.map((item) => ({
-          ageBand: item.ageBand,
-          value: item.failureRate ?? 0,
-        })),
-        "max",
-        "var(--color-persona-fifty)",
-        "var(--color-chart-failure-muted)"
-      ),
-    [ageStats]
-  )
-
-  const durationSource = useMemo(
+  const successFailureData = useMemo<StackedBarDatumViewModel[]>(
     () =>
       ageStats.map((item) => ({
         label: item.ageBand,
-        avgDurationMinutes: item.avgDurationMinutes ?? 0,
+        success: item.successRate,
+        failure: item.failureRate ?? 0,
+        successColor: getAgeBandColor(item.ageBand, "primary"),
+        failureColor: getAgeBandColor(item.ageBand, "muted"),
       })),
     [ageStats]
   )
 
-  const actionSource = useMemo(
+  const durationBars = useMemo<BarChartDatumViewModel[]>(
     () =>
       ageStats.map((item) => ({
         label: item.ageBand,
-        avgActions: item.avgActions ?? 0,
+        score: item.avgDurationMinutes ?? 0,
+        color: getAgeBandColor(item.ageBand, "primary"),
       })),
     [ageStats]
   )
 
-  const declareFailureSource = useMemo(
+  const actionBars = useMemo<BarChartDatumViewModel[]>(
     () =>
       ageStats.map((item) => ({
         label: item.ageBand,
-        avgDeclareFailure: item.avgDeclareFailure ?? 0,
+        score: item.avgActions ?? 0,
+        color: getAgeBandColor(item.ageBand, "primary"),
       })),
     [ageStats]
   )
 
-  if (isLoading) {
-    return <PageSkeleton className={motion.page} />
-  }
+  const declareFailureBars = useMemo<BarChartDatumViewModel[]>(
+    () =>
+      ageStats.map((item) => ({
+        label: item.ageBand,
+        score: item.avgDeclareFailure ?? 0,
+        color: getAgeBandColor(item.ageBand, "primary"),
+      })),
+    [ageStats]
+  )
+
+  if (isLoading) return <PageSkeleton className={motion.page} />
 
   if (isError) {
     return (
       <ErrorState
         title="Overview 데이터를 불러오지 못했습니다"
-        description="시뮬레이션이 존재하지 않거나 아직 분석이 완료되지 않았을 수 있습니다. 시뮬레이션 상태를 확인하거나 잠시 후 다시 시도해주세요."
+        description="시뮬레이션이 존재하지 않거나 아직 분석이 완료되지 않았을 수 있습니다."
         actionLabel="다시 시도"
-        onAction={() => {
-          void refetch()
-        }}
+        onAction={() => { void refetch() }}
       />
     )
   }
@@ -235,6 +190,7 @@ function ResultOverviewPage() {
 
   return (
     <div className={cn("grid gap-5", motion.page)}>
+      {/* 요약 카드 */}
       <section className="grid gap-3 md:grid-cols-4">
         <MetricCard
           title="테스트 성공률"
@@ -262,122 +218,89 @@ function ResultOverviewPage() {
         />
       </section>
 
+      {/* 성과 지표 */}
       <section className="grid gap-3">
+        <SectionLabel>성과 지표</SectionLabel>
         <ChartCard
-          title="연령대별 성공률"
+          title="연령대별 성공 / 실패율"
           badge={buildHighlightBadge(
-            ageStats.map((item) => ({
-              ageBand: item.ageBand,
-              value: item.successRate,
-            })),
+            ageStats.map((item) => ({ ageBand: item.ageBand, value: item.successRate })),
             "min",
             "%"
           )}
         >
-          <HorizontalBarChart
-            data={successRateBars}
-            barColor="var(--color-chart-landing)"
-            mutedBarColor="var(--color-primary-100)"
-            highlightMode="min"
-            heightClassName="h-[250px]"
-            emptyTitle="성공률 데이터가 없습니다"
+          <StackedBarChart
+            data={successFailureData}
+            heightClassName="h-[280px]"
+            emptyTitle="성공/실패 데이터가 없습니다"
           />
         </ChartCard>
       </section>
 
-      <section className="grid gap-3 xl:grid-cols-2">
-        <ChartCard
-          title="연령대별 평균 완료 시간"
-          badge={buildMaxBadge(
-            ageStats.map((item) => ({
-              ageBand: item.ageBand,
-              value: item.avgDurationMinutes ?? 0,
-            })),
-            "가장 오래 걸림",
-            formatMinutes
-          )}
-        >
-          <LineTrendChart
-            data={durationSource}
-            dataKey="label"
-            valueKey="avgDurationMinutes"
-            stroke="var(--color-persona-eighty)"
-            domain={[0, resolveUpperBound(durationSource.map((item) => item.avgDurationMinutes), 1)]}
-            heightClassName="h-[250px]"
-            yAxisTickFormatter={formatMinutes}
-            tooltipFormatter={formatMinutes}
-            emptyTitle="완료 시간 데이터가 없습니다"
-          />
-        </ChartCard>
+      {/* 행동 지표 */}
+      <section className="grid gap-3">
+        <SectionLabel>행동 지표</SectionLabel>
+        <div className="grid gap-3 xl:grid-cols-3">
+          <ChartCard
+            title="연령대별 평균 완료 시간"
+            badge={buildMaxBadge(
+              ageStats.map((item) => ({ ageBand: item.ageBand, value: item.avgDurationMinutes ?? 0 })),
+              "가장 오래 걸림",
+              formatMinutes
+            )}
+          >
+            <HorizontalBarChart
+              data={durationBars}
+              heightClassName="h-[240px]"
+              highlightMode="none"
+              domain={[0, resolveUpperBound(durationBars.map((d) => d.score), 1)]}
+              xAxisTickFormatter={formatMinutes}
+              emptyTitle="완료 시간 데이터가 없습니다"
+            />
+          </ChartCard>
 
-        <ChartCard
-          title="연령대별 실패율"
-          badge={buildHighlightBadge(
-            ageStats.map((item) => ({
-              ageBand: item.ageBand,
-              value: item.failureRate ?? 0,
-            })),
-            "max",
-            "%"
-          )}
-        >
-          <HorizontalBarChart
-            data={failureRateBars}
-            barColor="var(--color-persona-fifty)"
-            mutedBarColor="var(--color-chart-failure-muted)"
-            highlightMode="max"
-            heightClassName="h-[220px]"
-            emptyTitle="실패율 데이터가 없습니다"
-          />
-        </ChartCard>
+          <ChartCard
+            title="연령대별 평균 액션 수"
+            badge={buildMaxBadge(
+              ageStats.map((item) => ({ ageBand: item.ageBand, value: item.avgActions ?? 0 })),
+              "가장 많음",
+              formatActions
+            )}
+          >
+            <LollipopChart
+              data={actionBars}
+              heightClassName="h-[240px]"
+              xAxisTickFormatter={formatActions}
+              valueFormatter={formatActions}
+              domain={[0, resolveUpperBound(actionBars.map((d) => d.score), 1)]}
+              emptyTitle="액션 수 데이터가 없습니다"
+            />
+          </ChartCard>
 
-        <ChartCard
-          title="연령대별 평균 액션 수"
-          badge={buildMaxBadge(
-            ageStats.map((item) => ({
-              ageBand: item.ageBand,
-              value: item.avgActions ?? 0,
-            })),
-            "가장 많음",
-            formatActions
-          )}
-        >
-          <LineTrendChart
-            data={actionSource}
-            dataKey="label"
-            valueKey="avgActions"
-            stroke="var(--color-chart-field-input)"
-            domain={[0, resolveUpperBound(actionSource.map((item) => item.avgActions), 1)]}
-            heightClassName="h-[220px]"
-            yAxisTickFormatter={formatActions}
-            tooltipFormatter={formatActions}
-            emptyTitle="액션 수 데이터가 없습니다"
-          />
-        </ChartCard>
-
-        <ChartCard
-          title="연령대별 탐색 포기율"
-          badge={buildHighlightBadge(
-            ageStats.map((item) => ({
-              ageBand: item.ageBand,
-              value: item.avgDeclareFailure ?? 0,
-            })),
-            "max",
-            "회"
-          )}
-        >
-          <LineTrendChart
-            data={declareFailureSource}
-            dataKey="label"
-            valueKey="avgDeclareFailure"
-            stroke="var(--color-chart-validation)"
-            domain={[0, resolveUpperBound(declareFailureSource.map((item) => item.avgDeclareFailure), 1)]}
-            heightClassName="h-[240px]"
-            yAxisTickFormatter={formatDeclareFailure}
-            tooltipFormatter={formatDeclareFailure}
-            emptyTitle="탐색 포기율 데이터가 없습니다"
-          />
-        </ChartCard>
+          <ChartCard
+            title="연령대별 탐색 포기율"
+            badge={buildHighlightBadge(
+              ageStats.map((item) => ({ ageBand: item.ageBand, value: item.avgDeclareFailure ?? 0 })),
+              "max",
+              "회"
+            )}
+          >
+            <LineTrendChart
+              data={ageStats.map((item) => ({
+                label: item.ageBand,
+                avgDeclareFailure: item.avgDeclareFailure ?? 0,
+              }))}
+              dataKey="label"
+              valueKey="avgDeclareFailure"
+              stroke="var(--color-primary-main)"
+              domain={[0, resolveUpperBound(ageStats.map((item) => item.avgDeclareFailure ?? 0), 1)]}
+              heightClassName="h-[240px]"
+              yAxisTickFormatter={formatDeclareFailure}
+              tooltipFormatter={formatDeclareFailure}
+              emptyTitle="탐색 포기율 데이터가 없습니다"
+            />
+          </ChartCard>
+        </div>
       </section>
     </div>
   )

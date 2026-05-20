@@ -76,7 +76,7 @@ function StackedBarChart({
   const containerRef = useRef<HTMLDivElement>(null)
   const [height, setHeight] = useState(280)
   const [activeIndex, setActiveIndex] = useState<number | null>(null)
-  const [animated, setAnimated] = useState(true)
+  const animatedRef = useRef(true)
 
   useEffect(() => {
     const updateHeight = () => {
@@ -180,9 +180,9 @@ function StackedBarChart({
             name="성공"
             barSize={barSize ?? 22}
             radius={[8, 0, 0, 8]}
-            isAnimationActive={animated}
+            isAnimationActive={animatedRef.current}
             animationDuration={450}
-            onAnimationEnd={() => setAnimated(false)}
+            onAnimationEnd={() => { animatedRef.current = false }}
           >
             {data.map((entry) => (
               <Cell key={`success-${entry.label}`} fill={entry.successColor} />
@@ -195,7 +195,7 @@ function StackedBarChart({
             name="실패"
             barSize={barSize ?? 22}
             radius={[0, 8, 8, 0]}
-            isAnimationActive={animated}
+            isAnimationActive={animatedRef.current}
             animationDuration={450}
           >
             {data.map((entry) => (

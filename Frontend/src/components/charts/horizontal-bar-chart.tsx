@@ -16,8 +16,12 @@ interface HorizontalBarChartProps {
   ticks?: number[]
   gaugeTicks?: number[]
   xAxisTickFormatter?: (v: number) => string
+  tooltipLabel?: string
+  tooltipFormatter?: (v: number) => string
   emptyTitle?: string
   emptyDescription?: string
+  highlightedLabel?: string | null
+  onLabelClick?: (label: string | null) => void
 }
 
 function HorizontalBarChart({
@@ -31,8 +35,12 @@ function HorizontalBarChart({
   ticks,
   gaugeTicks,
   xAxisTickFormatter,
+  tooltipLabel,
+  tooltipFormatter,
   emptyTitle,
   emptyDescription,
+  highlightedLabel,
+  onLabelClick,
 }: HorizontalBarChartProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [height, setHeight] = useState(240)
@@ -87,6 +95,11 @@ function HorizontalBarChart({
             if (state.activeTooltipIndex !== undefined) setActiveIndex(state.activeTooltipIndex)
           }}
           onMouseLeave={() => setActiveIndex(null)}
+          onClick={(state) => {
+            const label = state?.activePayload?.[0]?.payload?.label
+            if (label) onLabelClick?.(highlightedLabel === label ? null : label)
+          }}
+          style={{ cursor: onLabelClick ? "pointer" : "default" }}
         >
           <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
           <XAxis
@@ -104,7 +117,13 @@ function HorizontalBarChart({
             width={92}
             tick={{ fill: "var(--color-foreground)", fontSize: 12 }}
           />
-          <Tooltip contentStyle={chartTooltipContentStyle} />
+          <Tooltip
+            contentStyle={chartTooltipContentStyle}
+            formatter={(value, name) => [
+              tooltipFormatter && typeof value === "number" ? tooltipFormatter(value) : value,
+              tooltipLabel ?? name,
+            ]}
+          />
           {(gaugeTicks ?? []).map((tick) => (
             <ReferenceLine
               key={tick}
@@ -128,12 +147,22 @@ function HorizontalBarChart({
             barSize={barSize}
             isAnimationActive
             animationDuration={450}
+            onClick={(barData: BarChartDatumViewModel) => onLabelClick?.(highlightedLabel === barData.label ? null : barData.label)}
+            style={{ cursor: onLabelClick ? "pointer" : "default" }}
           >
             {data.map((entry, index) => {
               const isHighlighted = targetScore !== null && entry.score === targetScore
               const fill = entry.color ?? (isHighlighted ? barColor : mutedBarColor)
 
-              return <Cell key={`${entry.label}-${index}`} fill={fill} />
+              return (
+                <Cell
+                  key={`${entry.label}-${index}`}
+                  fill={fill}
+                  opacity={highlightedLabel && highlightedLabel !== entry.label ? 0.12 : 1}
+                stroke={highlightedLabel === entry.label ? "rgba(255,255,255,0.4)" : "none"}
+                strokeWidth={highlightedLabel === entry.label ? 1.5 : 0}
+                />
+              )
             })}
           </Bar>
         </BarChart>

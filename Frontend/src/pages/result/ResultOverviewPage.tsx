@@ -28,15 +28,17 @@ function MetricCard({
   title,
   value,
   description,
+  tooltip,
   icon,
 }: {
   title: string
   value: string
   description: string
+  tooltip: string
   icon: React.ReactNode
 }) {
   return (
-    <Card className={cn("rounded-2xl border border-border-strong bg-card shadow-none", motion.card)}>
+    <Card className={cn("rounded-2xl border border-border-strong bg-card shadow-none !overflow-visible", motion.card)}>
       <CardContent className="grid gap-3 px-5 py-4">
         <div className="flex items-center justify-between text-text-subtle">
           <div className="flex items-center gap-2">
@@ -45,8 +47,11 @@ function MetricCard({
             </span>
             <p className="text-caption-12-medium">{title}</p>
           </div>
-          <span className="grid size-6 place-items-center rounded-lg" aria-hidden="true">
+          <span className="relative grid size-6 place-items-center rounded-lg group cursor-default">
             <AlertCircle className="size-4" />
+            <div className="pointer-events-none absolute bottom-full right-0 mb-2 w-56 rounded-xl border border-border-soft bg-card px-3 py-2.5 shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-150 z-10">
+              <p className="text-caption-12-regular text-text-body leading-relaxed">{tooltip}</p>
+            </div>
           </span>
         </div>
         <div className="grid gap-1">
@@ -128,6 +133,15 @@ function resolveUpperBound(values: number[], fallback: number) {
 }
 
 const formatMinutes = (v: number) => `${v.toFixed(1)}분`
+const formatDuration = (v: number) => {
+  const total = Math.round(v * 60)
+  const h = Math.floor(total / 3600)
+  const m = Math.floor((total % 3600) / 60)
+  const s = total % 60
+  if (h > 0) return `${h}시간 ${m}분 ${s}초`
+  if (m > 0) return `${m}분 ${s}초`
+  return `${s}초`
+}
 const formatActions = (v: number) => `${v.toFixed(1)}회`
 const formatDeclareFailure = (v: number) => `${v.toFixed(2)}회`
 
@@ -137,6 +151,7 @@ function ResultOverviewPage() {
   const { data, isLoading, isError, refetch } = useResultOverviewQuery(resolvedId)
   const [successFailureMode, setSuccessFailureMode] = useState<SuccessFailureMode>("all")
   const successFailureModeLabel: Record<SuccessFailureMode, string> = { all: "전체", success: "성공률", failure: "실패율" }
+  const [highlightedBand, setHighlightedBand] = useState<string | null>(null)
 
   const ageStats = useMemo(() => data?.ageStats ?? [], [data])
 
@@ -232,24 +247,28 @@ function ResultOverviewPage() {
           title="테스트 성공률"
           value={data.summary.taskSuccessRateLabel}
           description="성공한 세션 수 / 전체 세션 수"
+          tooltip="시뮬레이션에서 주어진 태스크를 끝까지 완료한 세션의 비율입니다. 높을수록 사용자가 목표를 달성하기 쉬운 UI임을 의미합니다."
           icon={<Flag className="size-4" />}
         />
         <MetricCard
           title="전체 세션 수"
           value={data.summary.totalAgentsLabel}
           description="전체 시뮬레이션 세션 수"
+          tooltip="이번 시뮬레이션에 참여한 AI 에이전트의 총 수입니다. 세션 수가 많을수록 결과의 신뢰도가 높아집니다."
           icon={<Users className="size-4" />}
         />
         <MetricCard
           title="평균 완료 시간"
           value={data.summary.avgCompletionTimeLabel}
           description="성공한 세션 기준"
+          tooltip="태스크를 성공적으로 완료한 세션만을 대상으로 측정한 평균 소요 시간입니다. 실패 세션은 포함되지 않습니다."
           icon={<Clock className="size-4" />}
         />
         <MetricCard
           title="이탈 세션 수"
           value={data.summary.dropOffAgentsLabel}
           description="전체 세션 수 - 성공한 세션 수"
+          tooltip="태스크를 완료하지 못하고 중단된 세션 수입니다. 이탈이 많을수록 UI에서 사용자가 막히는 구간이 있음을 나타냅니다."
           icon={<AlertCircle className="size-4" />}
         />
       </section>
@@ -282,6 +301,8 @@ function ResultOverviewPage() {
               data={successFailureData}
               heightClassName="h-[280px]"
               emptyTitle="성공/실패 데이터가 없습니다"
+              highlightedLabel={highlightedBand}
+              onLabelClick={setHighlightedBand}
             />
           )}
           {successFailureMode === "success" && (
@@ -293,7 +314,11 @@ function ResultOverviewPage() {
               ticks={[0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]}
               gaugeTicks={[10, 20, 30, 40, 50, 60, 70, 80, 90]}
               xAxisTickFormatter={(v) => `${v}%`}
+              tooltipLabel="성공률"
+              tooltipFormatter={(v) => `${v}%`}
               emptyTitle="성공 데이터가 없습니다"
+              highlightedLabel={highlightedBand}
+              onLabelClick={setHighlightedBand}
             />
           )}
           {successFailureMode === "failure" && (
@@ -305,7 +330,11 @@ function ResultOverviewPage() {
               ticks={[0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]}
               gaugeTicks={[10, 20, 30, 40, 50, 60, 70, 80, 90]}
               xAxisTickFormatter={(v) => `${v}%`}
+              tooltipLabel="실패율"
+              tooltipFormatter={(v) => `${v}%`}
               emptyTitle="실패 데이터가 없습니다"
+              highlightedLabel={highlightedBand}
+              onLabelClick={setHighlightedBand}
             />
           )}
         </ChartCard>
@@ -329,7 +358,11 @@ function ResultOverviewPage() {
               highlightMode="none"
               domain={[0, resolveUpperBound(durationBars.map((d) => d.score), 1)]}
               xAxisTickFormatter={formatMinutes}
+              tooltipLabel="완료 시간"
+              tooltipFormatter={formatDuration}
               emptyTitle="완료 시간 데이터가 없습니다"
+              highlightedLabel={highlightedBand}
+              onLabelClick={setHighlightedBand}
             />
           </ChartCard>
 
@@ -345,9 +378,12 @@ function ResultOverviewPage() {
               data={actionBars}
               heightClassName="h-[240px]"
               xAxisTickFormatter={formatActions}
+              valueLabel="평균 액션 수"
               valueFormatter={formatActions}
               domain={[0, resolveUpperBound(actionBars.map((d) => d.score), 1)]}
               emptyTitle="액션 수 데이터가 없습니다"
+              highlightedLabel={highlightedBand}
+              onLabelClick={setHighlightedBand}
             />
           </ChartCard>
 
@@ -363,6 +399,7 @@ function ResultOverviewPage() {
               data={ageStats.map((item) => ({
                 label: item.ageBand,
                 avgDeclareFailure: item.avgDeclareFailure ?? 0,
+                color: getAgeBandColor(item.ageBand, "primary"),
               }))}
               dataKey="label"
               valueKey="avgDeclareFailure"
@@ -370,8 +407,11 @@ function ResultOverviewPage() {
               domain={[0, resolveUpperBound(ageStats.map((item) => item.avgDeclareFailure ?? 0), 1)]}
               heightClassName="h-[240px]"
               yAxisTickFormatter={formatDeclareFailure}
+              tooltipLabel="포기 횟수"
               tooltipFormatter={formatDeclareFailure}
               emptyTitle="탐색 포기율 데이터가 없습니다"
+              highlightedLabel={highlightedBand}
+              onLabelClick={setHighlightedBand}
             />
           </ChartCard>
         </div>

@@ -22,13 +22,16 @@ function LollipopShape(props: {
   width?: number
   height?: number
   fill?: string
+  opacity?: number
+  onClick?: React.MouseEventHandler<SVGElement>
 }) {
-  const { x = 0, y = 0, width = 0, height = 0, fill = "#94a3b8" } = props
+  const { x = 0, y = 0, width = 0, height = 0, fill = "#94a3b8", opacity = 1, onClick } = props
   if (width <= 0) return null
   const cy = y + height / 2
   const x2 = x + width
   return (
-    <g>
+    <g onClick={onClick} opacity={opacity} style={{ cursor: onClick ? "pointer" : "default" }}>
+      <rect x={x} y={y} width={width} height={height} fill="transparent" />
       <line
         x1={x}
         y1={cy}
@@ -48,8 +51,9 @@ function LollipopTooltip({
   active,
   payload,
   label,
+  valueLabel,
   valueFormatter,
-}: TooltipProps<number, string> & { valueFormatter?: (v: number) => string }) {
+}: TooltipProps<number, string> & { valueLabel?: string; valueFormatter?: (v: number) => string }) {
   if (!active || !payload?.length) return null
   const value = payload[0]?.value
   const color = payload[0]?.payload?.color
@@ -59,6 +63,7 @@ function LollipopTooltip({
       <p className="mb-1.5 font-semibold">{label}</p>
       <div className="flex items-center gap-2">
         <span className="size-2 rounded-full" style={{ backgroundColor: color }} />
+        {valueLabel && <span className="text-text-muted">{valueLabel}</span>}
         <span className="font-medium">
           {typeof value === "number" ? (valueFormatter ? valueFormatter(value) : value) : "-"}
         </span>
@@ -72,9 +77,12 @@ interface LollipopChartProps {
   heightClassName?: string
   domain?: [number, number]
   xAxisTickFormatter?: (v: number) => string
+  valueLabel?: string
   valueFormatter?: (v: number) => string
   emptyTitle?: string
   emptyDescription?: string
+  highlightedLabel?: string | null
+  onLabelClick?: (label: string | null) => void
 }
 
 function LollipopChart({
@@ -82,9 +90,12 @@ function LollipopChart({
   heightClassName = "h-[240px]",
   domain,
   xAxisTickFormatter,
+  valueLabel,
   valueFormatter,
   emptyTitle,
   emptyDescription,
+  highlightedLabel,
+  onLabelClick,
 }: LollipopChartProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [height, setHeight] = useState(240)
@@ -132,6 +143,11 @@ function LollipopChart({
             if (state.activeTooltipIndex !== undefined) setActiveIndex(state.activeTooltipIndex)
           }}
           onMouseLeave={() => setActiveIndex(null)}
+          onClick={(state) => {
+            const label = state?.activePayload?.[0]?.payload?.label
+            if (label) onLabelClick?.(highlightedLabel === label ? null : label)
+          }}
+          style={{ cursor: onLabelClick ? "pointer" : "default" }}
         >
           <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" horizontal={false} />
           <XAxis
@@ -151,7 +167,7 @@ function LollipopChart({
             axisLine={false}
           />
           <Tooltip
-            content={<LollipopTooltip valueFormatter={valueFormatter} />}
+            content={<LollipopTooltip valueLabel={valueLabel} valueFormatter={valueFormatter} />}
             cursor={false}
           />
           {activeScore !== null && (
@@ -165,7 +181,13 @@ function LollipopChart({
           <Bar
             dataKey="score"
             barSize={20}
-            shape={<LollipopShape />}
+            shape={(shapeProps: { x?: number; y?: number; width?: number; height?: number; fill?: string; label?: string }) => (
+              <LollipopShape
+                {...shapeProps}
+                opacity={highlightedLabel && highlightedLabel !== shapeProps.label ? 0.12 : 1}
+                onClick={() => onLabelClick?.(highlightedLabel === shapeProps.label ? null : (shapeProps.label ?? null))}
+              />
+            )}
             isAnimationActive
             animationDuration={450}
           >

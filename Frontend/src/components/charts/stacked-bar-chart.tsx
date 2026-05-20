@@ -64,6 +64,8 @@ interface StackedBarChartProps {
   barSize?: number
   emptyTitle?: string
   emptyDescription?: string
+  highlightedLabel?: string | null
+  onLabelClick?: (label: string | null) => void
 }
 
 function StackedBarChart({
@@ -72,6 +74,8 @@ function StackedBarChart({
   barSize,
   emptyTitle,
   emptyDescription,
+  highlightedLabel,
+  onLabelClick,
 }: StackedBarChartProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [height, setHeight] = useState(280)
@@ -110,9 +114,11 @@ function StackedBarChart({
     const { x = 0, y = 0, height: h = 0, value = 0, index = 0 } = props
     if (value < 10) return null
     const entry = data[index]
+    if (!entry) return null
+    const dimmed = !!highlightedLabel && highlightedLabel !== entry.label
     const textColor = isLightColor(entry.successColor) ? "rgba(0,0,0,0.7)" : "#ffffff"
     return (
-      <text x={x + 8} y={y + h / 2} dy={4} fill={textColor} fontSize={11} fontWeight={600}>
+      <text x={x + 8} y={y + h / 2} dy={4} fill={textColor} fontSize={11} fontWeight={600} opacity={dimmed ? 0 : 1}>
         {`${value}%`}
       </text>
     )
@@ -122,9 +128,11 @@ function StackedBarChart({
     const { x = 0, y = 0, width: w = 0, height: h = 0, value = 0, index = 0 } = props
     if (value <= 0) return null
     const entry = data[index]
+    if (!entry) return null
+    const dimmed = !!highlightedLabel && highlightedLabel !== entry.label
     const textColor = isLightColor(entry.failureColor) ? "rgba(0,0,0,0.7)" : "#ffffff"
     return (
-      <text x={x + w - 6} y={y + h / 2} dy={4} fill={textColor} fontSize={10} fontWeight={600} textAnchor="end">
+      <text x={x + w - 6} y={y + h / 2} dy={4} fill={textColor} fontSize={10} fontWeight={600} textAnchor="end" opacity={dimmed ? 0 : 1}>
         {`${value}%`}
       </text>
     )
@@ -142,6 +150,11 @@ function StackedBarChart({
             if (state.activeTooltipIndex !== undefined) setActiveIndex(state.activeTooltipIndex)
           }}
           onMouseLeave={() => setActiveIndex(null)}
+          onClick={(state) => {
+            const label = state?.activePayload?.[0]?.payload?.label
+            if (label) onLabelClick?.(highlightedLabel === label ? null : label)
+          }}
+          style={{ cursor: onLabelClick ? "pointer" : "default" }}
         >
           <CartesianGrid
             strokeDasharray="4 4"
@@ -192,9 +205,17 @@ function StackedBarChart({
             isAnimationActive={animatedRef.current}
             animationDuration={450}
             onAnimationEnd={() => { animatedRef.current = false }}
+            onClick={(barData: StackedBarDatumViewModel) => onLabelClick?.(highlightedLabel === barData.label ? null : barData.label)}
+            style={{ cursor: onLabelClick ? "pointer" : "default" }}
           >
             {data.map((entry) => (
-              <Cell key={`success-${entry.label}`} fill={entry.successColor} />
+              <Cell
+                key={`success-${entry.label}`}
+                fill={entry.successColor}
+                opacity={highlightedLabel && highlightedLabel !== entry.label ? 0.12 : 1}
+                stroke={highlightedLabel === entry.label ? "rgba(255,255,255,0.4)" : "none"}
+                strokeWidth={highlightedLabel === entry.label ? 1.5 : 0}
+              />
             ))}
             <LabelList dataKey="success" content={renderSuccessLabel} />
           </Bar>
@@ -206,9 +227,17 @@ function StackedBarChart({
             radius={[0, 8, 8, 0]}
             isAnimationActive={animatedRef.current}
             animationDuration={450}
+            onClick={(barData: StackedBarDatumViewModel) => onLabelClick?.(highlightedLabel === barData.label ? null : barData.label)}
+            style={{ cursor: onLabelClick ? "pointer" : "default" }}
           >
             {data.map((entry) => (
-              <Cell key={`failure-${entry.label}`} fill={entry.failureColor} />
+              <Cell
+                key={`failure-${entry.label}`}
+                fill={entry.failureColor}
+                opacity={highlightedLabel && highlightedLabel !== entry.label ? 0.12 : 1}
+                stroke={highlightedLabel === entry.label ? "rgba(255,255,255,0.4)" : "none"}
+                strokeWidth={highlightedLabel === entry.label ? 1.5 : 0}
+              />
             ))}
             <LabelList dataKey="failure" content={renderFailureLabel} />
           </Bar>

@@ -12,9 +12,12 @@ interface LineTrendChartProps<T extends object> {
   stroke?: string
   domain?: [number, number | "auto"]
   yAxisTickFormatter?: (value: number) => string
+  tooltipLabel?: string
   tooltipFormatter?: (value: number) => string
   emptyTitle?: string
   emptyDescription?: string
+  highlightedLabel?: string | null
+  onLabelClick?: (label: string | null) => void
 }
 
 function LineTrendChart<T extends object>({
@@ -25,9 +28,12 @@ function LineTrendChart<T extends object>({
   stroke = "var(--color-primary-main)",
   domain = [0, "auto"],
   yAxisTickFormatter,
+  tooltipLabel,
   tooltipFormatter,
   emptyTitle,
   emptyDescription,
+  highlightedLabel,
+  onLabelClick,
 }: LineTrendChartProps<T>) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [height, setHeight] = useState(240)
@@ -63,7 +69,15 @@ function LineTrendChart<T extends object>({
   return (
     <div ref={containerRef} className={`${heightClassName} w-full flex items-center justify-center`}>
       <ResponsiveContainer width="100%" height={height}>
-        <LineChart data={data} margin={{ top: 8, right: 12, left: 0, bottom: 4 }}>
+        <LineChart
+          data={data}
+          margin={{ top: 8, right: 12, left: 0, bottom: 4 }}
+          onClick={(state) => {
+            const label = state?.activePayload?.[0]?.payload?.[dataKey as string]
+            if (label) onLabelClick?.(highlightedLabel === label ? null : label)
+          }}
+          style={{ cursor: onLabelClick ? "pointer" : "default" }}
+        >
           <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
           <XAxis
             dataKey={dataKey as string}
@@ -80,16 +94,35 @@ function LineTrendChart<T extends object>({
           />
           <Tooltip
             contentStyle={chartTooltipContentStyle}
-            formatter={(value) =>
-              tooltipFormatter && typeof value === "number" ? tooltipFormatter(value) : value
-            }
+            formatter={(value, name) => [
+              tooltipFormatter && typeof value === "number" ? tooltipFormatter(value) : value,
+              tooltipLabel ?? name,
+            ]}
           />
           <Line
             type="monotone"
             dataKey={valueKey as string}
             stroke={stroke}
             strokeWidth={3}
-            dot={{ r: 4, fill: stroke, strokeWidth: 0 }}
+            dot={(dotProps) => {
+              const label = dotProps.payload?.[dataKey as string]
+              const dotColor = dotProps.payload?.color ?? stroke
+              const isHighlighted = !highlightedLabel || highlightedLabel === label
+              return (
+                <circle
+                  key={dotProps.key}
+                  cx={dotProps.cx}
+                  cy={dotProps.cy}
+                  r={isHighlighted ? 7 : 5}
+                  fill={dotColor}
+                  stroke={isHighlighted ? "var(--color-background)" : "none"}
+                  strokeWidth={isHighlighted ? 2 : 0}
+                  opacity={isHighlighted ? 1 : 0.15}
+                  style={{ cursor: onLabelClick ? "pointer" : "default" }}
+                  onClick={() => onLabelClick?.(highlightedLabel === label ? null : label)}
+                />
+              )
+            }}
             activeDot={{ r: 6, fill: stroke, stroke: "var(--color-background)", strokeWidth: 2 }}
             isAnimationActive
             animationDuration={450}

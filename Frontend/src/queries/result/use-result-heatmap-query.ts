@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query"
+import { keepPreviousData, useQuery } from "@tanstack/react-query"
 
 import { queryKeys } from "@/queries/query-keys"
 import {
@@ -9,17 +9,18 @@ import { resultHeatmapService } from "@/services"
 import type { GetResultHeatmapParams } from "@/services/result/result.types"
 
 export function useResultHeatmapQuery(params: GetResultHeatmapParams) {
-  const { simulationId, ageGroup, page, size } = params
+  const { simulationId, ageGroups, page, size } = params
 
   return useQuery({
     queryKey: queryKeys.results.heatmap({
       simulationId,
-      ageGroup,
+      ageGroups,
       page,
       size,
     }),
     queryFn: () => resultHeatmapService.getHeatmap(params),
     enabled: Boolean(simulationId),
+    placeholderData: keepPreviousData,
     ...RESULT_QUERY_OPTIONS,
     retry: shouldRetryResultQuery,
   })

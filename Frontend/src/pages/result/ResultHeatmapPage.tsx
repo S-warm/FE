@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useParams } from "react-router-dom"
 import { Info } from "lucide-react"
 
@@ -13,7 +13,7 @@ import { useResultPageParam } from "@/lib/result-page-param"
 import { useResultPageSidePanelState } from "@/lib/result-page-side-panel-state"
 import { cn } from "@/lib/utils"
 import { useResultHeatmapQuery } from "@/queries"
-import type { ResultAgeFilter } from "@/types/view-model/common/result-meta"
+import type { ResultAgeBand, ResultAgeFilter } from "@/types/view-model/common/result-meta"
 import type {
   ResultHeatmapCoordinateMode,
   ResultHeatmapPageViewModel,
@@ -30,6 +30,115 @@ const ageFilters: ResultAgeFilter[] = [
   "60대",
   "70대",
 ]
+
+const selectableAgeBands = ageFilters.filter(
+  (filter): filter is ResultAgeBand => filter !== "all",
+)
+
+function buildJetLookup(): Uint8ClampedArray {
+  const stops: Array<[number, [number, number, number]]> = [
+    [0.0, [10, 10, 130]],
+    [0.2, [10, 60, 230]],
+    [0.4, [10, 200, 220]],
+    [0.55, [40, 220, 60]],
+    [0.72, [240, 230, 30]],
+    [0.88, [240, 130, 20]],
+    [1.0, [220, 30, 30]],
+  ]
+
+  const lookup = new Uint8ClampedArray(256 * 3)
+  for (let i = 0; i < 256; i += 1) {
+    const t = i / 255
+    let r = 0
+    let g = 0
+    let b = 0
+
+    for (let stopIndex = 0; stopIndex < stops.length - 1; stopIndex += 1) {
+      const [t0, c0] = stops[stopIndex]
+      const [t1, c1] = stops[stopIndex + 1]
+      if (t >= t0 && t <= t1) {
+        const local = (t - t0) / (t1 - t0)
+        r = Math.round(c0[0] + (c1[0] - c0[0]) * local)
+        g = Math.round(c0[1] + (c1[1] - c0[1]) * local)
+        b = Math.round(c0[2] + (c1[2] - c0[2]) * local)
+        break
+      }
+    }
+
+    lookup[i * 3] = r
+    lookup[i * 3 + 1] = g
+    lookup[i * 3 + 2] = b
+  }
+
+  return lookup
+}
+
+const JET_LOOKUP = buildJetLookup()
+const BLOB_HEATMAP_RADIUS_SCALE = 0.095
+const BLOB_HEATMAP_MIN_RADIUS = 54
+const BLOB_HEATMAP_MAX_RADIUS = 118
+const BLOB_HEATMAP_AMBIENT_SCALE = 1.42
+const BLOB_HEATMAP_CORE_SCALE = 0.7
+const BLOB_HEATMAP_CORE_ALPHA = 0.64
+const BLOB_HEATMAP_AMBIENT_ALPHA = 0.28
+const BLOB_HEATMAP_OUTPUT_ALPHA = 0.82
+const BLOB_HEATMAP_ALPHA_GAMMA = 1.02
+const BLOB_HEATMAP_LOW_SAMPLE_BOOST = 1.18
+
+function getLowSampleVisibilityProfile(pointsCount: number) {
+  if (pointsCount <= 4) {
+    return {
+      intensityBoost: 1.6,
+      intensityFloor: 0.4,
+      coreAlphaBonus: 0.12,
+      ambientAlphaBonus: 0.1,
+      alphaThreshold: 3,
+    }
+  }
+
+  if (pointsCount <= 8) {
+    return {
+      intensityBoost: 1.44,
+      intensityFloor: 0.34,
+      coreAlphaBonus: 0.09,
+      ambientAlphaBonus: 0.08,
+      alphaThreshold: 3,
+    }
+  }
+
+  if (pointsCount <= 12) {
+    return {
+      intensityBoost: 1.3,
+      intensityFloor: 0.28,
+      coreAlphaBonus: 0.07,
+      ambientAlphaBonus: 0.06,
+      alphaThreshold: 4,
+    }
+  }
+
+  if (pointsCount <= 24) {
+    return {
+      intensityBoost: BLOB_HEATMAP_LOW_SAMPLE_BOOST,
+      intensityFloor: 0.22,
+      coreAlphaBonus: 0.04,
+      ambientAlphaBonus: 0.04,
+      alphaThreshold: 4,
+    }
+  }
+
+  return {
+    intensityBoost: 1,
+    intensityFloor: 0,
+    coreAlphaBonus: 0,
+    ambientAlphaBonus: 0,
+    alphaThreshold: Math.max(4, Math.round(9 / window.devicePixelRatio || 1)),
+  }
+}
+
+function clampUnit(value: number) {
+  if (!Number.isFinite(value)) return 0
+  return Math.max(0, Math.min(1, value))
+}
 
 function getPointBadgeVariant(point: ResultHeatmapPointViewModel) {
   const tone = point.severity.tone
@@ -135,34 +244,48 @@ function resolvePointPixels(
 }
 
 function getSeverityWeight(point: ResultHeatmapPointViewModel) {
-  if (point.severity.rank >= 4) return 1.5
-  if (point.severity.rank >= 2) return 1.15
-  return 0.9
+  const rank = point.severity?.rank ?? 0
+  if (rank >= 4) return 1.5
+  if (rank >= 2) return 1.0
+  return 0.6
 }
 
-function getHeatScore(point: ResultHeatmapPointViewModel, maxCount: number) {
-  const countRatio = point.count / Math.max(maxCount, 1)
-  const severityRatio = Math.min(1, getSeverityWeight(point) / 1.5)
-  return Math.min(1, countRatio * 0.72 + severityRatio * 0.28)
+function getPointIntensity(point: ResultHeatmapPointViewModel) {
+  return point.count * getSeverityWeight(point)
 }
 
-function getHeatColor(score: number) {
-  if (score >= 0.72) return "239, 68, 68"
-  if (score >= 0.42) return "249, 115, 22"
-  return "34, 197, 94"
-}
-
-function getHeatRadius(point: ResultHeatmapPointViewModel, maxCount: number) {
-  const countRatio = point.count / Math.max(maxCount, 1)
-  return 68 + countRatio * 76 + getSeverityWeight(point) * 28
-}
-
-function getHeatAlpha(
-  point: ResultHeatmapPointViewModel,
-  maxCount: number,
+function getPointDensityFactors(
+  points: ResultHeatmapPointViewModel[],
+  metrics: RenderedImageMetrics,
+  coordinateMode: ResultHeatmapCoordinateMode,
+  baseRadius: number,
 ) {
-  const score = getHeatScore(point, maxCount)
-  return 0.24 + score * 0.5
+  const positions = points.map((point) =>
+    resolvePointPixels(point, metrics, coordinateMode)
+  )
+  const influenceDistance = baseRadius * 1.85
+
+  const densities = positions.map((position, currentIndex) => {
+    let accumulatedDensity = 0
+
+    for (let compareIndex = 0; compareIndex < positions.length; compareIndex += 1) {
+      if (compareIndex === currentIndex) continue
+
+      const comparePosition = positions[compareIndex]
+      const distanceX = position.left - comparePosition.left
+      const distanceY = position.top - comparePosition.top
+      const distance = Math.hypot(distanceX, distanceY)
+
+      if (distance > influenceDistance) continue
+
+      const normalizedDistance = distance / influenceDistance
+      accumulatedDensity += Math.exp(-(normalizedDistance * normalizedDistance) * 3.1)
+    }
+
+    return clampUnit(accumulatedDensity / 2.4)
+  })
+
+  return { positions, densities }
 }
 
 function drawHeatmapLayer(
@@ -171,51 +294,131 @@ function drawHeatmapLayer(
   coordinateMode: ResultHeatmapCoordinateMode,
   points: ResultHeatmapPointViewModel[],
 ) {
-  const { displayWidth: width, displayHeight: height } = metrics
-  const dpr = window.devicePixelRatio || 1
-  canvas.width = Math.max(1, Math.round(width * dpr))
-  canvas.height = Math.max(1, Math.round(height * dpr))
-  canvas.style.width = `${width}px`
-  canvas.style.height = `${height}px`
-
   const ctx = canvas.getContext("2d")
   if (!ctx) return
 
+  const cssWidth = metrics.displayWidth
+  const cssHeight = metrics.displayHeight
+  if (cssWidth <= 0 || cssHeight <= 0) return
+
+  const dpr = window.devicePixelRatio || 1
+  canvas.style.width = `${cssWidth}px`
+  canvas.style.height = `${cssHeight}px`
+  canvas.width = Math.max(1, Math.round(cssWidth * dpr))
+  canvas.height = Math.max(1, Math.round(cssHeight * dpr))
+
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
-  ctx.clearRect(0, 0, width, height)
+  ctx.clearRect(0, 0, cssWidth, cssHeight)
+  if (!points.length) return
 
-  const maxCount = Math.max(...points.map((point) => point.count), 1)
+  const baseRadius = Math.max(
+    BLOB_HEATMAP_MIN_RADIUS,
+    Math.min(BLOB_HEATMAP_MAX_RADIUS, cssWidth * BLOB_HEATMAP_RADIUS_SCALE),
+  )
+  const intensities = points.map(getPointIntensity)
+  const maxIntensity = Math.max(...intensities, 1)
+  const visibilityProfile = getLowSampleVisibilityProfile(points.length)
+  const { positions, densities } = getPointDensityFactors(
+    points,
+    metrics,
+    coordinateMode,
+    baseRadius,
+  )
 
-  points.forEach((point) => {
-    const { left: x, top: y } = resolvePointPixels(point, metrics, coordinateMode)
-    const radius = getHeatRadius(point, maxCount)
-    const alpha = getHeatAlpha(point, maxCount)
-    const score = getHeatScore(point, maxCount)
-    const color = getHeatColor(score)
+  ctx.globalCompositeOperation = "lighter"
+  for (let index = 0; index < points.length; index += 1) {
+    const { left, top } = positions[index]
+    const normalized = intensities[index] / maxIntensity
+    const density = densities[index]
+    const softened = clampUnit(
+      Math.max(
+        visibilityProfile.intensityFloor,
+        Math.pow(normalized, 0.88) * visibilityProfile.intensityBoost,
+      ),
+    )
+    const radius = baseRadius * (0.9 + density * 0.18 + softened * 0.06)
+    const ambientRadius = radius * (BLOB_HEATMAP_AMBIENT_SCALE + density * 0.08)
+    const coreRadius = radius * Math.max(0.58, BLOB_HEATMAP_CORE_SCALE - density * 0.04)
+    const coreAlpha = Math.min(
+      0.66,
+      visibilityProfile.coreAlphaBonus +
+        softened * (BLOB_HEATMAP_CORE_ALPHA - density * 0.06),
+    )
+    const ambientAlpha = Math.min(
+      0.32,
+      visibilityProfile.ambientAlphaBonus +
+        softened * (BLOB_HEATMAP_AMBIENT_ALPHA + density * 0.05),
+    )
 
-    const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius)
-    gradient.addColorStop(0, `rgba(${color}, ${Math.min(alpha * 1.18, 0.92)})`)
-    gradient.addColorStop(0.14, `rgba(${color}, ${Math.min(alpha * 1.02, 0.84)})`)
-    gradient.addColorStop(0.34, `rgba(${color}, ${alpha * 0.72})`)
-    gradient.addColorStop(0.58, `rgba(${color}, ${alpha * 0.34})`)
-    gradient.addColorStop(0.82, `rgba(${color}, ${alpha * 0.1})`)
-    gradient.addColorStop(1, `rgba(${color}, 0)`)
+    const ambientGradient = ctx.createRadialGradient(
+      left,
+      top,
+      0,
+      left,
+      top,
+      ambientRadius,
+    )
+    ambientGradient.addColorStop(0.0, `rgba(0, 0, 0, ${ambientAlpha})`)
+    ambientGradient.addColorStop(0.45, `rgba(0, 0, 0, ${ambientAlpha * 0.82})`)
+    ambientGradient.addColorStop(0.78, `rgba(0, 0, 0, ${ambientAlpha * 0.3})`)
+    ambientGradient.addColorStop(1.0, "rgba(0, 0, 0, 0)")
 
-    ctx.fillStyle = gradient
-    ctx.beginPath()
-    ctx.arc(x, y, radius, 0, Math.PI * 2)
-    ctx.fill()
-  })
+    ctx.fillStyle = ambientGradient
+    ctx.fillRect(
+      left - ambientRadius,
+      top - ambientRadius,
+      ambientRadius * 2,
+      ambientRadius * 2,
+    )
+
+    const coreGradient = ctx.createRadialGradient(left, top, 0, left, top, coreRadius)
+    coreGradient.addColorStop(0.0, `rgba(0, 0, 0, ${coreAlpha * 0.94})`)
+    coreGradient.addColorStop(0.14, `rgba(0, 0, 0, ${coreAlpha * 0.76})`)
+    coreGradient.addColorStop(0.42, `rgba(0, 0, 0, ${coreAlpha * 0.26})`)
+    coreGradient.addColorStop(1.0, "rgba(0, 0, 0, 0)")
+
+    ctx.fillStyle = coreGradient
+    ctx.fillRect(left - coreRadius, top - coreRadius, coreRadius * 2, coreRadius * 2)
+  }
+  ctx.globalCompositeOperation = "source-over"
+
+  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+  const { data } = imageData
+  const alphaThreshold =
+    visibilityProfile.alphaThreshold ?? Math.max(4, Math.round(9 / dpr))
+
+  for (let index = 0; index < data.length; index += 4) {
+    const alpha = data[index + 3]
+    if (alpha < alphaThreshold) {
+      data[index + 3] = 0
+      continue
+    }
+
+    const normalizedAlpha = Math.pow(alpha / 255, BLOB_HEATMAP_ALPHA_GAMMA)
+    const lookupAlpha = Math.max(0, Math.min(255, Math.round(normalizedAlpha * 255)))
+    const lookupIndex = lookupAlpha * 3
+    data[index] = JET_LOOKUP[lookupIndex]
+    data[index + 1] = JET_LOOKUP[lookupIndex + 1]
+    data[index + 2] = JET_LOOKUP[lookupIndex + 2]
+    data[index + 3] = Math.min(
+      255,
+      Math.round(lookupAlpha * BLOB_HEATMAP_OUTPUT_ALPHA),
+    )
+  }
+
+  ctx.putImageData(imageData, 0, 0)
 }
 
 function HeatmapCanvas({
   page,
+  isPinpointMode,
   selectedMarkerId,
   onSelectPoint,
   hoveredMarkerId,
   onHoverPoint,
 }: {
   page: ResultHeatmapPageViewModel
+  isPinpointMode: boolean
   selectedMarkerId: string | null
   onSelectPoint: (markerId: string) => void
   hoveredMarkerId: string | null
@@ -310,13 +513,34 @@ function HeatmapCanvas({
 
   useEffect(() => {
     if (!canvasRef.current || !imageMetrics) return
+    if (imageMetrics.displayWidth <= 0 || imageMetrics.displayHeight <= 0) return
 
-    drawHeatmapLayer(
-      canvasRef.current,
-      imageMetrics,
-      page.coordinateMode,
-      page.points,
-    )
+    let rafId: number | null = null
+    const scheduleDraw = () => {
+      if (rafId !== null) {
+        cancelAnimationFrame(rafId)
+      }
+
+      rafId = requestAnimationFrame(() => {
+        if (!canvasRef.current) return
+
+        drawHeatmapLayer(
+          canvasRef.current,
+          imageMetrics,
+          page.coordinateMode,
+          page.points,
+        )
+        rafId = null
+      })
+    }
+
+    scheduleDraw()
+
+    return () => {
+      if (rafId !== null) {
+        cancelAnimationFrame(rafId)
+      }
+    }
   }, [imageMetrics, page.coordinateMode, page.points])
 
   const getTooltipPosition = (point: Pick<ResultHeatmapPointViewModel, "x" | "y">) => {
@@ -361,7 +585,7 @@ function HeatmapCanvas({
             />
           ) : null}
 
-          {imageMetrics ? (
+          {imageMetrics && isPinpointMode ? (
             <div
               className="pointer-events-none absolute left-0 top-0 z-[3]"
               style={{
@@ -601,13 +825,18 @@ function PointDetail({ point }: { point: ResultHeatmapPointViewModel | null }) {
 function ResultHeatmapPage() {
   const { simulationId } = useParams()
   const resolvedId = simulationId ?? "unknown"
-  const [ageFilter, setAgeFilter] = useState<ResultAgeFilter>("all")
+  const [selectedAgeBands, setSelectedAgeBands] =
+    useState<ResultAgeBand[]>(selectableAgeBands)
   const [currentPageIndex, setCurrentPageIndex] = useState(0)
+  const [isPinpointMode, setIsPinpointMode] = useState(true)
   const [selectedMarkerId, setSelectedMarkerId] = useState<string | null>(null)
   const [hoveredMarkerId, setHoveredMarkerId] = useState<string | null>(null)
+  const isAllAgesSelected = selectedAgeBands.length === selectableAgeBands.length
+  const activeAgeFilterLabel: ResultAgeFilter =
+    isAllAgesSelected ? "all" : (selectedAgeBands[0] ?? "all")
   const { data, isLoading, isError, refetch } = useResultHeatmapQuery({
     simulationId: resolvedId,
-    ageGroup: ageFilter,
+    ageGroups: selectedAgeBands,
     page: currentPageIndex,
     size: 12,
   })
@@ -627,6 +856,10 @@ function ResultHeatmapPage() {
     [pages, selectedPageId],
   )
   const selectedPoint = useMemo(() => {
+    if (!isPinpointMode) {
+      return selectedPage?.points[0] ?? null
+    }
+
     if (hoveredMarkerId) {
       return (
         selectedPage?.points.find((point) => point.markerId === hoveredMarkerId) ??
@@ -639,7 +872,43 @@ function ResultHeatmapPage() {
       selectedPage?.points[0] ??
       null
     )
-  }, [hoveredMarkerId, selectedMarkerId, selectedPage])
+  }, [hoveredMarkerId, isPinpointMode, selectedMarkerId, selectedPage])
+
+  const togglePinpointMode = useCallback(() => {
+    setIsPinpointMode((prev) => {
+      const next = !prev
+      if (!next) {
+        setSelectedMarkerId(null)
+        setHoveredMarkerId(null)
+      }
+      return next
+    })
+  }, [])
+
+  const resetHeatmapSelection = useCallback(() => {
+    setCurrentPageIndex(0)
+    setSelectedMarkerId(null)
+    setHoveredMarkerId(null)
+  }, [])
+
+  const toggleAgeFilter = useCallback((filter: ResultAgeFilter) => {
+    setSelectedAgeBands((prev) => {
+      if (filter === "all") {
+        return selectableAgeBands
+      }
+
+      const nextAgeBands = prev.includes(filter)
+        ? prev.filter((ageBand) => ageBand !== filter)
+        : [...prev, filter]
+
+      if (!nextAgeBands.length) {
+        return selectableAgeBands
+      }
+
+      return selectableAgeBands.filter((ageBand) => nextAgeBands.includes(ageBand))
+    })
+    resetHeatmapSelection()
+  }, [resetHeatmapSelection])
 
   const sidePages = useMemo(
     () =>
@@ -687,6 +956,7 @@ function ResultHeatmapPage() {
         onSelectPage={(pageId) => {
           setSelectedPageId(pageId)
           setSelectedMarkerId(null)
+          setHoveredMarkerId(null)
           expandPage(pageId)
         }}
         onTogglePage={togglePage}
@@ -712,9 +982,16 @@ function ResultHeatmapPage() {
               </div>
             </div>
 
+            <p className="text-caption-12-regular text-text-muted">
+              선택된 연령대: {activeAgeFilterLabel === "all" ? "전체" : selectedAgeBands.join(", ")}
+            </p>
+
             <div className="flex flex-wrap gap-2">
               {ageFilters.map((filter) => {
-                const active = ageFilter === filter
+                const active =
+                  filter === "all"
+                    ? isAllAgesSelected
+                    : selectedAgeBands.includes(filter)
                 return (
                   <button
                     key={filter}
@@ -726,15 +1003,26 @@ function ResultHeatmapPage() {
                         : "border-border-soft bg-card text-text-secondary hover:bg-surface-subtle",
                     )}
                     onClick={() => {
-                      setAgeFilter(filter)
-                      setCurrentPageIndex(0)
-                      setSelectedMarkerId(null)
+                      toggleAgeFilter(filter)
                     }}
                   >
                     {filter === "all" ? "전체" : filter}
                   </button>
                 )
               })}
+              <button
+                type="button"
+                onClick={togglePinpointMode}
+                aria-pressed={isPinpointMode}
+                className={cn(
+                  "rounded-full border px-3 py-1.5 text-caption-12-medium transition-colors",
+                  isPinpointMode
+                    ? "border-border-focus bg-brand-subtle text-text-link"
+                    : "border-border-soft bg-card text-text-secondary hover:bg-surface-subtle",
+                )}
+              >
+                핀포인트 {isPinpointMode ? "ON" : "OFF"}
+              </button>
             </div>
           </CardContent>
         </Card>
@@ -748,9 +1036,10 @@ function ResultHeatmapPage() {
           <>
             <HeatmapCanvas
               page={selectedPage}
-              selectedMarkerId={selectedPoint?.markerId ?? null}
+              isPinpointMode={isPinpointMode}
+              selectedMarkerId={isPinpointMode ? selectedPoint?.markerId ?? null : null}
               onSelectPoint={setSelectedMarkerId}
-              hoveredMarkerId={hoveredMarkerId}
+              hoveredMarkerId={isPinpointMode ? hoveredMarkerId : null}
               onHoverPoint={setHoveredMarkerId}
             />
 
@@ -826,6 +1115,7 @@ function ResultHeatmapPage() {
                     onClick={() => {
                       setCurrentPageIndex((prev) => Math.max(0, prev - 1))
                       setSelectedMarkerId(null)
+                      setHoveredMarkerId(null)
                     }}
                     disabled={currentPageIndex <= 0}
                   >
@@ -840,6 +1130,7 @@ function ResultHeatmapPage() {
                     onClick={() => {
                       setCurrentPageIndex((prev) => prev + 1)
                       setSelectedMarkerId(null)
+                      setHoveredMarkerId(null)
                     }}
                     disabled={!selectedPage.pagination.hasMore}
                   >

@@ -1,4 +1,4 @@
-import type { ResultAgeFilter } from "@/types/view-model/common/result-meta"
+import type { ResultAgeBand } from "@/types/view-model/common/result-meta"
 
 export const queryKeys = {
   simulations: {
@@ -19,7 +19,7 @@ export const queryKeys = {
       ["results", simulationId, "ai-fix"] as const,
     heatmap: (params: {
       simulationId: string
-      ageGroup: ResultAgeFilter
+      ageGroups: ResultAgeBand[]
       page: number
       size: number
     }) =>
@@ -27,7 +27,7 @@ export const queryKeys = {
         "results",
         params.simulationId,
         "heatmap",
-        params.ageGroup,
+        [...params.ageGroups].sort().join(","),
         params.page,
         params.size,
       ] as const,

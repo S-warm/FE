@@ -7,7 +7,7 @@ import type {
   SimulationHeatmapBusinessPointDto,
   SimulationHeatmapPageDto,
 } from "@/types/api/simulation/simulation-heatmap.response"
-import type { ResultAgeFilter } from "@/types/view-model/common/result-meta"
+import type { ResultAgeBand, ResultAgeFilter } from "@/types/view-model/common/result-meta"
 import type {
   ResultHeatmapCoordinateMode,
   ResultHeatmapViewModel,
@@ -105,16 +105,24 @@ function buildPointDescription(point: SimulationHeatmapBusinessPointDto) {
   return `${ageLabel} 페르소나에서 ${point.errorType} 이슈가 ${point.count}회 관측되었습니다.`
 }
 
+function resolveCurrentAgeGroup(ageGroups: ResultAgeBand[]): ResultAgeFilter {
+  return ageGroups.length === 7 ? "all" : ageGroups[0] ?? "all"
+}
+
 function toBusinessViewModel(
   simulationId: string,
   raw: Extract<SimulationHeatmapApiResponseDto, { errorPoints: SimulationHeatmapBusinessPointDto[] }>,
   params: GetResultHeatmapParams
 ): ResultHeatmapViewModel {
+  const selectedAgeGroups = new Set(params.ageGroups)
   const filteredByAge =
-    params.ageGroup === "all"
+    selectedAgeGroups.size === 0 || selectedAgeGroups.size === 7
       ? raw.errorPoints
       : raw.errorPoints.filter(
-          (point) => normalizeAgeBand(point.ageBand) === params.ageGroup
+          (point) => {
+            const normalizedAgeBand = normalizeAgeBand(point.ageBand)
+            return normalizedAgeBand !== "all" && selectedAgeGroups.has(normalizedAgeBand)
+          }
         )
 
   const pointsByUrl = filteredByAge.reduce<Map<string, SimulationHeatmapBusinessPointDto[]>>(
@@ -145,7 +153,7 @@ function toBusinessViewModel(
         totalCountType: "errors",
         metaText: `${points.length}개 포인트`,
       }),
-      currentAgeGroup: params.ageGroup,
+      currentAgeGroup: resolveCurrentAgeGroup(params.ageGroups),
       coordinateMode: detectCoordinateMode(pagedPoints),
       points: pagedPoints.map((point) => ({
         markerId: `${url}:${point.issueId}:${point.x}:${point.y}:${point.ageBand}`,

@@ -36,18 +36,35 @@ function RangeSlider({
   const [isDragging, setIsDragging] = useState(false)
   const [trackWidth, setTrackWidth] = useState(0)
   const trackRef = useRef<HTMLDivElement | null>(null)
+  const isUnmountingRef = useRef(false)
+
+  useEffect(() => {
+    return () => {
+      isUnmountingRef.current = true
+    }
+  }, [])
 
   useEffect(() => {
     if (!isDragging) return
 
     const handlePointerUp = () => {
-      setIsDragging(false)
+      if (!isUnmountingRef.current) {
+        setIsDragging(false)
+      }
+    }
+
+    const handlePointerLeave = () => {
+      if (!isUnmountingRef.current) {
+        setIsDragging(false)
+      }
     }
 
     window.addEventListener("pointerup", handlePointerUp)
+    window.addEventListener("pointerleave", handlePointerLeave)
 
     return () => {
       window.removeEventListener("pointerup", handlePointerUp)
+      window.removeEventListener("pointerleave", handlePointerLeave)
     }
   }, [isDragging])
 

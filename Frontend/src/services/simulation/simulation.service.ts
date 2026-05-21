@@ -93,7 +93,9 @@ function buildMockSimulationStatus(record: MockSimulationRecord): SimulationStat
   return {
     id: record.projectId,
     status: isCompleted ? "completed" : "running",
-    progress: isCompleted ? 100 : Math.max(12, Math.round(progressRatio * 92)),
+    // 진행도는 절대 100%에 도달하지 않음 (백엔드가 완료될 때까지)
+    // 95%에서 멈춤 → 백엔드 완료 후 100% 점프
+    progress: isCompleted ? 95 : Math.max(12, Math.round(progressRatio * 92)),
     currentStep: isCompleted ? "결과 분석" : "시뮬레이션 실행",
     completed,
     total,

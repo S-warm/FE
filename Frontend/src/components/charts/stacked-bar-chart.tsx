@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react"
+import type { ReactElement } from "react"
 import {
   Bar,
   BarChart,
@@ -11,7 +12,6 @@ import {
   XAxis,
   YAxis,
 } from "recharts"
-import type { TooltipProps } from "recharts"
 
 import { EmptyState } from "@/components/sections/empty-state"
 import { chartTooltipContentStyle } from "@/components/charts/chart-tooltip"
@@ -31,7 +31,75 @@ function isLightColor(hex: string): boolean {
   return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.55
 }
 
-function StackedTooltip({ active, payload, label }: TooltipProps<number, string>) {
+type StackedTooltipEntry = {
+  dataKey?: string
+  value?: number | string
+  payload?: {
+    successColor?: string
+    failureColor?: string
+  }
+}
+
+type LabelContentProps = {
+  x?: number | string
+  y?: number | string
+  width?: number | string
+  height?: number | string
+  value?: number | string | boolean | null
+  index?: number
+}
+
+function getActiveTooltipIndex(state: unknown) {
+  if (
+    typeof state === "object" &&
+    state !== null &&
+    "activeTooltipIndex" in state &&
+    typeof state.activeTooltipIndex === "number"
+  ) {
+    return state.activeTooltipIndex
+  }
+
+  return null
+}
+
+function getActivePayloadLabel(state: unknown) {
+  if (
+    typeof state === "object" &&
+    state !== null &&
+    "activePayload" in state &&
+    Array.isArray(state.activePayload)
+  ) {
+    const firstPayload = state.activePayload[0]
+    if (
+      typeof firstPayload === "object" &&
+      firstPayload !== null &&
+      "payload" in firstPayload &&
+      typeof firstPayload.payload === "object" &&
+      firstPayload.payload !== null &&
+      "label" in firstPayload.payload &&
+      typeof firstPayload.payload.label === "string"
+    ) {
+      return firstPayload.payload.label
+    }
+  }
+
+  return null
+}
+
+function toNumber(value?: number | string | boolean | null) {
+  return typeof value === "number" ? value : typeof value === "string" ? Number(value) : 0
+}
+
+function StackedTooltip(props: {
+  active?: boolean
+  payload?: StackedTooltipEntry[]
+  label?: string | number
+}) {
+  const active = props.active
+  const payload = props.payload ?? []
+  const label = typeof props.label === "string" || typeof props.label === "number"
+    ? String(props.label)
+    : ""
   if (!active || !payload?.length) return null
 
   const success = payload.find((p) => p.dataKey === "success")
@@ -110,8 +178,13 @@ function StackedBarChart({
 
   const activeSuccess = activeIndex !== null ? data[activeIndex]?.success : null
 
-  const renderSuccessLabel = (props: { x?: number; y?: number; width?: number; height?: number; value?: number; index?: number }) => {
-    const { x = 0, y = 0, width: w = 0, height: h = 0, value = 0, index = 0 } = props
+  const renderSuccessLabel = (props: LabelContentProps) => {
+    const x = toNumber(props.x)
+    const y = toNumber(props.y)
+    const w = toNumber(props.width)
+    const h = toNumber(props.height)
+    const value = toNumber(props.value)
+    const index = props.index ?? 0
     if (value < 10) return null
     const entry = data[index]
     if (!entry) return null
@@ -124,8 +197,13 @@ function StackedBarChart({
     )
   }
 
-  const renderFailureLabel = (props: { x?: number; y?: number; width?: number; height?: number; value?: number; index?: number }) => {
-    const { x = 0, y = 0, width: w = 0, height: h = 0, value = 0, index = 0 } = props
+  const renderFailureLabel = (props: LabelContentProps) => {
+    const x = toNumber(props.x)
+    const y = toNumber(props.y)
+    const w = toNumber(props.width)
+    const h = toNumber(props.height)
+    const value = toNumber(props.value)
+    const index = props.index ?? 0
     if (value <= 0) return null
     const entry = data[index]
     if (!entry) return null
@@ -147,11 +225,11 @@ function StackedBarChart({
           margin={{ top: 4, right: 8, left: 8, bottom: 4 }}
           barCategoryGap="60%"
           onMouseMove={(state) => {
-            if (state.activeTooltipIndex !== undefined) setActiveIndex(state.activeTooltipIndex)
+            setActiveIndex(getActiveTooltipIndex(state))
           }}
           onMouseLeave={() => setActiveIndex(null)}
           onClick={(state) => {
-            const label = state?.activePayload?.[0]?.payload?.label
+            const label = getActivePayloadLabel(state)
             if (label) onLabelClick?.(highlightedLabel === label ? null : label)
           }}
           style={{ cursor: onLabelClick ? "pointer" : "default" }}
@@ -198,7 +276,12 @@ function StackedBarChart({
             isAnimationActive={animatedRef.current}
             animationDuration={450}
             onAnimationEnd={() => { animatedRef.current = false }}
-            onClick={(barData: StackedBarDatumViewModel) => onLabelClick?.(highlightedLabel === barData.label ? null : barData.label)}
+            onClick={(_, index) => {
+              const label = data[index]?.label
+              if (label) {
+                onLabelClick?.(highlightedLabel === label ? null : label)
+              }
+            }}
             style={{ cursor: onLabelClick ? "pointer" : "default" }}
             background={(bgProps: { x?: number; y?: number; width?: number; height?: number; index?: number }) => {
               const { x = 0, y = 0, width = 0, height = 0, index = 0 } = bgProps
@@ -225,7 +308,7 @@ function StackedBarChart({
                 strokeWidth={highlightedLabel === entry.label ? 1.5 : 0}
               />
             ))}
-            <LabelList dataKey="success" content={renderSuccessLabel} />
+            <LabelList dataKey="success" content={renderSuccessLabel as (props: unknown) => ReactElement | null} />
           </Bar>
           <Bar
             dataKey="failure"
@@ -235,7 +318,12 @@ function StackedBarChart({
             radius={[0, 8, 8, 0]}
             isAnimationActive={animatedRef.current}
             animationDuration={450}
-            onClick={(barData: StackedBarDatumViewModel) => onLabelClick?.(highlightedLabel === barData.label ? null : barData.label)}
+            onClick={(_, index) => {
+              const label = data[index]?.label
+              if (label) {
+                onLabelClick?.(highlightedLabel === label ? null : label)
+              }
+            }}
             style={{ cursor: onLabelClick ? "pointer" : "default" }}
           >
             {data.map((entry) => (
@@ -247,7 +335,7 @@ function StackedBarChart({
                 strokeWidth={highlightedLabel === entry.label ? 1.5 : 0}
               />
             ))}
-            <LabelList dataKey="failure" content={renderFailureLabel} />
+            <LabelList dataKey="failure" content={renderFailureLabel as (props: unknown) => ReactElement | null} />
           </Bar>
         </BarChart>
       </ResponsiveContainer>

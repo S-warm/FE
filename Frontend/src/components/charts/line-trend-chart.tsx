@@ -4,6 +4,29 @@ import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YA
 import { chartTooltipContentStyle } from "@/components/charts/chart-tooltip"
 import { EmptyState } from "@/components/sections/empty-state"
 
+function getActivePayloadLabel<T extends object>(state: unknown, dataKey: keyof T) {
+  if (
+    typeof state === "object" &&
+    state !== null &&
+    "activePayload" in state &&
+    Array.isArray(state.activePayload)
+  ) {
+    const firstPayload = state.activePayload[0]
+    if (
+      typeof firstPayload === "object" &&
+      firstPayload !== null &&
+      "payload" in firstPayload &&
+      typeof firstPayload.payload === "object" &&
+      firstPayload.payload !== null
+    ) {
+      const value = firstPayload.payload[dataKey as string]
+      return typeof value === "string" ? value : null
+    }
+  }
+
+  return null
+}
+
 interface LineTrendChartProps<T extends object> {
   data: T[]
   dataKey: keyof T
@@ -73,7 +96,7 @@ function LineTrendChart<T extends object>({
           data={data}
           margin={{ top: 8, right: 12, left: 0, bottom: 4 }}
           onClick={(state) => {
-            const label = state?.activePayload?.[0]?.payload?.[dataKey as string]
+            const label = getActivePayloadLabel<T>(state, dataKey)
             if (label) onLabelClick?.(highlightedLabel === label ? null : label)
           }}
           style={{ cursor: onLabelClick ? "pointer" : "default" }}

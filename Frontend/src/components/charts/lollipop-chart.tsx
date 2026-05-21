@@ -16,6 +16,47 @@ import { EmptyState } from "@/components/sections/empty-state"
 import { chartTooltipContentStyle } from "@/components/charts/chart-tooltip"
 import type { BarChartDatumViewModel } from "@/types/view-model/common/chart"
 
+type LollipopTooltipPayload = {
+  color?: string
+}
+
+function getActiveTooltipIndex(state: unknown) {
+  if (
+    typeof state === "object" &&
+    state !== null &&
+    "activeTooltipIndex" in state &&
+    typeof state.activeTooltipIndex === "number"
+  ) {
+    return state.activeTooltipIndex
+  }
+
+  return null
+}
+
+function getActivePayloadLabel(state: unknown) {
+  if (
+    typeof state === "object" &&
+    state !== null &&
+    "activePayload" in state &&
+    Array.isArray(state.activePayload)
+  ) {
+    const firstPayload = state.activePayload[0]
+    if (
+      typeof firstPayload === "object" &&
+      firstPayload !== null &&
+      "payload" in firstPayload &&
+      typeof firstPayload.payload === "object" &&
+      firstPayload.payload !== null &&
+      "label" in firstPayload.payload &&
+      typeof firstPayload.payload.label === "string"
+    ) {
+      return firstPayload.payload.label
+    }
+  }
+
+  return null
+}
+
 function LollipopShape(props: {
   x?: number
   y?: number
@@ -49,11 +90,14 @@ function LollipopShape(props: {
 
 function LollipopTooltip({
   active,
-  payload,
-  label,
   valueLabel,
   valueFormatter,
 }: TooltipProps<number, string> & { valueLabel?: string; valueFormatter?: (v: number) => string }) {
+  const payload = (arguments[0].payload ?? []) as Array<{
+    value?: number
+    payload?: LollipopTooltipPayload
+  }>
+  const label = typeof arguments[0].label === "string" ? arguments[0].label : ""
   if (!active || !payload?.length) return null
   const value = payload[0]?.value
   const color = payload[0]?.payload?.color
@@ -142,11 +186,11 @@ function LollipopChart({
           margin={{ top: 4, right: 16, left: 8, bottom: 4 }}
           barCategoryGap="30%"
           onMouseMove={(state) => {
-            if (state.activeTooltipIndex !== undefined) setActiveIndex(state.activeTooltipIndex)
+            setActiveIndex(getActiveTooltipIndex(state))
           }}
           onMouseLeave={() => setActiveIndex(null)}
           onClick={(state) => {
-            const label = state?.activePayload?.[0]?.payload?.label
+            const label = getActivePayloadLabel(state)
             if (label) onLabelClick?.(highlightedLabel === label ? null : label)
           }}
           style={{ cursor: onLabelClick ? "pointer" : "default" }}
@@ -183,13 +227,16 @@ function LollipopChart({
           <Bar
             dataKey="score"
             barSize={barSize ?? 24}
-            shape={(shapeProps: { x?: number; y?: number; width?: number; height?: number; fill?: string; label?: string }) => (
-              <LollipopShape
-                {...shapeProps}
-                opacity={highlightedLabel && highlightedLabel !== shapeProps.label ? 0.12 : 1}
-                onClick={() => onLabelClick?.(highlightedLabel === shapeProps.label ? null : (shapeProps.label ?? null))}
-              />
-            )}
+            shape={(shapeProps: { x?: number; y?: number; width?: number; height?: number; fill?: string; payload?: { label?: string } }) => {
+              const label = typeof shapeProps.payload?.label === "string" ? shapeProps.payload.label : null
+              return (
+                <LollipopShape
+                  {...shapeProps}
+                  opacity={highlightedLabel && highlightedLabel !== label ? 0.12 : 1}
+                  onClick={() => onLabelClick?.(highlightedLabel === label ? null : label)}
+                />
+              )
+            }}
             isAnimationActive
             animationDuration={450}
           >

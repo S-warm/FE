@@ -22,9 +22,12 @@ function LoginPanel({ onGoToSignUp }: { onGoToSignUp: () => void }) {
 
   useEffect(() => {
     return () => {
+      // 컴포넌트 언마운트 시 민감한 정보 초기화
       if (transitionTimeoutRef.current !== null) {
         window.clearTimeout(transitionTimeoutRef.current)
       }
+      setPassword("")
+      setEmail("")
     }
   }, [])
 

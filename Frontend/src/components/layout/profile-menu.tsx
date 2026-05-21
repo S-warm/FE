@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from "react"
+import { useCallback, useEffect, useId, useRef, useState } from "react"
 
 import { CreditCard, LogOut, Settings, User } from "lucide-react"
 
@@ -42,23 +42,25 @@ function ProfileMenu({ initials = "CN" }: { initials?: string }) {
   const buttonRef = useRef<HTMLButtonElement | null>(null)
   const menuRef = useRef<HTMLDivElement | null>(null)
 
+  // 핸들러를 useCallback으로 메모이제이션하여 불필요한 리스너 재등록 방지
+  const handleKeyDown = useCallback((event: KeyboardEvent) => {
+    if (event.key === "Escape" && open) {
+      setOpen(false)
+      buttonRef.current?.focus()
+    }
+  }, [open])
+
+  const handlePointerDown = useCallback((event: PointerEvent) => {
+    if (!open) return
+    const target = event.target
+    if (!(target instanceof Node)) return
+    if (buttonRef.current?.contains(target)) return
+    if (menuRef.current?.contains(target)) return
+    setOpen(false)
+  }, [open])
+
   useEffect(() => {
     if (!open) return
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setOpen(false)
-        buttonRef.current?.focus()
-      }
-    }
-
-    const handlePointerDown = (event: PointerEvent) => {
-      const target = event.target
-      if (!(target instanceof Node)) return
-      if (buttonRef.current?.contains(target)) return
-      if (menuRef.current?.contains(target)) return
-      setOpen(false)
-    }
 
     window.addEventListener("keydown", handleKeyDown)
     window.addEventListener("pointerdown", handlePointerDown)
@@ -67,7 +69,7 @@ function ProfileMenu({ initials = "CN" }: { initials?: string }) {
       window.removeEventListener("keydown", handleKeyDown)
       window.removeEventListener("pointerdown", handlePointerDown)
     }
-  }, [open])
+  }, [open, handleKeyDown, handlePointerDown])
 
   const closeMenu = () => {
     setOpen(false)

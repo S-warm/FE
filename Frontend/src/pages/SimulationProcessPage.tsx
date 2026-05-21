@@ -127,10 +127,17 @@ function ProcessCard({
   )
 
   const progress = (() => {
+    // 백엔드가 완료되면 진행도 100%
+    if (isTerminalStatus && !isFailedStatus) {
+      return 100
+    }
+
+    // 진행 중이면 서버의 progress 값 사용
     if (typeof simulationStatus?.progress === "number") {
       return Math.max(0, Math.min(100, Math.round(simulationStatus.progress)))
     }
 
+    // fallback: 단계별 진행도 (95% 이상 도달 금지)
     const fallbackByStep = [15, 35, 70, isFailedStatus ? 100 : 92]
     return fallbackByStep[activeStepIndex] ?? 15
   })()

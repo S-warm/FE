@@ -13,9 +13,13 @@ function GeneratePage() {
   const navigate = useNavigate()
 
   useEffect(() => {
-    window.requestAnimationFrame(() => {
+    const frameId = window.requestAnimationFrame(() => {
       setVisible(true)
     })
+
+    return () => {
+      window.cancelAnimationFrame(frameId)
+    }
   }, [])
 
   return (

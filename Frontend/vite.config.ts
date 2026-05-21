@@ -9,6 +9,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      'd3-color': path.resolve(__dirname, './node_modules/d3-color/src/index.js'),
     },
   },
   build: {

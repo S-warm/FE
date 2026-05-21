@@ -52,6 +52,23 @@ interface RenderedImageMetrics {
   naturalHeight: number
 }
 
+interface ImageViewportPosition {
+  left: number
+  top: number
+}
+
+function areImageMetricsEqual(
+  left: RenderedImageMetrics | null,
+  right: RenderedImageMetrics,
+) {
+  return (
+    left?.displayWidth === right.displayWidth &&
+    left?.displayHeight === right.displayHeight &&
+    left?.naturalWidth === right.naturalWidth &&
+    left?.naturalHeight === right.naturalHeight
+  )
+}
+
 function clampRatio(value: number) {
   if (!Number.isFinite(value)) return 0
   return Math.max(0, Math.min(1, value))
@@ -193,32 +210,47 @@ function drawHeatmapLayer(
 
 function HeatmapCanvas({
   page,
-  selectedPointId,
+  selectedMarkerId,
   onSelectPoint,
-  hoveredPointId,
+  hoveredMarkerId,
   onHoverPoint,
 }: {
   page: ResultHeatmapPageViewModel
-  selectedPointId: string | null
-  onSelectPoint: (issueId: string) => void
-  hoveredPointId: string | null
-  onHoverPoint: (issueId: string | null) => void
+  selectedMarkerId: string | null
+  onSelectPoint: (markerId: string) => void
+  hoveredMarkerId: string | null
+  onHoverPoint: (markerId: string | null) => void
 }) {
   const containerRef = useRef<HTMLDivElement>(null)
-  const contentRef = useRef<HTMLDivElement>(null)
   const imageRef = useRef<HTMLImageElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [failedScreenshotUrl, setFailedScreenshotUrl] = useState<string | null>(null)
   const [imageMetrics, setImageMetrics] = useState<RenderedImageMetrics | null>(null)
+  const [imageViewportPosition, setImageViewportPosition] =
+    useState<ImageViewportPosition | null>(null)
 
   const handleImageLoad = (event: React.SyntheticEvent<HTMLImageElement>) => {
     const image = event.currentTarget
-    setImageMetrics({
+    const nextMetrics = {
       displayWidth: image.clientWidth,
       displayHeight: image.clientHeight,
       naturalWidth: image.naturalWidth,
       naturalHeight: image.naturalHeight,
-    })
+    }
+    const nextViewportPosition = {
+      left: image.getBoundingClientRect().left,
+      top: image.getBoundingClientRect().top,
+    }
+
+    setImageMetrics((prev) => (
+      areImageMetricsEqual(prev, nextMetrics) ? prev : nextMetrics
+    ))
+    setImageViewportPosition((prev) =>
+      prev?.left === nextViewportPosition.left &&
+      prev?.top === nextViewportPosition.top
+        ? prev
+        : nextViewportPosition
+    )
   }
 
   useEffect(() => {
@@ -226,21 +258,38 @@ function HeatmapCanvas({
       const image = imageRef.current
       if (!image) return
 
-      setImageMetrics({
+      const nextMetrics = {
         displayWidth: image.clientWidth,
         displayHeight: image.clientHeight,
         naturalWidth: image.naturalWidth,
         naturalHeight: image.naturalHeight,
-      })
+      }
+      const nextViewportPosition = {
+        left: image.getBoundingClientRect().left,
+        top: image.getBoundingClientRect().top,
+      }
+
+      setImageMetrics((prev) => (
+        areImageMetricsEqual(prev, nextMetrics) ? prev : nextMetrics
+      ))
+      setImageViewportPosition((prev) =>
+        prev?.left === nextViewportPosition.left &&
+        prev?.top === nextViewportPosition.top
+          ? prev
+          : nextViewportPosition
+      )
     }
 
     updateMetrics()
 
+    const container = containerRef.current
     const image = imageRef.current
     if (!image || typeof ResizeObserver === "undefined") {
       window.addEventListener("resize", updateMetrics)
+      container?.addEventListener("scroll", updateMetrics, { passive: true })
       return () => {
         window.removeEventListener("resize", updateMetrics)
+        container?.removeEventListener("scroll", updateMetrics)
       }
     }
 
@@ -249,9 +298,13 @@ function HeatmapCanvas({
     })
 
     resizeObserver.observe(image)
+    window.addEventListener("resize", updateMetrics)
+    container?.addEventListener("scroll", updateMetrics, { passive: true })
 
     return () => {
       resizeObserver.disconnect()
+      window.removeEventListener("resize", updateMetrics)
+      container?.removeEventListener("scroll", updateMetrics)
     }
   }, [page.pageId])
 
@@ -267,16 +320,15 @@ function HeatmapCanvas({
   }, [imageMetrics, page.coordinateMode, page.points])
 
   const getTooltipPosition = (point: Pick<ResultHeatmapPointViewModel, "x" | "y">) => {
-    const imageRect = imageRef.current?.getBoundingClientRect()
-    if (!imageRect || !imageMetrics) {
+    if (!imageViewportPosition || !imageMetrics) {
       return { x: 0, y: 0 }
     }
 
     const { left, top } = resolvePointPixels(point, imageMetrics, page.coordinateMode)
 
     return {
-      x: imageRect.left + left,
-      y: imageRect.top + top,
+      x: imageViewportPosition.left + left,
+      y: imageViewportPosition.top + top,
     }
   }
 
@@ -287,12 +339,13 @@ function HeatmapCanvas({
       style={{ maxHeight: "80vh" }}
     >
       {page.screenshotUrl && failedScreenshotUrl !== page.screenshotUrl ? (
-        <div ref={contentRef} className="relative w-full">
+        <div className="relative w-full">
           <img
             ref={imageRef}
             src={page.screenshotUrl}
             alt={page.pageName}
             className="block w-full h-auto"
+            decoding="async"
             onLoad={handleImageLoad}
             onError={() => setFailedScreenshotUrl(page.screenshotUrl ?? null)}
           />
@@ -317,9 +370,9 @@ function HeatmapCanvas({
               }}
             >
               {page.points.map((point, index) => {
-                const isSelected = point.issueId === selectedPointId
-                const isHovered = point.issueId === hoveredPointId
-                const uniqueKey = `${page.pageUrl}-${point.issueId}-${index}`
+                const isSelected = point.markerId === selectedMarkerId
+                const isHovered = point.markerId === hoveredMarkerId
+                const uniqueKey = point.markerId || `${page.pageUrl}-${point.issueId}-${index}`
                 const position = resolvePointPixels(point, imageMetrics, page.coordinateMode)
                 const tooltipPosition = getTooltipPosition(point)
 
@@ -342,8 +395,8 @@ function HeatmapCanvas({
                     />
                     <button
                       type="button"
-                      onClick={() => onSelectPoint(point.issueId)}
-                      onMouseEnter={() => onHoverPoint(point.issueId)}
+                      onClick={() => onSelectPoint(point.markerId)}
+                      onMouseEnter={() => onHoverPoint(point.markerId)}
                       onMouseLeave={() => onHoverPoint(null)}
                       className={cn(
                         "pointer-events-auto absolute grid size-9 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-white/55 text-[11px] font-semibold text-white shadow-[0_6px_16px_rgba(15,23,42,0.32)] backdrop-blur-sm transition-all duration-300",
@@ -550,8 +603,8 @@ function ResultHeatmapPage() {
   const resolvedId = simulationId ?? "unknown"
   const [ageFilter, setAgeFilter] = useState<ResultAgeFilter>("all")
   const [currentPageIndex, setCurrentPageIndex] = useState(0)
-  const [selectedPointId, setSelectedPointId] = useState<string | null>(null)
-  const [hoveredPointId, setHoveredPointId] = useState<string | null>(null)
+  const [selectedMarkerId, setSelectedMarkerId] = useState<string | null>(null)
+  const [hoveredMarkerId, setHoveredMarkerId] = useState<string | null>(null)
   const { data, isLoading, isError, refetch } = useResultHeatmapQuery({
     simulationId: resolvedId,
     ageGroup: ageFilter,
@@ -574,19 +627,19 @@ function ResultHeatmapPage() {
     [pages, selectedPageId],
   )
   const selectedPoint = useMemo(() => {
-    if (hoveredPointId) {
+    if (hoveredMarkerId) {
       return (
-        selectedPage?.points.find((point) => point.issueId === hoveredPointId) ??
+        selectedPage?.points.find((point) => point.markerId === hoveredMarkerId) ??
         null
       )
     }
 
     return (
-      selectedPage?.points.find((point) => point.issueId === selectedPointId) ??
+      selectedPage?.points.find((point) => point.markerId === selectedMarkerId) ??
       selectedPage?.points[0] ??
       null
     )
-  }, [selectedPage, selectedPointId, hoveredPointId])
+  }, [hoveredMarkerId, selectedMarkerId, selectedPage])
 
   const sidePages = useMemo(
     () =>
@@ -633,7 +686,7 @@ function ResultHeatmapPage() {
         expandedPageIds={expandedPageIds}
         onSelectPage={(pageId) => {
           setSelectedPageId(pageId)
-          setSelectedPointId(null)
+          setSelectedMarkerId(null)
           expandPage(pageId)
         }}
         onTogglePage={togglePage}
@@ -675,7 +728,7 @@ function ResultHeatmapPage() {
                     onClick={() => {
                       setAgeFilter(filter)
                       setCurrentPageIndex(0)
-                      setSelectedPointId(null)
+                      setSelectedMarkerId(null)
                     }}
                   >
                     {filter === "all" ? "전체" : filter}
@@ -695,10 +748,10 @@ function ResultHeatmapPage() {
           <>
             <HeatmapCanvas
               page={selectedPage}
-              selectedPointId={selectedPoint?.issueId ?? null}
-              onSelectPoint={setSelectedPointId}
-              hoveredPointId={hoveredPointId}
-              onHoverPoint={setHoveredPointId}
+              selectedMarkerId={selectedPoint?.markerId ?? null}
+              onSelectPoint={setSelectedMarkerId}
+              hoveredMarkerId={hoveredMarkerId}
+              onHoverPoint={setHoveredMarkerId}
             />
 
             <PointDetail point={selectedPoint} />
@@ -725,10 +778,10 @@ function ResultHeatmapPage() {
                         <button
                           key={uniqueKey}
                           type="button"
-                          onClick={() => setSelectedPointId(point.issueId)}
+                          onClick={() => setSelectedMarkerId(point.markerId)}
                           className={cn(
                             "rounded-2xl border px-4 py-3 text-left transition-colors",
-                            selectedPoint?.issueId === point.issueId
+                            selectedPoint?.markerId === point.markerId
                               ? "border-border-focus bg-card"
                               : "border-border-soft bg-surface-subtle hover:bg-card",
                           )}
@@ -772,7 +825,7 @@ function ResultHeatmapPage() {
                     className="rounded-xl border border-border-soft bg-card px-3 py-2 text-caption-12-medium text-text-secondary disabled:opacity-50"
                     onClick={() => {
                       setCurrentPageIndex((prev) => Math.max(0, prev - 1))
-                      setSelectedPointId(null)
+                      setSelectedMarkerId(null)
                     }}
                     disabled={currentPageIndex <= 0}
                   >
@@ -786,7 +839,7 @@ function ResultHeatmapPage() {
                     className="rounded-xl border border-border-soft bg-card px-3 py-2 text-caption-12-medium text-text-secondary disabled:opacity-50"
                     onClick={() => {
                       setCurrentPageIndex((prev) => prev + 1)
-                      setSelectedPointId(null)
+                      setSelectedMarkerId(null)
                     }}
                     disabled={!selectedPage.pagination.hasMore}
                   >

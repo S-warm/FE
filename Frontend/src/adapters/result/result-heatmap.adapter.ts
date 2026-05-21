@@ -28,16 +28,16 @@ function detectCoordinateMode(
   const maxX = Math.max(...points.map((point) => point.x))
   const maxY = Math.max(...points.map((point) => point.y))
 
-  if (maxX < 1 && maxY < 1) {
-    return "pixel-scaled-thousand"
-  }
-
   if (maxX <= 1 && maxY <= 1) {
     return "ratio"
   }
 
   if (maxX <= 100 && maxY <= 100) {
     return "percent"
+  }
+
+  if (maxX <= 1000 && maxY <= 1000) {
+    return "pixel-scaled-thousand"
   }
 
   return "pixel"
@@ -148,6 +148,7 @@ function toBusinessViewModel(
       currentAgeGroup: params.ageGroup,
       coordinateMode: detectCoordinateMode(pagedPoints),
       points: pagedPoints.map((point) => ({
+        markerId: `${url}:${point.issueId}:${point.x}:${point.y}:${point.ageBand}`,
         issueType: "ux" as const,
         issueId: point.issueId,
           x: normalizeAxis(point.x),
@@ -197,6 +198,7 @@ function toLegacyViewModel(
         const ageBand = normalizeAgeBand(point.ageBand ?? "")
         const maxCount = Math.max(...(page.errorPoints ?? []).map((p) => p.count ?? 0), 1)
         return {
+          markerId: `${page.pageUrl}:${point.issueId}:${point.x}:${point.y}:${point.ageBand ?? ""}`,
           issueType: "ux" as const,
           issueId: point.issueId,
           x: normalizeAxis(point.x),

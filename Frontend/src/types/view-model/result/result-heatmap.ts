@@ -10,6 +10,7 @@ export type ResultHeatmapCoordinateMode =
   | "pixel-scaled-thousand"
 
 export interface ResultHeatmapPointViewModel extends ResultUxIssueLinkViewModel {
+  markerId: string
   x: number
   y: number
   count: number

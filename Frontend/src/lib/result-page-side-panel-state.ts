@@ -1,24 +1,32 @@
-import { useEffect, useState } from "react"
+import { useMemo, useState } from "react"
 
 function useResultPageSidePanelState(selectedPageId: string, allPageIds: string[] = []) {
-  const [expandedPageIds, setExpandedPageIds] = useState<string[]>(() =>
-    Array.from(new Set([selectedPageId, ...allPageIds]))
-  )
+  const [manualExpandedPageIds, setManualExpandedPageIds] = useState<string[]>(() => {
+    const initialPageId = selectedPageId || allPageIds[0]
+    return initialPageId ? [initialPageId] : []
+  })
 
-  const allPageIdsKey = allPageIds.join(",")
-  useEffect(() => {
-    if (allPageIds.length) {
-      setExpandedPageIds((prev) => Array.from(new Set([...prev, ...allPageIds])))
+  const expandedPageIds = useMemo(() => {
+    const normalized = manualExpandedPageIds.filter((pageId) => allPageIds.includes(pageId))
+    const fallbackPageId = selectedPageId || allPageIds[0]
+
+    if (!fallbackPageId) {
+      return normalized
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [allPageIdsKey])
+
+    return normalized.includes(fallbackPageId)
+      ? normalized
+      : [...normalized, fallbackPageId]
+  }, [allPageIds, manualExpandedPageIds, selectedPageId])
 
   const expandPage = (pageId: string) => {
-    setExpandedPageIds((prev) => (prev.includes(pageId) ? prev : [...prev, pageId]))
+    setManualExpandedPageIds((prev) => (prev.includes(pageId) ? prev : [...prev, pageId]))
   }
 
   const togglePage = (pageId: string) => {
-    setExpandedPageIds((prev) => (prev.includes(pageId) ? prev.filter((id) => id !== pageId) : [...prev, pageId]))
+    setManualExpandedPageIds((prev) =>
+      prev.includes(pageId) ? prev.filter((id) => id !== pageId) : [...prev, pageId]
+    )
   }
 
   return {

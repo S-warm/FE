@@ -88,23 +88,26 @@ function LollipopShape(props: {
   )
 }
 
-function LollipopTooltip({
-  active,
-  valueLabel,
-  valueFormatter,
-}: TooltipProps<number, string> & { valueLabel?: string; valueFormatter?: (v: number) => string }) {
-  const payload = (arguments[0].payload ?? []) as Array<{
+function LollipopTooltip(
+  props: TooltipProps<number, string> & {
+    valueLabel?: string
+    valueFormatter?: (v: number) => string
+  }
+) {
+  const { active, valueLabel, valueFormatter } = props
+  const resolvedPayload = ((props as { payload?: unknown }).payload ?? []) as Array<{
     value?: number
     payload?: LollipopTooltipPayload
   }>
-  const label = typeof arguments[0].label === "string" ? arguments[0].label : ""
-  if (!active || !payload?.length) return null
-  const value = payload[0]?.value
-  const color = payload[0]?.payload?.color
+  const label = (props as { label?: unknown }).label
+  const resolvedLabel = typeof label === "string" ? label : ""
+  if (!active || !resolvedPayload.length) return null
+  const value = resolvedPayload[0]?.value
+  const color = resolvedPayload[0]?.payload?.color
 
   return (
     <div style={chartTooltipContentStyle} className="rounded-xl px-3 py-2 text-[12px]">
-      <p className="mb-1.5 font-semibold">{label}</p>
+      <p className="mb-1.5 font-semibold">{resolvedLabel}</p>
       <div className="flex items-center gap-2">
         <span className="size-2 rounded-full" style={{ backgroundColor: color }} />
         {valueLabel && <span className="text-text-muted">{valueLabel}</span>}
@@ -151,7 +154,8 @@ function LollipopChart({
     const updateHeight = () => {
       if (containerRef.current) {
         const rect = containerRef.current.getBoundingClientRect()
-        setHeight(Math.max(200, Math.round(rect.height)))
+        const nextHeight = Math.max(200, Math.round(rect.height))
+        setHeight((prev) => (prev === nextHeight ? prev : nextHeight))
       }
     }
 

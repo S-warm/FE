@@ -148,13 +148,14 @@ function StackedBarChart({
   const containerRef = useRef<HTMLDivElement>(null)
   const [height, setHeight] = useState(280)
   const [activeIndex, setActiveIndex] = useState<number | null>(null)
-  const animatedRef = useRef(true)
+  const [isAnimationActive, setIsAnimationActive] = useState(true)
 
   useEffect(() => {
     const updateHeight = () => {
       if (containerRef.current) {
         const rect = containerRef.current.getBoundingClientRect()
-        setHeight(Math.max(200, Math.round(rect.height)))
+        const nextHeight = Math.max(200, Math.round(rect.height))
+        setHeight((prev) => (prev === nextHeight ? prev : nextHeight))
       }
     }
 
@@ -273,9 +274,9 @@ function StackedBarChart({
             name="성공"
             barSize={barSize ?? 24}
             radius={[8, 0, 0, 8]}
-            isAnimationActive={animatedRef.current}
+            isAnimationActive={isAnimationActive}
             animationDuration={450}
-            onAnimationEnd={() => { animatedRef.current = false }}
+            onAnimationEnd={() => { setIsAnimationActive(false) }}
             onClick={(_, index) => {
               const label = data[index]?.label
               if (label) {
@@ -316,7 +317,7 @@ function StackedBarChart({
             name="실패"
             barSize={barSize ?? 24}
             radius={[0, 8, 8, 0]}
-            isAnimationActive={animatedRef.current}
+            isAnimationActive={isAnimationActive}
             animationDuration={450}
             onClick={(_, index) => {
               const label = data[index]?.label

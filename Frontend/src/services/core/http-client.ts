@@ -68,7 +68,9 @@ function buildUrl(path: string, query?: RequestOptions["query"]) {
   const normalizedBaseUrl = normalizeBaseUrl(SERVICE_CONFIG.apiBaseUrl)
   const requestTarget = joinBaseUrlAndPath(normalizedBaseUrl, path)
   const requestOrigin =
-    typeof window !== "undefined" ? window.location.origin : "http://localhost:3000"
+    typeof window !== "undefined"
+      ? window.location.origin
+      : SERVICE_CONFIG.appOrigin
   const url = normalizedBaseUrl.startsWith("/")
     ? new URL(requestTarget, requestOrigin)
     : new URL(requestTarget)
@@ -170,10 +172,7 @@ function toApiErrorPayload(
 }
 
 function buildHeaders(customHeaders?: Record<string, string>) {
-  const token =
-    useAuthStore.getState().accessToken ??
-    import.meta.env.VITE_API_ACCESS_TOKEN ??
-    null
+  const token = useAuthStore.getState().accessToken ?? null
 
   const headers: Record<string, string> = {
     Accept: "application/json",

@@ -1,8 +1,9 @@
-function formatRelativeTime(input: string | Date, now: Date = new Date()) {
+function formatRelativeTime(input: string | Date, now?: Date) {
   const date = input instanceof Date ? input : new Date(input)
   if (Number.isNaN(date.getTime())) return "-"
 
-  const diffMs = now.getTime() - date.getTime()
+  const baseNow = now ?? new Date()
+  const diffMs = baseNow.getTime() - date.getTime()
   const absMs = Math.abs(diffMs)
   const isFuture = diffMs < 0
 

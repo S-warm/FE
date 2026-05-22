@@ -1,6 +1,11 @@
-import { codeToHtml } from "shiki"
+type HighlightResult = {
+  language: string
+  languageLabel: string
+  formattedCode: string
+}
 
-const CODE_THEME = "dark-plus"
+const highlightCache = new Map<string, HighlightResult>()
+const inflightHighlightCache = new Map<string, Promise<HighlightResult>>()
 
 function looksLikeJson(code: string) {
   const trimmed = code.trim()
@@ -100,15 +105,35 @@ export function formatCodeForDisplay(code: string) {
 export async function highlightCodeToHtml(code: string) {
   const formattedCode = formatCodeForDisplay(code)
   const language = guessCodeLanguage(formattedCode)
-  const html = await codeToHtml(formattedCode, {
-    lang: language,
-    theme: CODE_THEME,
+  const cacheKey = `${language}::${formattedCode}`
+  const cachedResult = highlightCache.get(cacheKey)
+
+  if (cachedResult) {
+    return cachedResult
+  }
+
+  const inflightResult = inflightHighlightCache.get(cacheKey)
+  if (inflightResult) {
+    return inflightResult
+  }
+
+  const highlightTask = Promise.resolve().then(() => {
+    const result = {
+      language,
+      languageLabel: formatCodeLanguageLabel(language),
+      formattedCode,
+    }
+
+    highlightCache.set(cacheKey, result)
+    inflightHighlightCache.delete(cacheKey)
+
+    return result
+  }).catch((error) => {
+    inflightHighlightCache.delete(cacheKey)
+    throw error
   })
 
-  return {
-    html,
-    language,
-    languageLabel: formatCodeLanguageLabel(language),
-    formattedCode,
-  }
+  inflightHighlightCache.set(cacheKey, highlightTask)
+
+  return highlightTask
 }

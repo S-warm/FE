@@ -85,6 +85,10 @@ const BLOB_HEATMAP_OUTPUT_ALPHA = 0.82
 const BLOB_HEATMAP_ALPHA_GAMMA = 1.02
 const BLOB_HEATMAP_LOW_SAMPLE_BOOST = 1.18
 
+function getDevicePixelRatio() {
+  return typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1
+}
+
 function getLowSampleVisibilityProfile(pointsCount: number) {
   if (pointsCount <= 4) {
     return {
@@ -131,7 +135,7 @@ function getLowSampleVisibilityProfile(pointsCount: number) {
     intensityFloor: 0,
     coreAlphaBonus: 0,
     ambientAlphaBonus: 0,
-    alphaThreshold: Math.max(4, Math.round(9 / window.devicePixelRatio || 1)),
+    alphaThreshold: Math.max(4, Math.round(9 / getDevicePixelRatio())),
   }
 }
 
@@ -259,22 +263,45 @@ function getPointDensityFactors(
     resolvePointPixels(point, metrics, coordinateMode)
   )
   const influenceDistance = baseRadius * 1.85
+  const bucketSize = Math.max(24, Math.round(influenceDistance))
+  const buckets = new Map<string, number[]>()
+
+  positions.forEach((position, index) => {
+    const bucketX = Math.floor(position.left / bucketSize)
+    const bucketY = Math.floor(position.top / bucketSize)
+    const bucketKey = `${bucketX}:${bucketY}`
+    const bucket = buckets.get(bucketKey) ?? []
+    bucket.push(index)
+    buckets.set(bucketKey, bucket)
+  })
 
   const densities = positions.map((position, currentIndex) => {
     let accumulatedDensity = 0
 
-    for (let compareIndex = 0; compareIndex < positions.length; compareIndex += 1) {
-      if (compareIndex === currentIndex) continue
+    const currentBucketX = Math.floor(position.left / bucketSize)
+    const currentBucketY = Math.floor(position.top / bucketSize)
 
-      const comparePosition = positions[compareIndex]
-      const distanceX = position.left - comparePosition.left
-      const distanceY = position.top - comparePosition.top
-      const distance = Math.hypot(distanceX, distanceY)
+    for (let offsetX = -1; offsetX <= 1; offsetX += 1) {
+      for (let offsetY = -1; offsetY <= 1; offsetY += 1) {
+        const neighborBucket = buckets.get(
+          `${currentBucketX + offsetX}:${currentBucketY + offsetY}`,
+        )
+        if (!neighborBucket) continue
 
-      if (distance > influenceDistance) continue
+        for (const compareIndex of neighborBucket) {
+          if (compareIndex === currentIndex) continue
 
-      const normalizedDistance = distance / influenceDistance
-      accumulatedDensity += Math.exp(-(normalizedDistance * normalizedDistance) * 3.1)
+          const comparePosition = positions[compareIndex]
+          const distanceX = position.left - comparePosition.left
+          const distanceY = position.top - comparePosition.top
+          const distance = Math.hypot(distanceX, distanceY)
+
+          if (distance > influenceDistance) continue
+
+          const normalizedDistance = distance / influenceDistance
+          accumulatedDensity += Math.exp(-(normalizedDistance * normalizedDistance) * 3.1)
+        }
+      }
     }
 
     return clampUnit(accumulatedDensity / 2.4)
@@ -296,7 +323,7 @@ function drawHeatmapLayer(
   const cssHeight = metrics.displayHeight
   if (cssWidth <= 0 || cssHeight <= 0) return
 
-  const dpr = window.devicePixelRatio || 1
+  const dpr = getDevicePixelRatio()
   canvas.style.width = `${cssWidth}px`
   canvas.style.height = `${cssHeight}px`
   canvas.width = Math.max(1, Math.round(cssWidth * dpr))
@@ -664,8 +691,10 @@ function MarkerTooltip({
 
   const tooltipWidth = tooltipRect?.width ?? 280
   const tooltipHeight = tooltipRect?.height ?? 100
-  const viewportWidth = window.innerWidth
-  const viewportHeight = window.innerHeight
+  const viewportWidth =
+    typeof window !== "undefined" ? window.innerWidth : Number.POSITIVE_INFINITY
+  const viewportHeight =
+    typeof window !== "undefined" ? window.innerHeight : Number.POSITIVE_INFINITY
   const padding = 16
 
   if (left + tooltipWidth > viewportWidth - padding) {

@@ -38,7 +38,7 @@ function CodePanel({
 }) {
   const [isExpanded, setIsExpanded] = useState(false)
   const [copyFeedback, setCopyFeedback] = useState<"idle" | "success" | "error">("idle")
-  const [highlightedHtml, setHighlightedHtml] = useState<string>("")
+  const [formattedHighlightedCode, setFormattedHighlightedCode] = useState<string>("")
   const displayCode = useMemo(() => formatCodeForDisplay(code), [code])
   const hasLongCode = code.length > 360
 
@@ -60,11 +60,11 @@ function CodePanel({
         const result = await highlightCodeToHtml(code)
         if (isCancelled) return
 
-        setHighlightedHtml(result.html)
+        setFormattedHighlightedCode(result.formattedCode)
       } catch {
         if (isCancelled) return
 
-        setHighlightedHtml("")
+        setFormattedHighlightedCode("")
       }
     }
 
@@ -133,16 +133,9 @@ function CodePanel({
               <Copy className="size-4" />
             )}
           </button>
-          {highlightedHtml ? (
-            <div
-              className="ai-fix-code-content"
-              dangerouslySetInnerHTML={{ __html: highlightedHtml }}
-            />
-          ) : (
-            <pre className="h-full whitespace-pre-wrap break-words p-5 text-[13px] leading-relaxed text-white">
-              <code>{displayCode}</code>
-            </pre>
-          )}
+          <pre className="h-full whitespace-pre-wrap break-words p-5 text-[13px] leading-relaxed text-white">
+            <code>{formattedHighlightedCode || displayCode}</code>
+          </pre>
         </div>
       </CardContent>
     </Card>

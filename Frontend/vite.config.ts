@@ -10,6 +10,7 @@ export default defineConfig({
     alias: {
       '@': path.resolve(__dirname, './src'),
       'd3-color': path.resolve(__dirname, './node_modules/d3-color/src/index.js'),
+      'shiki/wasm': path.resolve(__dirname, './node_modules/shiki/dist/onig.wasm'),
     },
   },
   build: {

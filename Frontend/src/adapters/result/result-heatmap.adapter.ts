@@ -106,7 +106,7 @@ function buildPointDescription(point: SimulationHeatmapBusinessPointDto) {
 }
 
 function resolveCurrentAgeGroup(ageGroups: ResultAgeBand[]): ResultAgeFilter {
-  return ageGroups.length === 7 ? "all" : ageGroups[0] ?? "all"
+  return ageGroups.length === 1 ? ageGroups[0] : "all"
 }
 
 function toBusinessViewModel(
@@ -154,6 +154,7 @@ function toBusinessViewModel(
         metaText: `${points.length}개 포인트`,
       }),
       currentAgeGroup: resolveCurrentAgeGroup(params.ageGroups),
+      selectedAgeBands: params.ageGroups,
       coordinateMode: detectCoordinateMode(pagedPoints),
       points: pagedPoints.map((point) => ({
         markerId: `${url}:${point.issueId}:${point.x}:${point.y}:${point.ageBand}`,
@@ -199,6 +200,10 @@ function toLegacyViewModel(
         metaText: `${page.totalErrorCount}건 오류`,
       }),
       currentAgeGroup: page.currentAgeGroup ?? "all",
+      selectedAgeBands:
+        page.currentAgeGroup && page.currentAgeGroup !== "all"
+          ? [page.currentAgeGroup]
+          : ["10대", "20대", "30대", "40대", "50대", "60대", "70대"],
       coordinateMode: detectCoordinateMode(page.errorPoints ?? []),
       points: (page.errorPoints ?? []).map((point) => {
         const count = point.count ?? 0

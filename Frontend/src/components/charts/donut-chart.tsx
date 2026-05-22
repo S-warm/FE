@@ -1,8 +1,9 @@
-import { useRef, useEffect, useState } from "react"
+import { useState } from "react"
 import { Cell, Pie, PieChart, ResponsiveContainer, Sector } from "recharts"
 import type { PieSectorShapeProps } from "recharts/types/polar/Pie"
 
 import { cn } from "@/lib/utils"
+import { useObservedContainerHeight } from "@/hooks"
 import { EmptyState } from "@/components/sections/empty-state"
 import type { DonutChartDatumViewModel } from "@/types/view-model/common/chart"
 
@@ -123,31 +124,9 @@ function DonutChart({
   activeSegmentName,
   onSegmentClick,
 }: DonutChartProps) {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const [height, setHeight] = useState(220)
+  const { containerRef, height } = useObservedContainerHeight(220)
   const [animationActive, setAnimationActive] = useState(true)
   const [hoverIndex, setHoverIndex] = useState(-1)
-
-  useEffect(() => {
-    const updateHeight = () => {
-      if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect()
-        setHeight(Math.max(200, Math.round(rect.height)))
-      }
-    }
-
-    const timer = setTimeout(updateHeight, 0)
-
-    const resizeObserver = new ResizeObserver(updateHeight)
-    if (containerRef.current) {
-      resizeObserver.observe(containerRef.current)
-    }
-
-    return () => {
-      clearTimeout(timer)
-      resizeObserver.disconnect()
-    }
-  }, [])
 
   if (!data.length) {
     return (

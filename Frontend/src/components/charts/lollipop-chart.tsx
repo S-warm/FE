@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react"
+import { useState } from "react"
 import {
   BarChart,
   Bar,
@@ -14,6 +14,7 @@ import type { TooltipProps } from "recharts"
 
 import { EmptyState } from "@/components/sections/empty-state"
 import { chartTooltipContentStyle } from "@/components/charts/chart-tooltip"
+import { useObservedContainerHeight } from "@/hooks"
 import type { BarChartDatumViewModel } from "@/types/view-model/common/chart"
 
 type LollipopTooltipPayload = {
@@ -146,28 +147,8 @@ function LollipopChart({
   highlightedLabel,
   onLabelClick,
 }: LollipopChartProps) {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const [height, setHeight] = useState(240)
+  const { containerRef, height } = useObservedContainerHeight(240)
   const [activeIndex, setActiveIndex] = useState<number | null>(null)
-
-  useEffect(() => {
-    const updateHeight = () => {
-      if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect()
-        const nextHeight = Math.max(200, Math.round(rect.height))
-        setHeight((prev) => (prev === nextHeight ? prev : nextHeight))
-      }
-    }
-
-    const timer = setTimeout(updateHeight, 0)
-    const resizeObserver = new ResizeObserver(updateHeight)
-    if (containerRef.current) resizeObserver.observe(containerRef.current)
-
-    return () => {
-      clearTimeout(timer)
-      resizeObserver.disconnect()
-    }
-  }, [])
 
   if (!data.length) {
     return (

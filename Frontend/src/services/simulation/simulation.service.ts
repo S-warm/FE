@@ -144,6 +144,21 @@ function mapSimulationListItemDtoToViewModel(
   }
 }
 
+function mapSimulationListItemDtoToHeaderViewModel(
+  simulationId: string,
+  dto: SimulationListItemDto & {
+    id?: string
+    simulationId?: string
+  },
+): ResultHeaderViewModel {
+  return {
+    simulationId: dto.projectId ?? dto.id ?? dto.simulationId ?? simulationId,
+    title: dto.title,
+    status: dto.status,
+    createdAt: dto.createdAt,
+  }
+}
+
 function resolveStatusStep(status: string) {
   switch (status) {
     case "pending":
@@ -285,9 +300,35 @@ export const simulationService: SimulationService = {
     return raw.map(mapSimulationListItemDtoToViewModel)
   },
   async getSimulationHeader({ simulationId, userId }: GetSimulationHeaderParams) {
-    void simulationId
-    void userId
-    return null
+    if (isSimulationMockEnabled()) {
+      const record = readMockSimulationRecord() ?? getDefaultMockSimulationRecord()
+      return {
+        simulationId: simulationId || record.projectId,
+        title: record.title,
+        status: buildMockSimulationStatus(record).status,
+        createdAt: record.createdAt,
+      }
+    }
+
+    const raw = await requestJson<
+      Array<
+        SimulationListItemDto & {
+          id?: string
+          simulationId?: string
+        }
+      >
+    >("/api/simulations", {
+      query: { userId },
+    })
+
+    const matchedSimulation = raw.find((item) => {
+      const itemId = item.projectId ?? item.id ?? item.simulationId
+      return itemId === simulationId
+    })
+
+    return matchedSimulation
+      ? mapSimulationListItemDtoToHeaderViewModel(simulationId, matchedSimulation)
+      : null
   },
   async getSimulationStatus({ simulationId }: GetSimulationStatusParams) {
     if (isSimulationMockEnabled()) {

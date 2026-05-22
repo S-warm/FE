@@ -67,8 +67,10 @@ function joinBaseUrlAndPath(baseUrl: string, path: string) {
 function buildUrl(path: string, query?: RequestOptions["query"]) {
   const normalizedBaseUrl = normalizeBaseUrl(SERVICE_CONFIG.apiBaseUrl)
   const requestTarget = joinBaseUrlAndPath(normalizedBaseUrl, path)
+  const requestOrigin =
+    typeof window !== "undefined" ? window.location.origin : "http://localhost:3000"
   const url = normalizedBaseUrl.startsWith("/")
-    ? new URL(requestTarget, window.location.origin)
+    ? new URL(requestTarget, requestOrigin)
     : new URL(requestTarget)
 
   if (query) {

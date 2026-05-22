@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react"
+import { useState } from "react"
 import type { ReactElement } from "react"
 import {
   Bar,
@@ -15,6 +15,7 @@ import {
 
 import { EmptyState } from "@/components/sections/empty-state"
 import { chartTooltipContentStyle } from "@/components/charts/chart-tooltip"
+import { useObservedContainerHeight } from "@/hooks"
 
 export interface StackedBarDatumViewModel {
   label: string
@@ -145,29 +146,9 @@ function StackedBarChart({
   highlightedLabel,
   onLabelClick,
 }: StackedBarChartProps) {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const [height, setHeight] = useState(280)
+  const { containerRef, height } = useObservedContainerHeight(280)
   const [activeIndex, setActiveIndex] = useState<number | null>(null)
   const [isAnimationActive, setIsAnimationActive] = useState(true)
-
-  useEffect(() => {
-    const updateHeight = () => {
-      if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect()
-        const nextHeight = Math.max(200, Math.round(rect.height))
-        setHeight((prev) => (prev === nextHeight ? prev : nextHeight))
-      }
-    }
-
-    const timer = setTimeout(updateHeight, 0)
-    const resizeObserver = new ResizeObserver(updateHeight)
-    if (containerRef.current) resizeObserver.observe(containerRef.current)
-
-    return () => {
-      clearTimeout(timer)
-      resizeObserver.disconnect()
-    }
-  }, [])
 
   if (!data.length) {
     return (

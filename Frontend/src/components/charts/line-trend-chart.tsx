@@ -1,8 +1,8 @@
-import { useRef, useEffect, useState } from "react"
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
 
 import { chartTooltipContentStyle } from "@/components/charts/chart-tooltip"
 import { EmptyState } from "@/components/sections/empty-state"
+import { useObservedContainerHeight } from "@/hooks"
 
 function getActivePayloadLabel<T extends object>(state: unknown, dataKey: keyof T) {
   if (
@@ -58,28 +58,7 @@ function LineTrendChart<T extends object>({
   highlightedLabel,
   onLabelClick,
 }: LineTrendChartProps<T>) {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const [height, setHeight] = useState(240)
-
-  useEffect(() => {
-    const updateHeight = () => {
-      if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect()
-        setHeight(Math.max(200, Math.round(rect.height)))
-      }
-    }
-
-    const timer = setTimeout(updateHeight, 0)
-    const resizeObserver = new ResizeObserver(updateHeight)
-    if (containerRef.current) {
-      resizeObserver.observe(containerRef.current)
-    }
-
-    return () => {
-      clearTimeout(timer)
-      resizeObserver.disconnect()
-    }
-  }, [])
+  const { containerRef, height } = useObservedContainerHeight(240)
 
   if (!data.length) {
     return (

@@ -161,11 +161,6 @@ interface RenderedImageMetrics {
   naturalHeight: number
 }
 
-interface ImageViewportPosition {
-  left: number
-  top: number
-}
-
 function areImageMetricsEqual(
   left: RenderedImageMetrics | null,
   right: RenderedImageMetrics,
@@ -429,8 +424,10 @@ function HeatmapCanvas({
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [failedScreenshotUrl, setFailedScreenshotUrl] = useState<string | null>(null)
   const [imageMetrics, setImageMetrics] = useState<RenderedImageMetrics | null>(null)
-  const [imageViewportPosition, setImageViewportPosition] =
-    useState<ImageViewportPosition | null>(null)
+  const [hoveredTooltipState, setHoveredTooltipState] = useState<{
+    markerId: string
+    position: { x: number; y: number }
+  } | null>(null)
 
   const handleImageLoad = (event: React.SyntheticEvent<HTMLImageElement>) => {
     const image = event.currentTarget
@@ -440,20 +437,10 @@ function HeatmapCanvas({
       naturalWidth: image.naturalWidth,
       naturalHeight: image.naturalHeight,
     }
-    const nextViewportPosition = {
-      left: image.getBoundingClientRect().left,
-      top: image.getBoundingClientRect().top,
-    }
 
     setImageMetrics((prev) => (
       areImageMetricsEqual(prev, nextMetrics) ? prev : nextMetrics
     ))
-    setImageViewportPosition((prev) =>
-      prev?.left === nextViewportPosition.left &&
-      prev?.top === nextViewportPosition.top
-        ? prev
-        : nextViewportPosition
-    )
   }
 
   useEffect(() => {
@@ -467,32 +454,19 @@ function HeatmapCanvas({
         naturalWidth: image.naturalWidth,
         naturalHeight: image.naturalHeight,
       }
-      const nextViewportPosition = {
-        left: image.getBoundingClientRect().left,
-        top: image.getBoundingClientRect().top,
-      }
 
       setImageMetrics((prev) => (
         areImageMetricsEqual(prev, nextMetrics) ? prev : nextMetrics
       ))
-      setImageViewportPosition((prev) =>
-        prev?.left === nextViewportPosition.left &&
-        prev?.top === nextViewportPosition.top
-          ? prev
-          : nextViewportPosition
-      )
     }
 
     updateMetrics()
 
-    const container = containerRef.current
     const image = imageRef.current
     if (!image || typeof ResizeObserver === "undefined") {
       window.addEventListener("resize", updateMetrics)
-      container?.addEventListener("scroll", updateMetrics, { passive: true })
       return () => {
         window.removeEventListener("resize", updateMetrics)
-        container?.removeEventListener("scroll", updateMetrics)
       }
     }
 
@@ -502,12 +476,10 @@ function HeatmapCanvas({
 
     resizeObserver.observe(image)
     window.addEventListener("resize", updateMetrics)
-    container?.addEventListener("scroll", updateMetrics, { passive: true })
 
     return () => {
       resizeObserver.disconnect()
       window.removeEventListener("resize", updateMetrics)
-      container?.removeEventListener("scroll", updateMetrics)
     }
   }, [page.pageId])
 
@@ -544,15 +516,17 @@ function HeatmapCanvas({
   }, [imageMetrics, page.coordinateMode, page.points])
 
   const getTooltipPosition = (point: Pick<ResultHeatmapPointViewModel, "x" | "y">) => {
-    if (!imageViewportPosition || !imageMetrics) {
+    const image = imageRef.current
+    if (!image || !imageMetrics) {
       return { x: 0, y: 0 }
     }
 
+    const imageRect = image.getBoundingClientRect()
     const { left, top } = resolvePointPixels(point, imageMetrics, page.coordinateMode)
 
     return {
-      x: imageViewportPosition.left + left,
-      y: imageViewportPosition.top + top,
+      x: imageRect.left + left,
+      y: imageRect.top + top,
     }
   }
 
@@ -598,7 +572,6 @@ function HeatmapCanvas({
                 const isHovered = point.markerId === hoveredMarkerId
                 const uniqueKey = point.markerId || `${page.pageUrl}-${point.issueId}-${index}`
                 const position = resolvePointPixels(point, imageMetrics, page.coordinateMode)
-                const tooltipPosition = getTooltipPosition(point)
 
                 return (
                   <div key={uniqueKey}>
@@ -620,8 +593,17 @@ function HeatmapCanvas({
                     <button
                       type="button"
                       onClick={() => onSelectPoint(point.markerId)}
-                      onMouseEnter={() => onHoverPoint(point.markerId)}
-                      onMouseLeave={() => onHoverPoint(null)}
+                      onMouseEnter={() => {
+                        onHoverPoint(point.markerId)
+                        setHoveredTooltipState({
+                          markerId: point.markerId,
+                          position: getTooltipPosition(point),
+                        })
+                      }}
+                      onMouseLeave={() => {
+                        onHoverPoint(null)
+                        setHoveredTooltipState(null)
+                      }}
                       className={cn(
                         "pointer-events-auto absolute grid size-9 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-white/55 text-[11px] font-semibold text-white shadow-[0_6px_16px_rgba(15,23,42,0.32)] backdrop-blur-sm transition-all duration-300",
                         getMarkerColor(point),
@@ -641,8 +623,8 @@ function HeatmapCanvas({
                       {point.count}
                     </button>
 
-                    {isHovered ? (
-                      <MarkerTooltip point={point} position={tooltipPosition} />
+                    {isHovered && hoveredTooltipState?.markerId === point.markerId ? (
+                      <MarkerTooltip point={point} position={hoveredTooltipState.position} />
                     ) : null}
                   </div>
                 )

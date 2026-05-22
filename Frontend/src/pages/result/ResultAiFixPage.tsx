@@ -53,11 +53,6 @@ function CodePanel({
   }, [copyFeedback])
 
   useEffect(() => {
-    setIsExpanded(false)
-    setCopyFeedback("idle")
-  }, [code])
-
-  useEffect(() => {
     let isCancelled = false
 
     async function runHighlight() {
@@ -354,8 +349,13 @@ function ResultAiFixPage() {
             </Card>
 
             <div className="grid gap-3 md:grid-cols-2">
-              <CodePanel title="이전 코드" code={selectedFix.beforeCode} />
               <CodePanel
+                key={`before:${selectedFix.issueId}`}
+                title="이전 코드"
+                code={selectedFix.beforeCode}
+              />
+              <CodePanel
+                key={`after:${selectedFix.issueId}`}
                 title="AI 생성 수정 이후 코드"
                 active
                 code={selectedFix.afterCode}

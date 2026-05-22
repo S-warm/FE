@@ -1,5 +1,5 @@
 import type { ResultUxIssueLinkViewModel } from "@/types/view-model/common/result-issue"
-import type { ResultAgeFilter } from "@/types/view-model/common/result-meta"
+import type { ResultAgeBand, ResultAgeFilter } from "@/types/view-model/common/result-meta"
 import type { ResultPageSummaryViewModel } from "@/types/view-model/common/result-page"
 import type { SeverityTokenViewModel } from "@/types/view-model/common/severity"
 
@@ -10,6 +10,7 @@ export type ResultHeatmapCoordinateMode =
   | "pixel-scaled-thousand"
 
 export interface ResultHeatmapPointViewModel extends ResultUxIssueLinkViewModel {
+  markerId: string
   x: number
   y: number
   count: number
@@ -29,6 +30,7 @@ export interface ResultHeatmapPointViewModel extends ResultUxIssueLinkViewModel 
 
 export interface ResultHeatmapPageViewModel extends ResultPageSummaryViewModel {
   currentAgeGroup: ResultAgeFilter
+  selectedAgeBands: ResultAgeBand[]
   coordinateMode: ResultHeatmapCoordinateMode
   points: ResultHeatmapPointViewModel[]
   pagination: {

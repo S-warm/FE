@@ -1,4 +1,4 @@
-import { ChevronRight, AlertTriangle, Sparkles, ArrowRight } from "lucide-react"
+import { AlertTriangle, Sparkles, ArrowRight } from "lucide-react"
 import { useNavigate, useParams } from "react-router-dom"
 
 import { cn } from "@/lib/utils"

@@ -1,8 +1,31 @@
-import { useRef, useEffect, useState } from "react"
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
 
 import { chartTooltipContentStyle } from "@/components/charts/chart-tooltip"
 import { EmptyState } from "@/components/sections/empty-state"
+import { useObservedContainerHeight } from "@/hooks"
+
+function getActivePayloadLabel<T extends object>(state: unknown, dataKey: keyof T) {
+  if (
+    typeof state === "object" &&
+    state !== null &&
+    "activePayload" in state &&
+    Array.isArray(state.activePayload)
+  ) {
+    const firstPayload = state.activePayload[0]
+    if (
+      typeof firstPayload === "object" &&
+      firstPayload !== null &&
+      "payload" in firstPayload &&
+      typeof firstPayload.payload === "object" &&
+      firstPayload.payload !== null
+    ) {
+      const value = firstPayload.payload[dataKey as string]
+      return typeof value === "string" ? value : null
+    }
+  }
+
+  return null
+}
 
 interface LineTrendChartProps<T extends object> {
   data: T[]
@@ -35,28 +58,7 @@ function LineTrendChart<T extends object>({
   highlightedLabel,
   onLabelClick,
 }: LineTrendChartProps<T>) {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const [height, setHeight] = useState(240)
-
-  useEffect(() => {
-    const updateHeight = () => {
-      if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect()
-        setHeight(Math.max(200, Math.round(rect.height)))
-      }
-    }
-
-    const timer = setTimeout(updateHeight, 0)
-    const resizeObserver = new ResizeObserver(updateHeight)
-    if (containerRef.current) {
-      resizeObserver.observe(containerRef.current)
-    }
-
-    return () => {
-      clearTimeout(timer)
-      resizeObserver.disconnect()
-    }
-  }, [])
+  const { containerRef, height } = useObservedContainerHeight(240)
 
   if (!data.length) {
     return (
@@ -73,7 +75,7 @@ function LineTrendChart<T extends object>({
           data={data}
           margin={{ top: 8, right: 12, left: 0, bottom: 4 }}
           onClick={(state) => {
-            const label = state?.activePayload?.[0]?.payload?.[dataKey as string]
+            const label = getActivePayloadLabel<T>(state, dataKey)
             if (label) onLabelClick?.(highlightedLabel === label ? null : label)
           }}
           style={{ cursor: onLabelClick ? "pointer" : "default" }}

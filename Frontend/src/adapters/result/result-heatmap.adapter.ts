@@ -7,7 +7,7 @@ import type {
   SimulationHeatmapBusinessPointDto,
   SimulationHeatmapPageDto,
 } from "@/types/api/simulation/simulation-heatmap.response"
-import type { ResultAgeFilter } from "@/types/view-model/common/result-meta"
+import type { ResultAgeBand, ResultAgeFilter } from "@/types/view-model/common/result-meta"
 import type {
   ResultHeatmapCoordinateMode,
   ResultHeatmapViewModel,
@@ -28,16 +28,16 @@ function detectCoordinateMode(
   const maxX = Math.max(...points.map((point) => point.x))
   const maxY = Math.max(...points.map((point) => point.y))
 
-  if (maxX < 1 && maxY < 1) {
-    return "pixel-scaled-thousand"
-  }
-
   if (maxX <= 1 && maxY <= 1) {
     return "ratio"
   }
 
   if (maxX <= 100 && maxY <= 100) {
     return "percent"
+  }
+
+  if (maxX <= 1000 && maxY <= 1000) {
+    return "pixel-scaled-thousand"
   }
 
   return "pixel"
@@ -105,16 +105,24 @@ function buildPointDescription(point: SimulationHeatmapBusinessPointDto) {
   return `${ageLabel} 페르소나에서 ${point.errorType} 이슈가 ${point.count}회 관측되었습니다.`
 }
 
+function resolveCurrentAgeGroup(ageGroups: ResultAgeBand[]): ResultAgeFilter {
+  return ageGroups.length === 1 ? ageGroups[0] : "all"
+}
+
 function toBusinessViewModel(
   simulationId: string,
   raw: Extract<SimulationHeatmapApiResponseDto, { errorPoints: SimulationHeatmapBusinessPointDto[] }>,
   params: GetResultHeatmapParams
 ): ResultHeatmapViewModel {
+  const selectedAgeGroups = new Set(params.ageGroups)
   const filteredByAge =
-    params.ageGroup === "all"
+    selectedAgeGroups.size === 0 || selectedAgeGroups.size === 7
       ? raw.errorPoints
       : raw.errorPoints.filter(
-          (point) => normalizeAgeBand(point.ageBand) === params.ageGroup
+          (point) => {
+            const normalizedAgeBand = normalizeAgeBand(point.ageBand)
+            return normalizedAgeBand !== "all" && selectedAgeGroups.has(normalizedAgeBand)
+          }
         )
 
   const pointsByUrl = filteredByAge.reduce<Map<string, SimulationHeatmapBusinessPointDto[]>>(
@@ -145,9 +153,11 @@ function toBusinessViewModel(
         totalCountType: "errors",
         metaText: `${points.length}개 포인트`,
       }),
-      currentAgeGroup: params.ageGroup,
+      currentAgeGroup: resolveCurrentAgeGroup(params.ageGroups),
+      selectedAgeBands: params.ageGroups,
       coordinateMode: detectCoordinateMode(pagedPoints),
       points: pagedPoints.map((point) => ({
+        markerId: `${url}:${point.issueId}:${point.x}:${point.y}:${point.ageBand}`,
         issueType: "ux" as const,
         issueId: point.issueId,
           x: normalizeAxis(point.x),
@@ -190,6 +200,10 @@ function toLegacyViewModel(
         metaText: `${page.totalErrorCount}건 오류`,
       }),
       currentAgeGroup: page.currentAgeGroup ?? "all",
+      selectedAgeBands:
+        page.currentAgeGroup && page.currentAgeGroup !== "all"
+          ? [page.currentAgeGroup]
+          : ["10대", "20대", "30대", "40대", "50대", "60대", "70대"],
       coordinateMode: detectCoordinateMode(page.errorPoints ?? []),
       points: (page.errorPoints ?? []).map((point) => {
         const count = point.count ?? 0
@@ -197,6 +211,7 @@ function toLegacyViewModel(
         const ageBand = normalizeAgeBand(point.ageBand ?? "")
         const maxCount = Math.max(...(page.errorPoints ?? []).map((p) => p.count ?? 0), 1)
         return {
+          markerId: `${page.pageUrl}:${point.issueId}:${point.x}:${point.y}:${point.ageBand ?? ""}`,
           issueType: "ux" as const,
           issueId: point.issueId,
           x: normalizeAxis(point.x),

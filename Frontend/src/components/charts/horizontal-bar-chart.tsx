@@ -1,9 +1,47 @@
-import { useRef, useEffect, useState } from "react"
-import { Bar, BarChart, CartesianGrid, Cell, LabelList, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis, type XAxisProps } from "recharts"
+import { useState } from "react"
+import { Bar, BarChart, CartesianGrid, Cell, LabelList, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
 
 import { chartTooltipContentStyle } from "@/components/charts/chart-tooltip"
 import { EmptyState } from "@/components/sections/empty-state"
+import { useObservedContainerHeight } from "@/hooks"
 import type { BarChartDatumViewModel } from "@/types/view-model/common/chart"
+
+function getActiveTooltipIndex(state: unknown) {
+  if (
+    typeof state === "object" &&
+    state !== null &&
+    "activeTooltipIndex" in state &&
+    typeof state.activeTooltipIndex === "number"
+  ) {
+    return state.activeTooltipIndex
+  }
+
+  return null
+}
+
+function getActivePayloadLabel(state: unknown) {
+  if (
+    typeof state === "object" &&
+    state !== null &&
+    "activePayload" in state &&
+    Array.isArray(state.activePayload)
+  ) {
+    const firstPayload = state.activePayload[0]
+    if (
+      typeof firstPayload === "object" &&
+      firstPayload !== null &&
+      "payload" in firstPayload &&
+      typeof firstPayload.payload === "object" &&
+      firstPayload.payload !== null &&
+      "label" in firstPayload.payload &&
+      typeof firstPayload.payload.label === "string"
+    ) {
+      return firstPayload.payload.label
+    }
+  }
+
+  return null
+}
 
 interface HorizontalBarChartProps {
   data: BarChartDatumViewModel[]
@@ -46,29 +84,8 @@ function HorizontalBarChart({
   highlightedLabel,
   onLabelClick,
 }: HorizontalBarChartProps) {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const [height, setHeight] = useState(240)
+  const { containerRef, height } = useObservedContainerHeight(240)
   const [activeIndex, setActiveIndex] = useState<number | null>(null)
-
-  useEffect(() => {
-    const updateHeight = () => {
-      if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect()
-        setHeight(Math.max(200, Math.round(rect.height)))
-      }
-    }
-
-    const timer = setTimeout(updateHeight, 0)
-    const resizeObserver = new ResizeObserver(updateHeight)
-    if (containerRef.current) {
-      resizeObserver.observe(containerRef.current)
-    }
-
-    return () => {
-      clearTimeout(timer)
-      resizeObserver.disconnect()
-    }
-  }, [])
 
   if (!data.length) {
     return (
@@ -96,11 +113,11 @@ function HorizontalBarChart({
           margin={{ top: 4, right: 8, left: 8, bottom: 4 }}
           barCategoryGap="30%"
           onMouseMove={(state) => {
-            if (state.activeTooltipIndex !== undefined) setActiveIndex(state.activeTooltipIndex)
+            setActiveIndex(getActiveTooltipIndex(state))
           }}
           onMouseLeave={() => setActiveIndex(null)}
           onClick={(state) => {
-            const label = state?.activePayload?.[0]?.payload?.label
+            const label = getActivePayloadLabel(state)
             if (label) onLabelClick?.(highlightedLabel === label ? null : label)
           }}
           style={{ cursor: onLabelClick ? "pointer" : "default" }}
@@ -153,7 +170,12 @@ function HorizontalBarChart({
             barSize={barSize ?? 24}
             isAnimationActive
             animationDuration={450}
-            onClick={(barData: BarChartDatumViewModel) => onLabelClick?.(highlightedLabel === barData.label ? null : barData.label)}
+            onClick={(_, index) => {
+              const label = data[index]?.label
+              if (label) {
+                onLabelClick?.(highlightedLabel === label ? null : label)
+              }
+            }}
             style={{ cursor: onLabelClick ? "pointer" : "default" }}
           >
             {data.map((entry, index) => {

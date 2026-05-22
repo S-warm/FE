@@ -230,13 +230,6 @@ function DetailIssueRow({
     return () => window.clearTimeout(timeoutId)
   }, [copyFeedback])
 
-  useEffect(() => {
-    if (!expanded) {
-      setIsCodeExpanded(false)
-      setCopyFeedback("idle")
-    }
-  }, [expanded])
-
   async function handleCopyHtml() {
     if (!issue.htmlElement) return
 
@@ -356,8 +349,8 @@ function DetailIssueRow({
 function ResultWcagPage() {
   const { simulationId } = useParams()
   const resolvedId = simulationId ?? "unknown"
-  const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set())
-  const [activeSeverityRaws, setActiveSeverityRaws] = useState<Set<string>>(() => new Set())
+  const [expandedIdsByPage, setExpandedIdsByPage] = useState<Record<string, string[]>>({})
+  const [activeSeverityRawsByPage, setActiveSeverityRawsByPage] = useState<Record<string, string[]>>({})
   const { data, error, isLoading, isError, refetch } = useResultWcagQuery(resolvedId)
   const pages = useMemo(() => data?.pages ?? [], [data])
   const pageIds = pages.map((page) => page.pageId)
@@ -373,6 +366,14 @@ function ResultWcagPage() {
   const selectedPage = useMemo<ResultWcagPageViewModel | null>(
     () => pages.find((page) => page.pageId === selectedPageId) ?? pages[0] ?? null,
     [pages, selectedPageId],
+  )
+  const activeSeverityRaws = useMemo(
+    () => new Set(activeSeverityRawsByPage[selectedPageId] ?? []),
+    [activeSeverityRawsByPage, selectedPageId],
+  )
+  const expandedIds = useMemo(
+    () => new Set(expandedIdsByPage[selectedPageId] ?? []),
+    [expandedIdsByPage, selectedPageId],
   )
 
   const distributionTotal = useMemo(
@@ -394,29 +395,36 @@ function ResultWcagPage() {
     return issues.filter((issue) => activeSeverityRaws.has(issue.severity.raw))
   }, [activeSeverityRaws, selectedPage])
 
-  useEffect(() => {
-    setActiveSeverityRaws(new Set())
-    setExpandedIds(new Set())
-  }, [selectedPageId])
-
   function handleToggleSeverity(severityRaw: string) {
-    setActiveSeverityRaws((prev) => {
-      const next = new Set(prev)
+    setActiveSeverityRawsByPage((prev) => {
+      const current = new Set(prev[selectedPageId] ?? [])
 
-      if (next.has(severityRaw)) {
-        next.delete(severityRaw)
+      if (current.has(severityRaw)) {
+        current.delete(severityRaw)
       } else {
-        next.add(severityRaw)
+        current.add(severityRaw)
       }
 
-      return next
+      return {
+        ...prev,
+        [selectedPageId]: Array.from(current),
+      }
     })
-    setExpandedIds(new Set())
+    setExpandedIdsByPage((prev) => ({
+      ...prev,
+      [selectedPageId]: [],
+    }))
   }
 
   function handleResetSeverityFilter() {
-    setActiveSeverityRaws(new Set())
-    setExpandedIds(new Set())
+    setActiveSeverityRawsByPage((prev) => ({
+      ...prev,
+      [selectedPageId]: [],
+    }))
+    setExpandedIdsByPage((prev) => ({
+      ...prev,
+      [selectedPageId]: [],
+    }))
   }
 
   const sidePages = useMemo(
@@ -571,18 +579,21 @@ function ResultWcagPage() {
                 const expanded = expandedIds.has(issue.wcagIssueId)
                 return (
                   <DetailIssueRow
-                    key={issue.wcagIssueId}
+                    key={`${issue.wcagIssueId}:${expanded ? "open" : "closed"}`}
                     issue={issue}
                     expanded={expanded}
                     onToggle={() =>
-                      setExpandedIds((prev) => {
-                        const next = new Set(prev)
-                        if (next.has(issue.wcagIssueId)) {
-                          next.delete(issue.wcagIssueId)
+                      setExpandedIdsByPage((prev) => {
+                        const current = new Set(prev[selectedPageId] ?? [])
+                        if (current.has(issue.wcagIssueId)) {
+                          current.delete(issue.wcagIssueId)
                         } else {
-                          next.add(issue.wcagIssueId)
+                          current.add(issue.wcagIssueId)
                         }
-                        return next
+                        return {
+                          ...prev,
+                          [selectedPageId]: Array.from(current),
+                        }
                       })
                     }
                   />

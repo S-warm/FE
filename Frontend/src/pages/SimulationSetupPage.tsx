@@ -183,11 +183,14 @@ function SimulationSetupPage() {
         const nextFieldErrors = mapApiErrorToSimulationSetupFormErrors(error)
         if (hasSimulationSetupValidationErrors(nextFieldErrors)) {
           setErrors(nextFieldErrors)
+        } else {
+          // 필드 에러가 없으면 일반 에러로 표시
+          setSubmitError(error.message)
         }
-        setSubmitError(error.message)
         return
       }
 
+      // 예상치 못한 에러
       setSubmitError(
         "시뮬레이션 생성 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.",
       )

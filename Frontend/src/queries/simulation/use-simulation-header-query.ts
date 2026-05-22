@@ -10,6 +10,6 @@ export function useSimulationHeaderQuery(
   return useQuery({
     queryKey: queryKeys.simulations.header(simulationId, userId),
     queryFn: () => simulationService.getSimulationHeader({ simulationId, userId }),
-    enabled: Boolean(simulationId && userId),
+    enabled: Boolean(simulationId),
   })
 }

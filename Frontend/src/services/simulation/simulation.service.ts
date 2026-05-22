@@ -93,7 +93,9 @@ function buildMockSimulationStatus(record: MockSimulationRecord): SimulationStat
   return {
     id: record.projectId,
     status: isCompleted ? "completed" : "running",
-    progress: isCompleted ? 100 : Math.max(12, Math.round(progressRatio * 92)),
+    // 진행도는 절대 100%에 도달하지 않음 (백엔드가 완료될 때까지)
+    // 95%에서 멈춤 → 백엔드 완료 후 100% 점프
+    progress: isCompleted ? 95 : Math.max(12, Math.round(progressRatio * 92)),
     currentStep: isCompleted ? "결과 분석" : "시뮬레이션 실행",
     completed,
     total,
@@ -139,6 +141,21 @@ function mapSimulationListItemDtoToViewModel(
     createdAt: dto.createdAt,
     relativeCreatedAtLabel: dto.createdAt,
     siteName: dto.siteName ?? deriveSiteName(dto.targetUrl),
+  }
+}
+
+function mapSimulationListItemDtoToHeaderViewModel(
+  simulationId: string,
+  dto: SimulationListItemDto & {
+    id?: string
+    simulationId?: string
+  },
+): ResultHeaderViewModel {
+  return {
+    simulationId: dto.projectId ?? dto.id ?? dto.simulationId ?? simulationId,
+    title: dto.title,
+    status: dto.status,
+    createdAt: dto.createdAt,
   }
 }
 
@@ -283,9 +300,35 @@ export const simulationService: SimulationService = {
     return raw.map(mapSimulationListItemDtoToViewModel)
   },
   async getSimulationHeader({ simulationId, userId }: GetSimulationHeaderParams) {
-    void simulationId
-    void userId
-    return null
+    if (isSimulationMockEnabled()) {
+      const record = readMockSimulationRecord() ?? getDefaultMockSimulationRecord()
+      return {
+        simulationId: simulationId || record.projectId,
+        title: record.title,
+        status: buildMockSimulationStatus(record).status,
+        createdAt: record.createdAt,
+      }
+    }
+
+    const raw = await requestJson<
+      Array<
+        SimulationListItemDto & {
+          id?: string
+          simulationId?: string
+        }
+      >
+    >("/api/simulations", {
+      query: { userId },
+    })
+
+    const matchedSimulation = raw.find((item) => {
+      const itemId = item.projectId ?? item.id ?? item.simulationId
+      return itemId === simulationId
+    })
+
+    return matchedSimulation
+      ? mapSimulationListItemDtoToHeaderViewModel(simulationId, matchedSimulation)
+      : null
   },
   async getSimulationStatus({ simulationId }: GetSimulationStatusParams) {
     if (isSimulationMockEnabled()) {

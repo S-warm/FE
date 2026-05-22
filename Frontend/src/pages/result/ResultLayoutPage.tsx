@@ -140,7 +140,7 @@ function ResultLayoutPage() {
   const draftProjectTitle = useSimulationDraftStore((state) => state.projectTitle)
   const draftStartedAt = useSimulationDraftStore((state) => state.startedAt)
   const fallbackTitle = draftProjectTitle.trim() || "A-Mall 회원가입 및 구매 플로우"
-  const fallbackCreatedAt = draftStartedAt || new Date().toISOString()
+  const fallbackCreatedAt = draftStartedAt || ""
   const {
     data: simulationHeader,
     isLoading,

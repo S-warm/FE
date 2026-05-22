@@ -1,7 +1,9 @@
-import { useRef, useEffect, useState } from "react"
+import { useState } from "react"
 import { Cell, Pie, PieChart, ResponsiveContainer, Sector } from "recharts"
+import type { PieSectorShapeProps } from "recharts/types/polar/Pie"
 
 import { cn } from "@/lib/utils"
+import { useObservedContainerHeight } from "@/hooks"
 import { EmptyState } from "@/components/sections/empty-state"
 import type { DonutChartDatumViewModel } from "@/types/view-model/common/chart"
 
@@ -122,31 +124,9 @@ function DonutChart({
   activeSegmentName,
   onSegmentClick,
 }: DonutChartProps) {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const [height, setHeight] = useState(220)
+  const { containerRef, height } = useObservedContainerHeight(220)
   const [animationActive, setAnimationActive] = useState(true)
   const [hoverIndex, setHoverIndex] = useState(-1)
-
-  useEffect(() => {
-    const updateHeight = () => {
-      if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect()
-        setHeight(Math.max(200, Math.round(rect.height)))
-      }
-    }
-
-    const timer = setTimeout(updateHeight, 0)
-
-    const resizeObserver = new ResizeObserver(updateHeight)
-    if (containerRef.current) {
-      resizeObserver.observe(containerRef.current)
-    }
-
-    return () => {
-      clearTimeout(timer)
-      resizeObserver.disconnect()
-    }
-  }, [])
 
   if (!data.length) {
     return (
@@ -169,29 +149,30 @@ function DonutChart({
     onSegmentClick(activeIndex === index ? null : (clickedName ?? null))
   }
 
-  const renderShape = (props: {
-    cx: number
-    cy: number
-    innerRadius: number
-    outerRadius: number
-    startAngle: number
-    endAngle: number
-    fill: string
-    index: number
-    [key: string]: unknown
-  }) => {
-    const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill, index } = props
+  const renderShape = (props: PieSectorShapeProps) => {
+    const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill } = props
+    const index = typeof props.payload?.index === "number"
+      ? props.payload.index
+      : typeof props.index === "number"
+        ? props.index
+        : -1
+    const safeCx = typeof cx === "number" ? cx : 0
+    const safeCy = typeof cy === "number" ? cy : 0
+    const safeInnerRadius = typeof innerRadius === "number" ? innerRadius : 0
+    const safeOuterRadius = typeof outerRadius === "number" ? outerRadius : 0
+    const safeStartAngle = typeof startAngle === "number" ? startAngle : 0
+    const safeEndAngle = typeof endAngle === "number" ? endAngle : 0
     const isActive = index === activeIndex
     const isHovered = !isActive && index === hoverIndex
     return (
       <Sector
-        cx={cx}
-        cy={cy}
-        innerRadius={isActive ? innerRadius - 2 : innerRadius}
-        outerRadius={isActive ? outerRadius + 10 : isHovered ? outerRadius + 4 : outerRadius}
-        startAngle={startAngle}
-        endAngle={endAngle}
-        fill={fill}
+        cx={safeCx}
+        cy={safeCy}
+        innerRadius={isActive ? safeInnerRadius - 2 : safeInnerRadius}
+        outerRadius={isActive ? safeOuterRadius + 10 : isHovered ? safeOuterRadius + 4 : safeOuterRadius}
+        startAngle={safeStartAngle}
+        endAngle={safeEndAngle}
+        fill={fill ?? "currentColor"}
       />
     )
   }

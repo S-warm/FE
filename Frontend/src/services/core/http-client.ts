@@ -67,8 +67,10 @@ function joinBaseUrlAndPath(baseUrl: string, path: string) {
 function buildUrl(path: string, query?: RequestOptions["query"]) {
   const normalizedBaseUrl = normalizeBaseUrl(SERVICE_CONFIG.apiBaseUrl)
   const requestTarget = joinBaseUrlAndPath(normalizedBaseUrl, path)
+  const requestOrigin =
+    typeof window !== "undefined" ? window.location.origin : "http://localhost:3000"
   const url = normalizedBaseUrl.startsWith("/")
-    ? new URL(requestTarget, window.location.origin)
+    ? new URL(requestTarget, requestOrigin)
     : new URL(requestTarget)
 
   if (query) {
@@ -257,7 +259,28 @@ export async function requestJson<T>(path: string, options: RequestOptions = {})
       })
     }
 
-    throw error
+    // ApiServiceError는 그대로 전파, 다른 에러는 래핑
+    if (error instanceof ApiServiceError) {
+      throw error
+    }
+
+    // 네트워크 에러 처리
+    if (error instanceof TypeError && error.message === "Failed to fetch") {
+      throw new ApiServiceError({
+        status: 0,
+        error: "Network Error",
+        message: "네트워크 연결을 확인해 주세요. 인터넷 연결이 끊어졌을 수 있습니다.",
+        path,
+      })
+    }
+
+    // 그 외 예상치 못한 에러
+    throw new ApiServiceError({
+      status: 500,
+      error: "Internal Error",
+      message: error instanceof Error ? error.message : "알 수 없는 오류가 발생했습니다.",
+      path,
+    })
   } finally {
     globalThis.clearTimeout(timeoutId)
   }

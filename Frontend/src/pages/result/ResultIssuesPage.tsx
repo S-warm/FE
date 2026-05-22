@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useMemo, useRef, useState } from "react"
 import { useLocation, useNavigate, useParams } from "react-router-dom"
 
 import { ArrowRight, X } from "lucide-react"
@@ -97,19 +97,6 @@ function CategoryPopup({
       }))
   }, [issues])
 
-  const [barAnimated, setBarAnimated] = useState(false)
-  useEffect(() => {
-    setBarAnimated(false)
-    let id2: number
-    const id1 = requestAnimationFrame(() => {
-      id2 = requestAnimationFrame(() => setBarAnimated(true))
-    })
-    return () => {
-      cancelAnimationFrame(id1)
-      cancelAnimationFrame(id2)
-    }
-  }, [category])
-
   return (
     <div className="animate-in fade-in-0 slide-in-from-right-3 absolute right-0 top-1/2 z-10 w-[300px] -translate-y-1/2 rounded-2xl border border-border-strong bg-card p-4 shadow-lg duration-200 ease-out">
       <div className="mb-3 flex items-center justify-between">
@@ -135,7 +122,7 @@ function CategoryPopup({
                 <div
                   key={item.name}
                   style={{
-                    width: barAnimated ? `${item.value}%` : "0%",
+                    width: `${item.value}%`,
                     backgroundColor: item.color,
                     transition: "width 0.6s cubic-bezier(0.4, 0, 0.2, 1)",
                   }}

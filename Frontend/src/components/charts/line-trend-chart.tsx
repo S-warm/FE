@@ -127,7 +127,8 @@ function LineTrendChart<T extends object>({
             }}
             activeDot={{ r: 6, fill: stroke, stroke: "var(--color-background)", strokeWidth: 2 }}
             isAnimationActive
-            animationDuration={450}
+            animationDuration={380}
+            animationEasing="linear"
           />
         </LineChart>
       </ResponsiveContainer>

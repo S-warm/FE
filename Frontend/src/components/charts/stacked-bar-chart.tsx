@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import type { ReactElement } from "react"
 import {
   Bar,
@@ -158,6 +158,18 @@ function StackedBarChart({
     )
   }
 
+  const chartDataKey = useMemo(
+    () =>
+      data
+        .map((entry) => `${entry.label}:${entry.success}:${entry.failure}`)
+        .join("|"),
+    [data],
+  )
+
+  useEffect(() => {
+    setIsAnimationActive(true)
+  }, [chartDataKey])
+
   const activeSuccess = activeIndex !== null ? data[activeIndex]?.success : null
 
   const renderSuccessLabel = (props: LabelContentProps) => {
@@ -256,7 +268,8 @@ function StackedBarChart({
             barSize={barSize ?? 24}
             radius={[8, 0, 0, 8]}
             isAnimationActive={isAnimationActive}
-            animationDuration={450}
+            animationDuration={420}
+            animationEasing="linear"
             onAnimationEnd={() => { setIsAnimationActive(false) }}
             onClick={(_, index) => {
               const label = data[index]?.label
@@ -290,7 +303,9 @@ function StackedBarChart({
                 strokeWidth={highlightedLabel === entry.label ? 1.5 : 0}
               />
             ))}
-            <LabelList dataKey="success" content={renderSuccessLabel as (props: unknown) => ReactElement | null} />
+            {!isAnimationActive ? (
+              <LabelList dataKey="success" content={renderSuccessLabel as (props: unknown) => ReactElement | null} />
+            ) : null}
           </Bar>
           <Bar
             dataKey="failure"
@@ -299,7 +314,8 @@ function StackedBarChart({
             barSize={barSize ?? 24}
             radius={[0, 8, 8, 0]}
             isAnimationActive={isAnimationActive}
-            animationDuration={450}
+            animationDuration={420}
+            animationEasing="linear"
             onClick={(_, index) => {
               const label = data[index]?.label
               if (label) {
@@ -317,7 +333,9 @@ function StackedBarChart({
                 strokeWidth={highlightedLabel === entry.label ? 1.5 : 0}
               />
             ))}
-            <LabelList dataKey="failure" content={renderFailureLabel as (props: unknown) => ReactElement | null} />
+            {!isAnimationActive ? (
+              <LabelList dataKey="failure" content={renderFailureLabel as (props: unknown) => ReactElement | null} />
+            ) : null}
           </Bar>
         </BarChart>
       </ResponsiveContainer>

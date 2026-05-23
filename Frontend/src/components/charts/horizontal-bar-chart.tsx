@@ -169,7 +169,8 @@ function HorizontalBarChart({
             radius={[8, 8, 8, 8]}
             barSize={barSize ?? 24}
             isAnimationActive
-            animationDuration={450}
+            animationDuration={360}
+            animationEasing="linear"
             onClick={(_, index) => {
               const label = data[index]?.label
               if (label) {

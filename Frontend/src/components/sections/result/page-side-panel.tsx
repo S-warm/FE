@@ -57,7 +57,7 @@ function ScreenshotPreview({
         loading="lazy"
         decoding="async"
         fetchPriority="low"
-        className="h-full w-full object-cover"
+        className="h-full w-full object-cover object-top"
         onError={() => setFailedPreviewUrl(previewUrl)}
       />
     </div>

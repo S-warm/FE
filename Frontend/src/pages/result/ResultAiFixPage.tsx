@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react"
+import { startTransition, useEffect, useMemo, useState } from "react"
 import { useLocation, useParams } from "react-router-dom"
 import { Check, Copy, Sparkles, TrendingUp } from "lucide-react"
 
@@ -7,12 +7,12 @@ import { EmptyState } from "@/components/sections"
 import { ResultPageSidePanel } from "@/components/sections/result/page-side-panel"
 import { ErrorState, ResultPageSkeleton } from "@/components/states"
 import { Card, CardContent } from "@/components/ui/card"
-import { formatCodeForDisplay, highlightCodeToHtml } from "@/lib/code-highlighting"
+import { formatCodeForDisplay } from "@/lib/code-formatting"
 import { useResultPageParam } from "@/lib/result-page-param"
 import { useResultPageSidePanelState } from "@/lib/result-page-side-panel-state"
 import { motion } from "@/lib/motion"
 import { cn } from "@/lib/utils"
-import { getResultPageScreenshotUrl } from "@/features/result/assets"
+import { resolveResultPageScreenshotSet } from "@/features/result/assets"
 import { useResultAiFixQuery } from "@/queries"
 import type {
   ResultAiFixItemViewModel,
@@ -39,6 +39,7 @@ function CodePanel({
   const [isExpanded, setIsExpanded] = useState(false)
   const [copyFeedback, setCopyFeedback] = useState<"idle" | "success" | "error">("idle")
   const [highlightedHtml, setHighlightedHtml] = useState<string>("")
+  const [shouldHighlight, setShouldHighlight] = useState(false)
   const displayCode = useMemo(() => formatCodeForDisplay(code), [code])
   const hasLongCode = code.length > 360
 
@@ -53,10 +54,23 @@ function CodePanel({
   }, [copyFeedback])
 
   useEffect(() => {
+    if (!active && !isExpanded) return
+
+    startTransition(() => {
+      setShouldHighlight(true)
+    })
+  }, [active, isExpanded])
+
+  useEffect(() => {
+    if (!shouldHighlight) return
+
     let isCancelled = false
+    let idleCallbackId: number | null = null
+    let timeoutId: number | null = null
 
     async function runHighlight() {
       try {
+        const { highlightCodeToHtml } = await import("@/lib/code-highlighting")
         const result = await highlightCodeToHtml(code)
         if (isCancelled) return
 
@@ -68,12 +82,26 @@ function CodePanel({
       }
     }
 
-    void runHighlight()
+    if (typeof window.requestIdleCallback === "function") {
+      idleCallbackId = window.requestIdleCallback(() => {
+        void runHighlight()
+      })
+    } else {
+      timeoutId = window.setTimeout(() => {
+        void runHighlight()
+      }, 0)
+    }
 
     return () => {
       isCancelled = true
+      if (idleCallbackId !== null) {
+        window.cancelIdleCallback(idleCallbackId)
+      }
+      if (timeoutId !== null) {
+        window.clearTimeout(timeoutId)
+      }
     }
-  }, [code])
+  }, [code, shouldHighlight])
 
   async function handleCopyCode() {
     try {
@@ -221,13 +249,19 @@ function ResultAiFixPage() {
 
   const sidePages = useMemo(
     () =>
-      pages.map((page) => ({
-        id: page.pageId,
-        name: page.pageName,
-        url: page.pageUrl,
-        screenshotUrl:
-          page.screenshotUrl || getResultPageScreenshotUrl(page.pageId),
-      })),
+      pages.map((page) => {
+        const screenshotSet = resolveResultPageScreenshotSet({
+          pageId: page.pageId,
+          screenshotUrl: page.screenshotUrl,
+        })
+
+        return {
+          id: page.pageId,
+          name: page.pageName,
+          url: page.pageUrl,
+          previewUrl: screenshotSet.previewUrl,
+        }
+      }),
     [pages]
   )
 

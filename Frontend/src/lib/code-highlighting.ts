@@ -1,114 +1,119 @@
-import { codeToHtml } from "shiki"
+import type { HighlighterCore } from "@shikijs/types"
 
 const CODE_THEME = "dark-plus"
+const SHIKI_SUPPORTED_LANGUAGES = {
+  tsx: () => import("@shikijs/langs/tsx"),
+  ts: () => import("@shikijs/langs/typescript"),
+  js: () => import("@shikijs/langs/javascript"),
+  html: () => import("@shikijs/langs/html"),
+  css: () => import("@shikijs/langs/css"),
+  json: () => import("@shikijs/langs/json"),
+} as const
 
-function looksLikeJson(code: string) {
-  const trimmed = code.trim()
+type ShikiSupportedLanguage = keyof typeof SHIKI_SUPPORTED_LANGUAGES
 
-  if (!trimmed) {
-    return false
-  }
+let highlighterPromise: Promise<HighlighterCore> | null = null
+const loadedLanguages = new Set<ShikiSupportedLanguage>()
+const highlightResultCache = new Map<
+  string,
+  Promise<{
+    html: string
+    language: string
+    languageLabel: string
+    formattedCode: string
+  }>
+>()
 
-  if (!(trimmed.startsWith("{") || trimmed.startsWith("["))) {
-    return false
-  }
+export {
+  formatCodeForDisplay,
+  formatCodeLanguageLabel,
+  guessCodeLanguage,
+} from "@/lib/code-formatting"
+import {
+  formatCodeForDisplay,
+  formatCodeLanguageLabel,
+  guessCodeLanguage,
+} from "@/lib/code-formatting"
 
-  try {
-    JSON.parse(trimmed)
-    return true
-  } catch {
-    return false
-  }
+function isShikiSupportedLanguage(language: string): language is ShikiSupportedLanguage {
+  return language in SHIKI_SUPPORTED_LANGUAGES
 }
 
-export function guessCodeLanguage(code: string) {
-  const trimmed = code.trim()
+async function getHighlighter(): Promise<HighlighterCore> {
+  if (!highlighterPromise) {
+    highlighterPromise = (async () => {
+      const [{ createHighlighterCore }, { createJavaScriptRegexEngine }, themeModule] =
+        await Promise.all([
+          import("@shikijs/core"),
+          import("@shikijs/engine-javascript"),
+          import("@shikijs/themes/dark-plus"),
+        ])
 
-  if (!trimmed) {
-    return "text"
+      return createHighlighterCore({
+        engine: createJavaScriptRegexEngine(),
+        themes: [themeModule.default],
+      })
+    })()
   }
 
-  if (
-    /className=|<\/?[A-Z][\w-]*|use[A-Z]\w+\(|export default|return \(|<>\s*$/m.test(trimmed)
-  ) {
-    return "tsx"
-  }
-
-  if (/<\/?[a-z][\w-]*[\s/>]/.test(trimmed)) {
-    return "html"
-  }
-
-  if (looksLikeJson(trimmed)) {
-    return "json"
-  }
-
-  if (/@media|^\s*[.#]?[\w-]+\s*\{|\bdisplay:\s*|\bcolor:\s*/m.test(trimmed)) {
-    return "css"
-  }
-
-  if (/\binterface\b|\btype\b|\benum\b|:\s*(string|number|boolean|React\.)|\bas const\b/.test(trimmed)) {
-    return "ts"
-  }
-
-  if (/\bconst\b|\blet\b|\bfunction\b|=>|\bimport\b|\bexport\b/.test(trimmed)) {
-    return "js"
-  }
-
-  return "text"
+  return highlighterPromise
 }
 
-export function formatCodeLanguageLabel(language: string) {
-  switch (language) {
-    case "tsx":
-      return "TSX"
-    case "ts":
-      return "TypeScript"
-    case "js":
-      return "JavaScript"
-    case "html":
-      return "HTML"
-    case "css":
-      return "CSS"
-    case "json":
-      return "JSON"
-    default:
-      return "Plain text"
-  }
-}
-
-function formatCssForDisplay(code: string) {
-  const compact = code.replace(/\s+/g, " ").trim()
-
-  return compact
-    .replace(/\s*\{\s*/g, " {\n  ")
-    .replace(/;\s*/g, ";\n  ")
-    .replace(/\s*\}\s*/g, "\n}")
-    .replace(/\n {2}\n}/g, "\n}")
-    .trim()
-}
-
-export function formatCodeForDisplay(code: string) {
-  const language = guessCodeLanguage(code)
-
-  if (language === "css") {
-    return formatCssForDisplay(code)
+async function ensureLanguageLoaded(language: ShikiSupportedLanguage) {
+  if (loadedLanguages.has(language)) {
+    return
   }
 
-  return code
+  const [highlighter, languageModule] = await Promise.all([
+    getHighlighter(),
+    SHIKI_SUPPORTED_LANGUAGES[language](),
+  ])
+
+  await highlighter.loadLanguage(languageModule.default)
+  loadedLanguages.add(language)
 }
 
 export async function highlightCodeToHtml(code: string) {
   const formattedCode = formatCodeForDisplay(code)
   const language = guessCodeLanguage(formattedCode)
-  const html = await codeToHtml(formattedCode, {
-    lang: language,
-    theme: CODE_THEME,
-  })
 
-  return {
-    html,
-    language,
-    languageLabel: formatCodeLanguageLabel(language),
-    formattedCode,
+  if (!isShikiSupportedLanguage(language)) {
+    return {
+      html: "",
+      language,
+      languageLabel: formatCodeLanguageLabel(language),
+      formattedCode,
+    }
+  }
+
+  const cacheKey = `${language}:${formattedCode}`
+  const cachedResult = highlightResultCache.get(cacheKey)
+  if (cachedResult) {
+    return cachedResult
+  }
+
+  const resultPromise = (async () => {
+    await ensureLanguageLoaded(language)
+    const highlighter = await getHighlighter()
+    const html = highlighter.codeToHtml(formattedCode, {
+      lang: language,
+      theme: CODE_THEME,
+    })
+
+    return {
+      html,
+      language,
+      languageLabel: formatCodeLanguageLabel(language),
+      formattedCode,
+    }
+  })()
+
+  highlightResultCache.set(cacheKey, resultPromise)
+
+  try {
+    return await resultPromise
+  } catch (error) {
+    highlightResultCache.delete(cacheKey)
+    throw error
   }
 }

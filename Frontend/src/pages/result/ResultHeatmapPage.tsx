@@ -7,7 +7,7 @@ import { EmptyState } from "@/components/sections"
 import { ResultPageSidePanel } from "@/components/sections/result/page-side-panel"
 import { ErrorState, ResultPageSkeleton } from "@/components/states"
 import { Card, CardContent } from "@/components/ui/card"
-import { getResultPageScreenshotUrl } from "@/features/result/assets"
+import { resolveResultPageScreenshotSet } from "@/features/result/assets"
 import { motion } from "@/lib/motion"
 import { useResultPageParam } from "@/lib/result-page-param"
 import { useResultPageSidePanelState } from "@/lib/result-page-side-panel-state"
@@ -84,6 +84,9 @@ const BLOB_HEATMAP_AMBIENT_ALPHA = 0.28
 const BLOB_HEATMAP_OUTPUT_ALPHA = 0.82
 const BLOB_HEATMAP_ALPHA_GAMMA = 1.02
 const BLOB_HEATMAP_LOW_SAMPLE_BOOST = 1.18
+const MAX_HEATMAP_RENDER_DIMENSION = 1280
+const HEATMAP_PANEL_MAX_HEIGHT_PX = 3200
+const HEATMAP_PANEL_MAX_VIEWPORT_RATIO = 1.6
 
 function getLowSampleVisibilityProfile(pointsCount: number) {
   if (pointsCount <= 4) {
@@ -296,13 +299,16 @@ function drawHeatmapLayer(
   const cssHeight = metrics.displayHeight
   if (cssWidth <= 0 || cssHeight <= 0) return
 
-  const dpr = window.devicePixelRatio || 1
+  const renderScale = Math.min(
+    1,
+    MAX_HEATMAP_RENDER_DIMENSION / Math.max(cssWidth, cssHeight, 1),
+  )
   canvas.style.width = `${cssWidth}px`
   canvas.style.height = `${cssHeight}px`
-  canvas.width = Math.max(1, Math.round(cssWidth * dpr))
-  canvas.height = Math.max(1, Math.round(cssHeight * dpr))
+  canvas.width = Math.max(1, Math.round(cssWidth * renderScale))
+  canvas.height = Math.max(1, Math.round(cssHeight * renderScale))
 
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+  ctx.setTransform(renderScale, 0, 0, renderScale, 0, 0)
   ctx.clearRect(0, 0, cssWidth, cssHeight)
   if (!points.length) return
 
@@ -380,7 +386,7 @@ function drawHeatmapLayer(
   const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
   const { data } = imageData
   const alphaThreshold =
-    visibilityProfile.alphaThreshold ?? Math.max(4, Math.round(9 / dpr))
+    visibilityProfile.alphaThreshold ?? Math.max(4, Math.round(9 / renderScale))
 
   for (let index = 0; index < data.length; index += 4) {
     const alpha = data[index + 3]
@@ -423,14 +429,87 @@ function HeatmapCanvas({
   const imageRef = useRef<HTMLImageElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [failedScreenshotUrl, setFailedScreenshotUrl] = useState<string | null>(null)
+  const [activeScreenshotUrl, setActiveScreenshotUrl] = useState<string | null>(null)
   const [imageMetrics, setImageMetrics] = useState<RenderedImageMetrics | null>(null)
+  const screenshotSet = useMemo(
+    () =>
+      resolveResultPageScreenshotSet({
+        pageId: page.pageId,
+        screenshotUrl: page.screenshotUrl,
+      }),
+    [page.pageId, page.screenshotUrl],
+  )
   const [hoveredTooltipState, setHoveredTooltipState] = useState<{
     markerId: string
     position: { x: number; y: number }
   } | null>(null)
+  const [panelMaxHeight, setPanelMaxHeight] = useState(() =>
+    Math.min(
+      HEATMAP_PANEL_MAX_HEIGHT_PX,
+      Math.round(window.innerHeight * HEATMAP_PANEL_MAX_VIEWPORT_RATIO),
+    ),
+  )
+
+  useEffect(() => {
+    setFailedScreenshotUrl(null)
+    setImageMetrics(null)
+    setActiveScreenshotUrl(screenshotSet.fullUrl ?? screenshotSet.originalUrl ?? null)
+    setHoveredTooltipState(null)
+  }, [page.pageId, screenshotSet.fullUrl, screenshotSet.originalUrl])
+
+  useEffect(() => {
+    const updatePanelMaxHeight = () => {
+      setPanelMaxHeight(
+        Math.min(
+          HEATMAP_PANEL_MAX_HEIGHT_PX,
+          Math.round(window.innerHeight * HEATMAP_PANEL_MAX_VIEWPORT_RATIO),
+        ),
+      )
+    }
+
+    updatePanelMaxHeight()
+    window.addEventListener("resize", updatePanelMaxHeight)
+
+    return () => {
+      window.removeEventListener("resize", updatePanelMaxHeight)
+    }
+  }, [])
 
   const handleImageLoad = (event: React.SyntheticEvent<HTMLImageElement>) => {
     const image = event.currentTarget
+    const hasExpectedDimensions =
+      image.naturalWidth > 0 &&
+      image.naturalHeight > 0 &&
+      image.naturalWidth === screenshotSet.expectedNaturalWidth &&
+      image.naturalHeight === screenshotSet.expectedNaturalHeight
+
+    const canFallbackToOriginal =
+      activeScreenshotUrl === screenshotSet.fullUrl &&
+      screenshotSet.originalUrl &&
+      screenshotSet.originalUrl !== screenshotSet.fullUrl
+
+    if (
+      screenshotSet.expectedNaturalWidth &&
+      screenshotSet.expectedNaturalHeight &&
+      !hasExpectedDimensions
+    ) {
+      if (canFallbackToOriginal) {
+        setActiveScreenshotUrl(screenshotSet.originalUrl)
+        return
+      }
+
+      if (import.meta.env.DEV) {
+        console.warn("[heatmap] screenshot dimension mismatch", {
+          pageId: page.pageId,
+          currentUrl: activeScreenshotUrl,
+          expectedWidth: screenshotSet.expectedNaturalWidth,
+          expectedHeight: screenshotSet.expectedNaturalHeight,
+          actualWidth: image.naturalWidth,
+          actualHeight: image.naturalHeight,
+        })
+      }
+    }
+
     const nextMetrics = {
       displayWidth: image.clientWidth,
       displayHeight: image.clientHeight,
@@ -515,122 +594,180 @@ function HeatmapCanvas({
     }
   }, [imageMetrics, page.coordinateMode, page.points])
 
-  const getTooltipPosition = (point: Pick<ResultHeatmapPointViewModel, "x" | "y">) => {
-    const image = imageRef.current
-    if (!image || !imageMetrics) {
-      return { x: 0, y: 0 }
+  const getTooltipPosition = useCallback(
+    (point: Pick<ResultHeatmapPointViewModel, "x" | "y">) => {
+      const image = imageRef.current
+      if (!image || !imageMetrics) {
+        return { x: 0, y: 0 }
+      }
+
+      const imageRect = image.getBoundingClientRect()
+      const { left, top } = resolvePointPixels(point, imageMetrics, page.coordinateMode)
+
+      return {
+        x: imageRect.left + left,
+        y: imageRect.top + top,
+      }
+    },
+    [imageMetrics, page.coordinateMode],
+  )
+
+  useEffect(() => {
+    const scrollContainer = containerRef.current
+    if (!scrollContainer || !hoveredTooltipState || !imageMetrics) return
+
+    const syncHoveredTooltip = () => {
+      const hoveredPoint = page.points.find(
+        (point) => point.markerId === hoveredTooltipState.markerId,
+      )
+
+      if (!hoveredPoint) {
+        setHoveredTooltipState(null)
+        return
+      }
+
+      setHoveredTooltipState((prev) => {
+        if (!prev || prev.markerId !== hoveredPoint.markerId) return prev
+
+        return {
+          markerId: hoveredPoint.markerId,
+          position: getTooltipPosition(hoveredPoint),
+        }
+      })
     }
 
-    const imageRect = image.getBoundingClientRect()
-    const { left, top } = resolvePointPixels(point, imageMetrics, page.coordinateMode)
+    scrollContainer.addEventListener("scroll", syncHoveredTooltip, { passive: true })
+    window.addEventListener("resize", syncHoveredTooltip)
 
-    return {
-      x: imageRect.left + left,
-      y: imageRect.top + top,
+    return () => {
+      scrollContainer.removeEventListener("scroll", syncHoveredTooltip)
+      window.removeEventListener("resize", syncHoveredTooltip)
     }
-  }
+  }, [getTooltipPosition, hoveredTooltipState, imageMetrics, page.points])
+
+  const shouldConstrainHeight =
+    imageMetrics !== null && imageMetrics.displayHeight > panelMaxHeight
 
   return (
     <div
       ref={containerRef}
-      className="relative overflow-y-auto rounded-2xl border border-border-strong bg-card"
-      style={{ maxHeight: "80vh" }}
+      className={cn(
+        "relative rounded-2xl border border-border-strong bg-card",
+        shouldConstrainHeight ? "overflow-y-auto overscroll-contain" : "overflow-hidden",
+      )}
+      style={{
+        maxHeight: shouldConstrainHeight ? `${panelMaxHeight}px` : undefined,
+      }}
     >
-      {page.screenshotUrl && failedScreenshotUrl !== page.screenshotUrl ? (
+      {activeScreenshotUrl && failedScreenshotUrl !== activeScreenshotUrl ? (
         <div className="relative w-full">
-          <img
-            ref={imageRef}
-            src={page.screenshotUrl}
-            alt={page.pageName}
-            className="block w-full h-auto"
-            decoding="async"
-            onLoad={handleImageLoad}
-            onError={() => setFailedScreenshotUrl(page.screenshotUrl ?? null)}
-          />
+          <div className="relative w-full">
+            <img
+              ref={imageRef}
+              src={activeScreenshotUrl}
+              alt={page.pageName}
+              className="block w-full h-auto"
+              decoding="async"
+              fetchPriority="low"
+              onLoad={handleImageLoad}
+              onError={() => {
+                if (
+                  activeScreenshotUrl === screenshotSet.fullUrl &&
+                  screenshotSet.originalUrl &&
+                  screenshotSet.originalUrl !== screenshotSet.fullUrl
+                ) {
+                  setActiveScreenshotUrl(screenshotSet.originalUrl)
+                  return
+                }
 
-          {imageMetrics ? (
-            <canvas
-              ref={canvasRef}
-              className="pointer-events-none absolute left-0 top-0 z-[1] opacity-100"
-              style={{
-                width: `${imageMetrics.displayWidth}px`,
-                height: `${imageMetrics.displayHeight}px`,
+                setFailedScreenshotUrl(activeScreenshotUrl)
               }}
             />
-          ) : null}
 
-          {imageMetrics && isPinpointMode ? (
-            <div
-              className="pointer-events-none absolute left-0 top-0 z-[3]"
-              style={{
-                width: `${imageMetrics.displayWidth}px`,
-                height: `${imageMetrics.displayHeight}px`,
-              }}
-            >
-              {page.points.map((point, index) => {
-                const isSelected = point.markerId === selectedMarkerId
-                const isHovered = point.markerId === hoveredMarkerId
-                const uniqueKey = point.markerId || `${page.pageUrl}-${point.issueId}-${index}`
-                const position = resolvePointPixels(point, imageMetrics, page.coordinateMode)
+            {imageMetrics ? (
+              <canvas
+                ref={canvasRef}
+                className="pointer-events-none absolute left-0 top-0 z-[1] opacity-100"
+                style={{
+                  width: `${imageMetrics.displayWidth}px`,
+                  height: `${imageMetrics.displayHeight}px`,
+                }}
+              />
+            ) : null}
 
-                return (
-                  <div key={uniqueKey}>
-                    <div
-                      className={cn(
-                        "absolute rounded-full blur-[14px] transition-opacity duration-300",
-                        getMarkerColor(point),
-                        "opacity-14",
-                      )}
-                      style={{
-                        left: `${position.left}px`,
-                        top: `${position.top}px`,
-                        width: `${10 + point.count * 2}px`,
-                        height: `${10 + point.count * 2}px`,
-                        transform: "translate(-50%, -50%)",
-                        zIndex: isHovered ? 9 : 0,
-                      }}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => onSelectPoint(point.markerId)}
-                      onMouseEnter={() => {
-                        onHoverPoint(point.markerId)
-                        setHoveredTooltipState({
-                          markerId: point.markerId,
-                          position: getTooltipPosition(point),
-                        })
-                      }}
-                      onMouseLeave={() => {
-                        onHoverPoint(null)
-                        setHoveredTooltipState(null)
-                      }}
-                      className={cn(
-                        "pointer-events-auto absolute grid size-9 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-white/55 text-[11px] font-semibold text-white shadow-[0_6px_16px_rgba(15,23,42,0.32)] backdrop-blur-sm transition-all duration-300",
-                        getMarkerColor(point),
-                        isSelected ? "ring-3 ring-white/65" : "",
-                        isHovered
-                          ? "scale-110 ring-4 ring-white/90 shadow-2xl"
-                          : "hover:scale-105",
-                        "opacity-92",
-                      )}
-                      style={{
-                        left: `${position.left}px`,
-                        top: `${position.top}px`,
-                        zIndex: isHovered ? 10 : 1,
-                      }}
-                      aria-label={`${point.issueId} ${point.description}`}
-                    >
-                      {point.count}
-                    </button>
+            {imageMetrics && isPinpointMode ? (
+              <div
+                className="pointer-events-none absolute left-0 top-0 z-[3]"
+                style={{
+                  width: `${imageMetrics.displayWidth}px`,
+                  height: `${imageMetrics.displayHeight}px`,
+                }}
+              >
+                {page.points.map((point, index) => {
+                  const isSelected = point.markerId === selectedMarkerId
+                  const isHovered = point.markerId === hoveredMarkerId
+                  const uniqueKey = point.markerId || `${page.pageUrl}-${point.issueId}-${index}`
+                  const position = resolvePointPixels(point, imageMetrics, page.coordinateMode)
 
-                    {isHovered && hoveredTooltipState?.markerId === point.markerId ? (
-                      <MarkerTooltip point={point} position={hoveredTooltipState.position} />
-                    ) : null}
-                  </div>
-                )
-              })}
-            </div>
-          ) : null}
+                  return (
+                    <div key={uniqueKey}>
+                      <div
+                        className={cn(
+                          "absolute rounded-full blur-[14px] transition-opacity duration-300",
+                          getMarkerColor(point),
+                          "opacity-14",
+                        )}
+                        style={{
+                          left: `${position.left}px`,
+                          top: `${position.top}px`,
+                          width: `${10 + point.count * 2}px`,
+                          height: `${10 + point.count * 2}px`,
+                          transform: "translate(-50%, -50%)",
+                          zIndex: isHovered ? 9 : 0,
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => onSelectPoint(point.markerId)}
+                        onMouseEnter={() => {
+                          onHoverPoint(point.markerId)
+                          setHoveredTooltipState({
+                            markerId: point.markerId,
+                            position: getTooltipPosition(point),
+                          })
+                        }}
+                        onMouseLeave={() => {
+                          onHoverPoint(null)
+                          setHoveredTooltipState(null)
+                        }}
+                        className={cn(
+                          "pointer-events-auto absolute grid size-9 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-white/55 text-[11px] font-semibold text-white shadow-[0_6px_16px_rgba(15,23,42,0.32)] backdrop-blur-sm transition-all duration-300",
+                          getMarkerColor(point),
+                          isSelected ? "ring-3 ring-white/65" : "",
+                          isHovered
+                            ? "scale-110 ring-4 ring-white/90 shadow-2xl"
+                            : "hover:scale-105",
+                          "opacity-92",
+                        )}
+                        style={{
+                          left: `${position.left}px`,
+                          top: `${position.top}px`,
+                          zIndex: isHovered ? 10 : 1,
+                        }}
+                        aria-label={`${point.issueId} ${point.description}`}
+                      >
+                        {point.count}
+                      </button>
+
+                      {isHovered && hoveredTooltipState?.markerId === point.markerId ? (
+                        <MarkerTooltip point={point} position={hoveredTooltipState.position} />
+                      ) : null}
+                    </div>
+                  )
+                })}
+              </div>
+            ) : null}
+          </div>
         </div>
       ) : (
         <div className="grid w-full place-items-center py-12">
@@ -804,6 +941,8 @@ function PointDetail({ point }: { point: ResultHeatmapPointViewModel | null }) {
   )
 }
 
+void PointDetail
+
 function ResultHeatmapPage() {
   const { simulationId } = useParams()
   const resolvedId = simulationId ?? "unknown"
@@ -894,12 +1033,19 @@ function ResultHeatmapPage() {
 
   const sidePages = useMemo(
     () =>
-      pages.map((page) => ({
-        id: page.pageId,
-        name: page.pageName,
-        url: page.pageUrl,
-        screenshotUrl: page.screenshotUrl || getResultPageScreenshotUrl(page.pageId),
-      })),
+      pages.map((page) => {
+        const screenshotSet = resolveResultPageScreenshotSet({
+          pageId: page.pageId,
+          screenshotUrl: page.screenshotUrl,
+        })
+
+        return {
+          id: page.pageId,
+          name: page.pageName,
+          url: page.pageUrl,
+          previewUrl: screenshotSet.previewUrl,
+        }
+      }),
     [pages],
   )
 
@@ -1024,8 +1170,6 @@ function ResultHeatmapPage() {
               hoveredMarkerId={isPinpointMode ? hoveredMarkerId : null}
               onHoverPoint={setHoveredMarkerId}
             />
-
-            <PointDetail point={selectedPoint} />
 
             <Card
               className={cn(

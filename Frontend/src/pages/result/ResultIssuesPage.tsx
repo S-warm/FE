@@ -9,7 +9,7 @@ import { EmptyState, IssueListSection } from "@/components/sections"
 import { ResultPageSidePanel } from "@/components/sections/result/page-side-panel"
 import { ErrorState, ResultPageSkeleton } from "@/components/states"
 import { Card, CardContent } from "@/components/ui/card"
-import { getResultPageScreenshotUrl } from "@/features/result/assets"
+import { resolveResultPageScreenshotSet } from "@/features/result/assets"
 import { motion } from "@/lib/motion"
 import { useResultPageParam } from "@/lib/result-page-param"
 import { useResultPageSidePanelState } from "@/lib/result-page-side-panel-state"
@@ -192,12 +192,19 @@ function ResultIssuesPage() {
 
   const sidePages = useMemo(
     () =>
-      pages.map((page) => ({
-        id: page.pageId,
-        name: page.pageName,
-        url: page.pageUrl,
-        screenshotUrl: page.screenshotUrl || getResultPageScreenshotUrl(page.pageId),
-      })),
+      pages.map((page) => {
+        const screenshotSet = resolveResultPageScreenshotSet({
+          pageId: page.pageId,
+          screenshotUrl: page.screenshotUrl,
+        })
+
+        return {
+          id: page.pageId,
+          name: page.pageName,
+          url: page.pageUrl,
+          previewUrl: screenshotSet.previewUrl,
+        }
+      }),
     [pages],
   )
 

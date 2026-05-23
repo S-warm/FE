@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { ChevronDown } from "lucide-react"
 
 import { Card, CardContent } from "@/components/ui/card"
@@ -9,7 +9,7 @@ export interface ResultPageSidePanelItem {
   id: string
   name: string
   url?: string
-  screenshotUrl?: string
+  previewUrl?: string
   metaText?: string
 }
 
@@ -27,15 +27,19 @@ function getDisplayPath(url: string): string {
 }
 
 function ScreenshotPreview({
-  screenshotUrl,
+  previewUrl,
   alt,
 }: {
-  screenshotUrl?: string
+  previewUrl?: string
   alt: string
 }) {
-  const [failedScreenshotUrl, setFailedScreenshotUrl] = useState<string | null>(null)
+  const [failedPreviewUrl, setFailedPreviewUrl] = useState<string | null>(null)
 
-  if (!screenshotUrl || failedScreenshotUrl === screenshotUrl) {
+  useEffect(() => {
+    setFailedPreviewUrl(null)
+  }, [previewUrl])
+
+  if (!previewUrl || failedPreviewUrl === previewUrl) {
     return (
       <div className="flex aspect-[16/10] items-center justify-center rounded-xl border border-border-soft bg-surface-subtle">
         <span className="text-caption-12-regular text-text-muted">
@@ -48,12 +52,13 @@ function ScreenshotPreview({
   return (
     <div className="aspect-[16/10] overflow-hidden rounded-xl border border-border-soft">
       <img
-        src={screenshotUrl}
+        src={previewUrl}
         alt={alt}
         loading="lazy"
         decoding="async"
+        fetchPriority="low"
         className="h-full w-full object-cover"
-        onError={() => setFailedScreenshotUrl(screenshotUrl)}
+        onError={() => setFailedPreviewUrl(previewUrl)}
       />
     </div>
   )
@@ -153,7 +158,7 @@ function ResultPageSidePanel({
                   {expanded ? (
                     <div className="grid gap-2 px-3 pb-3">
                       <ScreenshotPreview
-                        screenshotUrl={page.screenshotUrl}
+                        previewUrl={page.previewUrl}
                         alt={page.name}
                       />
                     </div>

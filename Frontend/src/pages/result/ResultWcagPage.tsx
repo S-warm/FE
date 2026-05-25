@@ -18,7 +18,7 @@ import { motion } from "@/lib/motion"
 import { useResultPageParam } from "@/lib/result-page-param"
 import { useResultPageSidePanelState } from "@/lib/result-page-side-panel-state"
 import { cn } from "@/lib/utils"
-import { useResultWcagQuery } from "@/queries"
+import { useResultWcagQuery, useResultIssuesQuery } from "@/queries"
 import type { SeverityTokenViewModel } from "@/types/view-model/common/severity"
 import type {
   ResultWcagDistributionItemViewModel,
@@ -352,8 +352,12 @@ function ResultWcagPage() {
   const [expandedIdsByPage, setExpandedIdsByPage] = useState<Record<string, string[]>>({})
   const [activeSeverityRawsByPage, setActiveSeverityRawsByPage] = useState<Record<string, string[]>>({})
   const { data, error, isLoading, isError, refetch } = useResultWcagQuery(resolvedId)
+  // Fetch Issues data for sidebar pages only (temporary workaround until WCAG backend provides pageUrl)
+  const { data: issuesData } = useResultIssuesQuery(resolvedId)
   const pages = useMemo(() => data?.pages ?? [], [data])
-  const pageIds = pages.map((page) => page.pageId)
+  // Use Issues page IDs for sidebar selection (since sidebar uses Issues data)
+  const issuePages = useMemo(() => issuesData?.pages ?? [], [issuesData])
+  const pageIds = issuePages.map((page) => page.pageId)
   const { selectedPageId, setSelectedPageId } = useResultPageParam({
     availablePageIds: pageIds,
     defaultPageId: pageIds[0],
@@ -427,9 +431,12 @@ function ResultWcagPage() {
     }))
   }
 
+  // Use Issues pages for sidebar (temporary workaround)
+  // WCAG data still displays in main content area
   const sidePages = useMemo(
-    () =>
-      pages.map((page) => {
+    () => {
+      const issuePages = issuesData?.pages ?? []
+      return issuePages.map((page) => {
         const screenshotSet = resolveResultPageScreenshotSet({
           pageId: page.pageId,
           screenshotUrl: page.screenshotUrl,
@@ -441,8 +448,9 @@ function ResultWcagPage() {
           url: page.pageUrl,
           previewUrl: screenshotSet.previewUrl,
         }
-      }),
-    [pages],
+      })
+    },
+    [issuesData],
   )
 
   if (isLoading) {

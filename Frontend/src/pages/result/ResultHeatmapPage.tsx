@@ -884,19 +884,22 @@ function MarkerTooltip({
   return (
     <div
       ref={tooltipRef}
-      className="pointer-events-none fixed z-70 max-w-xs rounded-xl border border-border-strong bg-white p-3 shadow-lg"
+      className="pointer-events-none fixed z-70 w-72 rounded-xl border border-border-strong bg-white p-3 shadow-lg"
       style={{
         left: `${left}px`,
         top: `${top}px`,
       }}
     >
       <div className="grid gap-2">
-        <div className="flex items-start gap-2">
-          <IssueBadge variant={getPointBadgeVariant(point)} size="sm">
-            {point.errorType}
-          </IssueBadge>
-          <p className="text-body-14-medium text-text-body">{point.issueId}</p>
+        <div className="flex flex-col gap-1">
+          <div className="flex items-start gap-2">
+            <IssueBadge variant={getPointBadgeVariant(point)} size="sm" className="shrink-0">
+              {point.errorType}
+            </IssueBadge>
+          </div>
+          <p className="text-body-12-medium text-text-body break-words">{point.errorType}</p>
         </div>
+        <p className="text-body-14-medium text-text-body">{point.issueId}</p>
         <p className="text-caption-12-regular text-text-muted">{point.description}</p>
       </div>
     </div>

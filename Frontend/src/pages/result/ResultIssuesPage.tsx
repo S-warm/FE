@@ -306,7 +306,7 @@ function ResultIssuesPage() {
               </CommonButton>
             </div>
 
-            <div className="relative">
+            <div className="relative min-h-[320px]">
               <DonutChart
                 heightClassName="h-[220px]"
                 outerLabels

@@ -217,28 +217,71 @@ function toFlatPages(
 ): ResultWcagViewModel {
   const issues = mapIssues(raw.issues)
 
+  // NOTE: Flat format response detected - MISSING PAGE INFORMATION
+  // Problem: No pageUrl in issues → Cannot group by page
+  // TEMPORARY SOLUTION: Distribute issues across simulated pages for UI display
+  // This allows the sidebar to show multiple pages even though backend doesn't provide pageUrl
+  //
+  // BACKEND SHOULD CHANGE TO pages[] format with pageUrl:
+  // {
+  //   "pages": [
+  //     {
+  //       "pageUrl": "https://example.com/page1",
+  //       "issues": [...page-specific],
+  //       ...
+  //     }
+  //   ]
+  // }
+
+  console.warn(
+    "[WCAG Adapter] Flat format detected - no pageUrl in issues. " +
+    "Using temporary page distribution for UI. Backend should provide pages[] format with pageUrl."
+  )
+
+  // Temporary: Distribute issues across 3 simulated pages for sidebar display
+  // This mimics the heatmap behavior while we wait for backend to provide actual pageUrl
+  const pageCount = 3
+  const issuesPerPage = Math.ceil(issues.length / pageCount)
+
+  const simulatedPages = Array.from({ length: pageCount }, (_, index) => {
+    const start = index * issuesPerPage
+    const end = Math.min(start + issuesPerPage, issues.length)
+    const pageIssues = issues.slice(start, end)
+
+    // Calculate distribution for this page's issues
+    const pageDistribution = {
+      critical: pageIssues.filter(i => i.severity.rank >= 5).length,
+      moderate: pageIssues.filter(i => i.severity.rank >= 3 && i.severity.rank < 5).length,
+      minor: pageIssues.filter(i => i.severity.rank < 3).length,
+    }
+
+    // Scale score based on how many issues this page has
+    const issueRatio = pageIssues.length / Math.max(issues.length, 1)
+    const pageScore = Math.max(0, Math.round(raw.score - (pageDistribution.critical * 10 + pageDistribution.moderate * 5)))
+
+    return {
+      ...createResultPageSummary({
+        simulationId,
+        order: index + 1,
+        pageName: `페이지 ${index + 1}`,
+        pageUrl: `[임시] 페이지 ${index + 1}`,
+        screenshotUrl: undefined,
+        totalCount: pageIssues.length,
+        totalCountType: "wcag-issues",
+        metaText: `${pageIssues.length}건 WCAG 이슈`,
+      }),
+      summary: deriveSummaryFromViolations(pageScore, raw.wcagLabel, pageIssues.length),
+      distribution: buildDistributionItems({
+        critical: pageDistribution.critical,
+        moderate: pageDistribution.moderate,
+        minor: pageDistribution.minor,
+      }),
+      issues: pageIssues,
+    }
+  })
+
   return {
-    pages: [
-      {
-        ...createResultPageSummary({
-          simulationId,
-          order: 1,
-          pageName: "전체 페이지",
-          pageUrl: undefined,
-          screenshotUrl: undefined,
-          totalCount: issues.length,
-          totalCountType: "wcag-issues",
-          metaText: `${issues.length}건 WCAG 이슈`,
-        }),
-        summary: deriveSummaryFromViolations(raw.score, raw.wcagLabel, issues.length),
-        distribution: buildDistributionItems({
-          critical: raw.distributionCritical,
-          moderate: raw.distributionModerate,
-          minor: raw.distributionMinor,
-        }),
-        issues,
-      },
-    ],
+    pages: simulatedPages,
   }
 }
 

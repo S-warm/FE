@@ -155,7 +155,9 @@ function AuthSidebar({
                           className="absolute right-3 top-3 grid size-7 place-items-center rounded-lg text-text-muted transition-colors hover:bg-surface-hover hover:text-text-body"
                           onClick={(event) => {
                             event.stopPropagation()
-                            onHideSimulation(item.simulationId)
+                            if (window.confirm(`"${item.title}" 프로젝트를 목록에서 제거하시겠습니까?`)) {
+                              onHideSimulation(item.simulationId)
+                            }
                           }}
                         >
                           <Trash2 className="size-3.5" />

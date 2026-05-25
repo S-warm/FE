@@ -39,14 +39,34 @@ function hasUsableWcagPayload(apiResponse: SimulationWcagApiResponseDto) {
 }
 
 function hasRecognizableWcagPayload(apiResponse: SimulationWcagApiResponseDto) {
-  return ("urls" in apiResponse && typeof apiResponse.urls === "object" && apiResponse.urls !== null) ||
-    ("summary" in apiResponse && "distribution" in apiResponse && Array.isArray(apiResponse.issues)) ||
-    ("score" in apiResponse &&
-      "wcagLabel" in apiResponse &&
-      "distributionCritical" in apiResponse &&
-      "distributionModerate" in apiResponse &&
-      "distributionMinor" in apiResponse &&
-      Array.isArray(apiResponse.issues))
+  // Support format detection in order of preference:
+  // 1. pages[] format (preferred - supports per-page breakdown)
+  // 2. urls object format (supports per-URL breakdown)
+  // 3. legacy format (aggregate with summary/distribution)
+  // 4. flat format (basic aggregate - no per-page support)
+
+  const hasPagesFormat = "pages" in apiResponse && Array.isArray(apiResponse.pages)
+  const hasUrlsFormat = "urls" in apiResponse && typeof apiResponse.urls === "object" && apiResponse.urls !== null
+  const hasLegacyFormat = "summary" in apiResponse && "distribution" in apiResponse && Array.isArray(apiResponse.issues)
+  const hasFlatFormat =
+    "score" in apiResponse &&
+    "wcagLabel" in apiResponse &&
+    "distributionCritical" in apiResponse &&
+    "distributionModerate" in apiResponse &&
+    "distributionMinor" in apiResponse &&
+    Array.isArray(apiResponse.issues)
+
+  const isRecognizable = hasPagesFormat || hasUrlsFormat || hasLegacyFormat || hasFlatFormat
+
+  if (isRecognizable && process.env.NODE_ENV === "development") {
+    if (hasFlatFormat && !hasPagesFormat && !hasUrlsFormat && !hasLegacyFormat) {
+      console.log(
+        "[WCAG Service] Detected flat format response. Note: For per-page WCAG error breakdown, backend should return pages[] format instead."
+      )
+    }
+  }
+
+  return isRecognizable
 }
 
 export const resultWcagService: ResultWcagService = {

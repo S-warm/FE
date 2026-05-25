@@ -66,7 +66,29 @@ export interface SimulationWcagFlatResponseDto {
   issues: SimulationWcagIssueDto[]
 }
 
+export interface SimulationWcagPageDto {
+  order: number
+  pageName?: string
+  pageUrl?: string
+  screenshotUrl?: string | null
+  totalIssueCount?: number
+  totalWcagIssueCount?: number
+  score?: number
+  wcagLabel?: string
+  summary?: SimulationWcagSummaryDto
+  distribution?: SimulationWcagDistributionDto
+  distributionCritical?: number
+  distributionModerate?: number
+  distributionMinor?: number
+  issues: SimulationWcagIssueDto[]
+}
+
+export interface SimulationWcagPagesResponseDto {
+  pages: SimulationWcagPageDto[]
+}
+
 export type SimulationWcagApiResponseDto =
   | SimulationWcagBusinessResponseDto
+  | SimulationWcagPagesResponseDto
   | SimulationWcagResponseDto
   | SimulationWcagFlatResponseDto

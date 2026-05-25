@@ -1,0 +1,25 @@
+{
+  "score": 97,
+  "wcagLabel": "AAA",
+  "distributionCritical": 2,
+  "distributionModerate": 0,
+  "distributionMinor": 0,
+  "issues": [
+    {
+      "wcagIssueId": "e7bc0ae5-5ebe-40a7-8871-2363c8c7b66c",
+      "title": "Ensures the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+      "severity": "Critical",
+      "description": "요소는 최소 색상 대비 비율 기준을 충족해야 합니다. 이 규칙은 시각적 장애가 있는 사용자, 특히 색상 인식에 어려움을 겪는 사용자에게 영향을 미칩니다.",
+      "html": "<p class=\"d\">편안한 실루엣</p>",
+      "wcagCriteria": "1.4.3"
+    },
+    {
+      "wcagIssueId": "51885e7e-ee5b-4227-bf7a-fe802f2fbf17",
+      "title": "Ensures the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+      "severity": "Critical",
+      "description": "요소는 최소 색상 대비 비율 기준을 충족해야 합니다. 이 규칙은 시각적 장애가 있는 사용자, 특히 색맹이나 저시력 사용자에게 중요한 영향을 미칩니다.",
+      "html": "<p class=\"product-name\">오버핏 코튼 셔츠</p>",
+      "wcagCriteria": "1.4.3"
+    }
+  ]
+}

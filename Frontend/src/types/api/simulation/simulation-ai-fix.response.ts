@@ -1,6 +1,10 @@
 import type { ApiIssueSeverity } from "@/types/api/common/enums"
 
 export interface SimulationAiFixBusinessItemDto {
+  issueId?: string
+  title?: string
+  issueTitle?: string
+  issue_title?: string
   selector: string
   beforeCode: string
   afterCode: string

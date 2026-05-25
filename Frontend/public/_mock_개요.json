@@ -1,0 +1,38 @@
+{
+  "totalSessions": 6,
+  "successCount": 4,
+  "successRate": 0.6667,
+  "avgDurationMs": 67678,
+  "ageOverview": [
+    {
+      "ageBand": "20대",
+      "totalSessions": 2,
+      "successCount": 2,
+      "successRate": 1.0,
+      "failRate": 0.0,
+      "avgDurationMs": 65234,
+      "avgActions": 7.5,
+      "avgDeclareFailure": 3.5
+    },
+    {
+      "ageBand": "50대",
+      "totalSessions": 2,
+      "successCount": 2,
+      "successRate": 1.0,
+      "failRate": 0.0,
+      "avgDurationMs": 63014,
+      "avgActions": 8.5,
+      "avgDeclareFailure": 4.5
+    },
+    {
+      "ageBand": "70대",
+      "totalSessions": 2,
+      "successCount": 0,
+      "successRate": 0.0,
+      "failRate": 1.0,
+      "avgDurationMs": 74786,
+      "avgActions": 9.0,
+      "avgDeclareFailure": 6.0
+    }
+  ]
+}

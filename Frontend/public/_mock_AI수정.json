@@ -1,0 +1,30 @@
+{
+  "pages": [
+    {
+      "order": 2,
+      "pageUrl": "http://muun-shop-demo.s3-website.ap-northeast-2.amazonaws.com/detail-1.html",
+      "screenshotUrl": "https://swarm-logs-bucket-195765661361.s3.ap-northeast-2.amazonaws.com/raw/muun-site-test-v1-260525/logs/2026-05-25_11-40-28/screenshots/muun-shop-demo_s3-website_ap-northeast-2_amazonaws_com_detail-1_html.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20260525T132755Z&X-Amz-SignedHeaders=host&X-Amz-Credential=AKIAS3FEK52YVORN7WKG%2F20260525%2Fap-northeast-2%2Fs3%2Faws4_request&X-Amz-Expires=3600&X-Amz-Signature=c933d516623419970436bf8b55ace3c79d208c096d47a707ecbf2938cab8b1d4",
+      "totalFixCount": 2,
+      "fixes": [
+        {
+          "issueId": "594d5d6c-86ad-4303-91a6-b7ee7aba2c2e",
+          "selector": ".sub-btn",
+          "beforeCode": ".sub-btn {}",
+          "afterCode": ".sub-btn { background-color: #ff6b6b; color: #ffffff; padding: 16px 32px; font-size: 16px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3); transition: all 0.3s ease; } .sub-btn:hover { background-color: #ff5252; transform: translateY(-2px); box-shadow: 0 6px 16px rgba(255, 107, 107, 0.4); }",
+          "impactDescription": "버튼의 가시성이 현저히 향상되어 고령 사용자를 포함한 모든 연령대의 사용자가 장바구니 기능을 더 쉽게 발견하고 사용할 수 있게 됩니다.",
+          "changeDescription": "장바구니 담기 버튼의 배경색을 눈에 띄는 빨간색으로 변경하고, 패딩과 폰트 크기를 확대하여 시각적 두드러짐을 강화했습니다. 그림자 효과와 호버 상태를 추가하여 상호작용성을 명확히 표현했습니다.",
+          "severity": "MEDIUM"
+        },
+        {
+          "issueId": "fb9437bd-26c1-4230-b3e4-bbece038f1b1",
+          "selector": "a.sub-btn",
+          "beforeCode": "a.sub-btn { font-size: 15px; color: rgb(26, 26, 26); background-color: rgb(255, 255, 255); padding: 15px; margin: 10px 0px 0px; border: 1px solid rgb(26, 26, 26); opacity: 1; cursor: pointer; text-decoration: none solid rgb(26, 26, 26); font-weight: 600; }",
+          "afterCode": "a.sub-btn { font-size: 16px; color: rgb(255, 255, 255); background-color: rgb(26, 26, 26); padding: 16px 20px; margin: 10px 0px 0px; border: 2px solid rgb(26, 26, 26); opacity: 1; cursor: pointer; text-decoration: none solid rgb(255, 255, 255); font-weight: 600; display: inline-block; width: 100%; text-align: center; border-radius: 4px; transition: background-color 0.2s ease; }",
+          "impactDescription": "높은 명도 대비와 확대된 클릭 영역으로 인해 사용자의 버튼 인식도와 접근성이 향상되어 클릭 불가 이슈가 해결될 것으로 예상됩니다.",
+          "changeDescription": "버튼의 배경색을 어두운 색으로 변경하고 텍스트 색을 흰색으로 설정하여 대비도를 높였습니다. 또한 padding과 border를 증가시키고 width를 100%로 설정하여 클릭 영역을 확대하고 시각적 인지도를 개선했습니다.",
+          "severity": "MEDIUM"
+        }
+      ]
+    }
+  ]
+}

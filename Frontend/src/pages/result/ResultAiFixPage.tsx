@@ -13,7 +13,7 @@ import { useResultPageSidePanelState } from "@/lib/result-page-side-panel-state"
 import { motion } from "@/lib/motion"
 import { cn } from "@/lib/utils"
 import { resolveResultPageScreenshotSet } from "@/features/result/assets"
-import { useResultAiFixQuery } from "@/queries"
+import { useResultAiFixQuery, useResultIssuesQuery } from "@/queries"
 import type {
   ResultAiFixItemViewModel,
   ResultAiFixPageViewModel,
@@ -195,6 +195,7 @@ function ResultAiFixPage() {
   const resolvedId = simulationId ?? "unknown"
 
   const { data, error, isLoading, isError, refetch } = useResultAiFixQuery(resolvedId)
+  const { data: issuesData } = useResultIssuesQuery(resolvedId)
   const pages = useMemo(() => data?.pages ?? [], [data])
   const pageIds = pages.map((page) => page.pageId)
 
@@ -240,7 +241,34 @@ function ResultAiFixPage() {
     pages.find((page) => page.pageId === selectedPageId) ?? pages[0] ?? null
   const [selectedFixId, setSelectedFixId] = useState<string>("")
 
-  const fixes = useMemo(() => selectedPage?.fixes ?? [], [selectedPage])
+  const issueTitleLookup = useMemo(() => {
+    const lookup = new Map<string, string>()
+
+    for (const page of issuesData?.pages ?? []) {
+      for (const issue of page.issues) {
+        if (issue.issueId) {
+          lookup.set(issue.issueId, issue.title)
+          lookup.set(`${page.pageUrl ?? ""}::${issue.issueId}`, issue.title)
+        }
+      }
+    }
+
+    return lookup
+  }, [issuesData])
+
+  const fixes = useMemo(
+    () =>
+      (selectedPage?.fixes ?? []).map((fix) => {
+        const scopedKey = `${selectedPage?.pageUrl ?? ""}::${fix.issueId}`
+        const mappedTitle =
+          issueTitleLookup.get(scopedKey) ??
+          issueTitleLookup.get(fix.issueId) ??
+          fix.title
+
+        return mappedTitle === fix.title ? fix : { ...fix, title: mappedTitle }
+      }),
+    [issueTitleLookup, selectedPage]
+  )
   const resolvedSelectedFixId = fixes.some((fix) => fix.issueId === selectedFixId)
     ? selectedFixId
     : (fixes[0]?.issueId ?? "")

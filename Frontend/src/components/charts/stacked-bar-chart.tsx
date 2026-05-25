@@ -36,6 +36,8 @@ type StackedTooltipEntry = {
   dataKey?: string
   value?: number | string
   payload?: {
+    success?: number
+    failure?: number
     successColor?: string
     failureColor?: string
   }
@@ -103,8 +105,8 @@ function StackedTooltip(props: {
     : ""
   if (!active || !payload?.length) return null
 
-  const success = payload.find((p) => p.dataKey === "success")
-  const failure = payload.find((p) => p.dataKey === "failure")
+  const success = payload.find((p) => p.dataKey === "successDisplay")
+  const failure = payload.find((p) => p.dataKey === "failureDisplay")
 
   return (
     <div style={chartTooltipContentStyle} className="rounded-xl px-3 py-2 text-[12px]">
@@ -113,14 +115,14 @@ function StackedTooltip(props: {
         <div className="flex items-center gap-2">
           <span className="size-2 rounded-full" style={{ backgroundColor: success.payload?.successColor }} />
           <span className="text-text-muted">성공</span>
-          <span className="ml-auto font-medium">{success.value}%</span>
+          <span className="ml-auto font-medium">{success.payload?.success ?? success.value}%</span>
         </div>
       )}
       {failure && (
         <div className="flex items-center gap-2">
           <span className="size-2 rounded-full" style={{ backgroundColor: failure.payload?.failureColor }} />
           <span className="text-text-muted">실패</span>
-          <span className="ml-auto font-medium">{failure.value}%</span>
+          <span className="ml-auto font-medium">{failure.payload?.failure ?? failure.value}%</span>
         </div>
       )}
     </div>
@@ -157,6 +159,21 @@ function StackedBarChart({
     [data],
   )
 
+  const chartData = useMemo(
+    () =>
+      data.map((entry) => {
+        const total = entry.success + entry.failure
+        const renderScale = total >= 100 ? 0.985 : 1
+
+        return {
+          ...entry,
+          successDisplay: Number((entry.success * renderScale).toFixed(2)),
+          failureDisplay: Number((entry.failure * renderScale).toFixed(2)),
+        }
+      }),
+    [data],
+  )
+
   // 데이터 변경 시 애니메이션 재실행: effect 없이 "마지막 완료 키"로 추적
   const [animatedDataKey, setAnimatedDataKey] = useState<string | null>(null)
   const isAnimationActive = animatedDataKey !== chartDataKey
@@ -169,23 +186,22 @@ function StackedBarChart({
     )
   }
 
-  const activeSuccess = activeIndex !== null ? data[activeIndex]?.success : null
+  const activeSuccess = activeIndex !== null ? chartData[activeIndex]?.successDisplay : null
 
   const renderSuccessLabel = (props: LabelContentProps) => {
     const x = toNumber(props.x)
     const y = toNumber(props.y)
     const w = toNumber(props.width)
     const h = toNumber(props.height)
-    const value = toNumber(props.value)
     const index = props.index ?? 0
-    if (value < 10) return null
     const entry = data[index]
     if (!entry) return null
+    if (entry.success < 10) return null
     const dimmed = !!highlightedLabel && highlightedLabel !== entry.label
     const textColor = isLightColor(entry.successColor) ? "rgba(0,0,0,0.7)" : "#ffffff"
     return (
       <text x={x + w / 2} y={y + h / 2} dy={4} textAnchor="middle" fill={textColor} fontSize={11} fontWeight={600} opacity={dimmed ? 0 : 1}>
-        {`${value}%`}
+        {`${entry.success}%`}
       </text>
     )
   }
@@ -195,16 +211,15 @@ function StackedBarChart({
     const y = toNumber(props.y)
     const w = toNumber(props.width)
     const h = toNumber(props.height)
-    const value = toNumber(props.value)
     const index = props.index ?? 0
-    if (value <= 0) return null
     const entry = data[index]
     if (!entry) return null
+    if (entry.failure <= 0) return null
     const dimmed = !!highlightedLabel && highlightedLabel !== entry.label
     const textColor = isLightColor(entry.failureColor) ? "rgba(0,0,0,0.7)" : "#ffffff"
     return (
       <text x={x + w / 2} y={y + h / 2} dy={4} textAnchor="middle" fill={textColor} fontSize={10} fontWeight={600} opacity={dimmed ? 0 : 1}>
-        {`${value}%`}
+        {`${entry.failure}%`}
       </text>
     )
   }
@@ -213,9 +228,9 @@ function StackedBarChart({
     <div ref={containerRef} className={`${heightClassName} w-full flex items-center justify-center`}>
       <ResponsiveContainer width="100%" height={height}>
         <BarChart
-          data={data}
+          data={chartData}
           layout="vertical"
-          margin={{ top: 4, right: 8, left: 8, bottom: 4 }}
+          margin={{ top: 4, right: 24, left: 8, bottom: 4 }}
           barCategoryGap="60%"
           onMouseMove={(state) => {
             setActiveIndex(getActiveTooltipIndex(state))
@@ -236,7 +251,7 @@ function StackedBarChart({
           />
           <XAxis
             type="number"
-            domain={[0, 100]}
+            domain={[0, 101]}
             ticks={[0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]}
             tick={{ fill: "var(--color-muted-foreground)", fontSize: 11, opacity: 0.6 }}
             tickFormatter={(v) => `${v}%`}
@@ -246,7 +261,7 @@ function StackedBarChart({
           <YAxis
             type="category"
             dataKey="label"
-            width={46}
+            width={56}
             tick={{ fill: "var(--color-foreground)", fontSize: 12 }}
             tickLine={false}
             axisLine={false}
@@ -261,7 +276,7 @@ function StackedBarChart({
             />
           )}
           <Bar
-            dataKey="success"
+            dataKey="successDisplay"
             stackId="a"
             name="성공"
             barSize={barSize ?? 24}
@@ -293,7 +308,7 @@ function StackedBarChart({
               )
             }}
           >
-            {data.map((entry) => (
+            {chartData.map((entry) => (
               <Cell
                 key={`success-${entry.label}`}
                 fill={entry.successColor}
@@ -303,11 +318,11 @@ function StackedBarChart({
               />
             ))}
             {!isAnimationActive ? (
-              <LabelList dataKey="success" content={renderSuccessLabel as (props: unknown) => ReactElement | null} />
+              <LabelList dataKey="successDisplay" content={renderSuccessLabel as (props: unknown) => ReactElement | null} />
             ) : null}
           </Bar>
           <Bar
-            dataKey="failure"
+            dataKey="failureDisplay"
             stackId="a"
             name="실패"
             barSize={barSize ?? 24}
@@ -323,7 +338,7 @@ function StackedBarChart({
             }}
             style={{ cursor: onLabelClick ? "pointer" : "default" }}
           >
-            {data.map((entry) => (
+            {chartData.map((entry) => (
               <Cell
                 key={`failure-${entry.label}`}
                 fill={entry.failureColor}
@@ -333,7 +348,7 @@ function StackedBarChart({
               />
             ))}
             {!isAnimationActive ? (
-              <LabelList dataKey="failure" content={renderFailureLabel as (props: unknown) => ReactElement | null} />
+              <LabelList dataKey="failureDisplay" content={renderFailureLabel as (props: unknown) => ReactElement | null} />
             ) : null}
           </Bar>
         </BarChart>

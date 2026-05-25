@@ -1,36 +1,16 @@
 import { adaptIssueCategory } from "@/adapters/result/result-category.adapter"
 import { createResultPageSummary } from "@/adapters/result/result-page.adapter"
+import {
+  deriveResultPageName,
+  normalizeResultScreenshotUrl,
+} from "@/adapters/result/result-page-meta.adapter"
 import { adaptIssueSeverity } from "@/adapters/result/result-severity.adapter"
-import { getResultPageScreenshotUrl } from "@/features/result/assets"
 import type {
   SimulationBusinessIssueDto,
   SimulationIssuesApiResponseDto,
   SimulationIssuesPageDto,
 } from "@/types/api/simulation/simulation-issues.response"
 import type { ResultIssueViewModel, ResultIssuesViewModel } from "@/types/view-model/result/result-issues"
-
-function resolvePageNameFromUrl(url: string) {
-  if (url.includes("/search")) return "검색 결과"
-  if (url.includes("/articleDetail")) return "논문 상세"
-  if (url.includes("/journal")) return "저널 상세"
-  if (url.includes("/login")) return "로그인"
-  if (url.includes("/signup")) return "회원가입"
-  return "상세 페이지"
-}
-
-function resolveScreenshotUrl(url: string, screenshotUrl?: string) {
-  if (screenshotUrl?.trim()) {
-    return screenshotUrl
-  }
-
-  if (url.includes("/search")) return getResultPageScreenshotUrl("search")
-  if (url.includes("/articleDetail") || url.includes("/journal")) {
-    return getResultPageScreenshotUrl("product")
-  }
-  if (url.includes("/login")) return getResultPageScreenshotUrl("login")
-  if (url.includes("/signup")) return getResultPageScreenshotUrl("signup")
-  return getResultPageScreenshotUrl()
-}
 
 function toPercentLabel(rate: number) {
   return Number((rate * 100).toFixed(1))
@@ -68,15 +48,17 @@ function mapBusinessIssueToViewModel(issue: SimulationBusinessIssueDto): ResultI
 }
 
 function mapLegacyIssueToViewModel(issue: SimulationIssuesPageDto["issues"][number]): ResultIssueViewModel {
+  const totalFailures = issue.failCount ?? issue.affectedUsersCount
+
   return {
     issueType: "ux",
     issueId: issue.issueId,
     title: issue.title,
     url: "",
     category: adaptIssueCategory(issue.category),
-    subCategory: "",
+    subCategory: issue.subCategory ?? "",
     severity: adaptIssueSeverity(issue.severity),
-    totalFailures: issue.affectedUsersCount,
+    totalFailures,
     failureRate: issue.affectedUsersPercent ?? 0,
     affectedUsersCount: issue.affectedUsersCount,
     affectedUsersPercent: issue.affectedUsersPercent,
@@ -104,7 +86,7 @@ function adaptBusinessIssues(
   return {
     pages: Array.from(issuesByUrl.entries()).map(([url, issues], index) => {
       const firstIssue = issues[0]
-      const pageName = firstIssue.pageName?.trim() || resolvePageNameFromUrl(url)
+      const pageName = deriveResultPageName(url, firstIssue.pageName)
 
       return {
         ...createResultPageSummary({
@@ -112,7 +94,7 @@ function adaptBusinessIssues(
           order: index + 1,
           pageName,
           pageUrl: url,
-          screenshotUrl: resolveScreenshotUrl(url, firstIssue.screenshotUrl),
+          screenshotUrl: normalizeResultScreenshotUrl(firstIssue.screenshotUrl),
           totalCount: issues.length,
           totalCountType: "issues",
           metaText: `${issues.length}건 이슈`,
@@ -132,9 +114,9 @@ function adaptLegacyPages(
       ...createResultPageSummary({
         simulationId,
         order: page.order,
-        pageName: page.pageName,
+        pageName: deriveResultPageName(page.pageUrl, page.pageName),
         pageUrl: page.pageUrl,
-        screenshotUrl: page.screenshotUrl,
+        screenshotUrl: normalizeResultScreenshotUrl(page.screenshotUrl),
         totalCount: page.totalIssueCount,
         totalCountType: "issues",
         metaText: `${page.totalIssueCount}건 이슈`,

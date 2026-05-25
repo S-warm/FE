@@ -1,6 +1,9 @@
 import { createResultPageSummary } from "@/adapters/result/result-page.adapter"
+import {
+  deriveResultPageName,
+  normalizeResultScreenshotUrl,
+} from "@/adapters/result/result-page-meta.adapter"
 import { adaptIssueSeverity } from "@/adapters/result/result-severity.adapter"
-import { getResultPageScreenshotUrl } from "@/features/result/assets"
 import type { GetResultHeatmapParams } from "@/services/result/result.types"
 import type {
   SimulationHeatmapApiResponseDto,
@@ -54,29 +57,10 @@ function normalizeAgeBand(ageBand: string): ResultAgeFilter {
   return "all"
 }
 
-function resolveScreenshotUrl(url: string) {
-  if (url.includes("/search")) return getResultPageScreenshotUrl("search")
-  if (url.includes("/articleDetail") || url.includes("/journal")) {
-    return getResultPageScreenshotUrl("product")
-  }
-  if (url.includes("/login")) return getResultPageScreenshotUrl("login")
-  if (url.includes("/signup")) return getResultPageScreenshotUrl("signup")
-  return getResultPageScreenshotUrl()
-}
-
-function resolvePageName(url: string) {
-  if (url.includes("/search")) return "검색 결과"
-  if (url.includes("/articleDetail")) return "논문 상세"
-  if (url.includes("/journal")) return "저널 상세"
-  if (url.includes("/login")) return "로그인"
-  if (url.includes("/signup")) return "회원가입"
-  return "상세 페이지"
-}
-
 function buildErrorBreakdown(label: string, count: number) {
   const normalized = label.toLowerCase()
 
-  if (normalized.includes("사용성")) {
+  if (normalized.includes("사용")) {
     return {
       timeout: Math.max(0, Math.round(count * 0.2)),
       network: Math.max(1, Math.round(count * 0.5)),
@@ -84,7 +68,7 @@ function buildErrorBreakdown(label: string, count: number) {
     }
   }
 
-  if (normalized.includes("접근성")) {
+  if (normalized.includes("접근")) {
     return {
       timeout: Math.max(0, Math.round(count * 0.1)),
       network: Math.max(0, Math.round(count * 0.25)),
@@ -102,11 +86,26 @@ function buildErrorBreakdown(label: string, count: number) {
 function buildPointDescription(point: SimulationHeatmapBusinessPointDto) {
   const ageBand = normalizeAgeBand(point.ageBand)
   const ageLabel = ageBand === "all" ? "전체" : ageBand
-  return `${ageLabel} 페르소나에서 ${point.errorType} 이슈가 ${point.count}회 관측되었습니다.`
+  return `${ageLabel} 사용자에서 ${point.errorType} 이슈가 ${point.count}회 관측되었습니다.`
 }
 
 function resolveCurrentAgeGroup(ageGroups: ResultAgeBand[]): ResultAgeFilter {
   return ageGroups.length === 1 ? ageGroups[0] : "all"
+}
+
+function filterPointsByAgeBands<T extends { ageBand?: string | null }>(
+  points: T[],
+  ageGroups: ResultAgeBand[],
+) {
+  if (!ageGroups.length || ageGroups.length === 7) {
+    return points
+  }
+
+  const selectedAgeGroups = new Set(ageGroups)
+  return points.filter((point) => {
+    const normalizedAgeBand = normalizeAgeBand(point.ageBand ?? "")
+    return normalizedAgeBand !== "all" && selectedAgeGroups.has(normalizedAgeBand)
+  })
 }
 
 function toBusinessViewModel(
@@ -118,12 +117,10 @@ function toBusinessViewModel(
   const filteredByAge =
     selectedAgeGroups.size === 0 || selectedAgeGroups.size === 7
       ? raw.errorPoints
-      : raw.errorPoints.filter(
-          (point) => {
-            const normalizedAgeBand = normalizeAgeBand(point.ageBand)
-            return normalizedAgeBand !== "all" && selectedAgeGroups.has(normalizedAgeBand)
-          }
-        )
+      : raw.errorPoints.filter((point) => {
+          const normalizedAgeBand = normalizeAgeBand(point.ageBand)
+          return normalizedAgeBand !== "all" && selectedAgeGroups.has(normalizedAgeBand)
+        })
 
   const pointsByUrl = filteredByAge.reduce<Map<string, SimulationHeatmapBusinessPointDto[]>>(
     (acc, point) => {
@@ -143,23 +140,23 @@ function toBusinessViewModel(
       const maxCount = Math.max(...points.map((point) => point.count), 1)
 
       return {
-      ...createResultPageSummary({
-        simulationId,
-        order: index + 1,
-        pageName: resolvePageName(url),
-        pageUrl: url,
-          screenshotUrl: resolveScreenshotUrl(url),
+        ...createResultPageSummary({
+          simulationId,
+          order: index + 1,
+          pageName: deriveResultPageName(url),
+          pageUrl: url,
+          screenshotUrl: undefined,
           totalCount,
-        totalCountType: "errors",
-        metaText: `${points.length}개 포인트`,
-      }),
-      currentAgeGroup: resolveCurrentAgeGroup(params.ageGroups),
-      selectedAgeBands: params.ageGroups,
-      coordinateMode: detectCoordinateMode(pagedPoints),
-      points: pagedPoints.map((point) => ({
-        markerId: `${url}:${point.issueId}:${point.x}:${point.y}:${point.ageBand}`,
-        issueType: "ux" as const,
-        issueId: point.issueId,
+          totalCountType: "errors",
+          metaText: `${points.length}개 오류`,
+        }),
+        currentAgeGroup: resolveCurrentAgeGroup(params.ageGroups),
+        selectedAgeBands: params.ageGroups,
+        coordinateMode: detectCoordinateMode(pagedPoints),
+        points: pagedPoints.map((point) => ({
+          markerId: `${url}:${point.issueId}:${point.x}:${point.y}:${point.ageBand}`,
+          issueType: "ux" as const,
+          issueId: point.issueId,
           x: normalizeAxis(point.x),
           y: normalizeAxis(point.y),
           count: point.count,
@@ -185,31 +182,41 @@ function toBusinessViewModel(
 
 function toLegacyViewModel(
   simulationId: string,
-  raw: Extract<SimulationHeatmapApiResponseDto, { pages: SimulationHeatmapPageDto[] }>
+  raw: Extract<SimulationHeatmapApiResponseDto, { pages: SimulationHeatmapPageDto[] }>,
+  params: GetResultHeatmapParams
 ): ResultHeatmapViewModel {
   return {
-    pages: raw.pages.map((page) => ({
-      ...createResultPageSummary({
-        simulationId,
-        order: page.order,
-        pageName: page.pageName,
-        pageUrl: page.pageUrl,
-        screenshotUrl: page.screenshotUrl,
-        totalCount: page.totalErrorCount,
-        totalCountType: "errors",
-        metaText: `${page.totalErrorCount}건 오류`,
-      }),
-      currentAgeGroup: page.currentAgeGroup ?? "all",
-      selectedAgeBands:
-        page.currentAgeGroup && page.currentAgeGroup !== "all"
-          ? [page.currentAgeGroup]
-          : ["10대", "20대", "30대", "40대", "50대", "60대", "70대"],
-      coordinateMode: detectCoordinateMode(page.errorPoints ?? []),
-      points: (page.errorPoints ?? []).map((point) => {
+    pages: raw.pages.flatMap((page) => {
+      const filteredPoints = filterPointsByAgeBands(page.errorPoints ?? [], params.ageGroups)
+      const filteredTotalCount = filteredPoints.length
+      const filteredTotalErrors = filteredPoints.reduce(
+        (sum, point) => sum + (point.count ?? 0),
+        0,
+      )
+
+      if (filteredTotalCount === 0) {
+        return []
+      }
+
+      return [{
+        ...createResultPageSummary({
+          simulationId,
+          order: page.order,
+          pageName: deriveResultPageName(page.pageUrl, page.pageName),
+          pageUrl: page.pageUrl,
+          screenshotUrl: normalizeResultScreenshotUrl(page.screenshotUrl),
+          totalCount: filteredTotalErrors,
+          totalCountType: "errors",
+          metaText: `${filteredTotalCount}개 오류`,
+        }),
+        currentAgeGroup: resolveCurrentAgeGroup(params.ageGroups),
+        selectedAgeBands: params.ageGroups,
+        coordinateMode: detectCoordinateMode(filteredPoints),
+        points: filteredPoints.map((point) => {
         const count = point.count ?? 0
         const errorType = point.errorType ?? ""
         const ageBand = normalizeAgeBand(point.ageBand ?? "")
-        const maxCount = Math.max(...(page.errorPoints ?? []).map((p) => p.count ?? 0), 1)
+        const maxCount = Math.max(...filteredPoints.map((p) => p.count ?? 0), 1)
         return {
           markerId: `${page.pageUrl}:${point.issueId}:${point.x}:${point.y}:${point.ageBand ?? ""}`,
           issueType: "ux" as const,
@@ -222,18 +229,19 @@ function toLegacyViewModel(
           affectedUsersCount: point.affectedUsersCount ?? count,
           blockRate: point.blockRate ?? Number(((count / maxCount) * 100).toFixed(1)),
           repeatCount: point.repeatCount ?? Number((count / Math.max(1, count / 2)).toFixed(1)),
-          description: point.description ?? `${ageBand === "all" ? "전체" : ageBand} 페르소나에서 ${errorType} 이슈가 ${count}회 관측되었습니다.`,
+          description: point.description ?? `${ageBand === "all" ? "전체" : ageBand} 사용자에서 ${errorType} 이슈가 ${count}회 관측되었습니다.`,
           ageBand,
           errorBreakdown: point.errorBreakdown ?? buildErrorBreakdown(errorType, count),
         }
       }),
       pagination: page.pagination ?? {
-        totalCount: page.totalErrorCount,
+        totalCount: filteredTotalCount,
         currentPage: 0,
-        pageSize: (page.errorPoints ?? []).length,
+        pageSize: filteredPoints.length,
         hasMore: false,
       },
-    })),
+    }]
+    }),
   }
 }
 
@@ -247,7 +255,7 @@ export function adaptHeatmapResponseToViewModel(
   }
 
   if ("pages" in raw && Array.isArray(raw.pages)) {
-    return toLegacyViewModel(simulationId, raw)
+    return toLegacyViewModel(simulationId, raw, params)
   }
 
   return { pages: [] }

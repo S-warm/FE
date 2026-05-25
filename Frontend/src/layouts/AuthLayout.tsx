@@ -1,7 +1,8 @@
+import { useMemo, useState } from "react"
 import type { ReactNode } from "react"
 import { matchPath, useLocation, useNavigate } from "react-router-dom"
 
-import { Menu } from "lucide-react"
+import { Menu, Trash2 } from "lucide-react"
 
 import { ProfileMenu } from "@/components/layout/profile-menu"
 import { EmptyState } from "@/components/sections"
@@ -14,6 +15,39 @@ import { useLayoutStore } from "@/store/layout.store"
 import type { SimulationListItemViewModel } from "@/types/view-model/simulation/simulation-list"
 import { formatRelativeWithDate } from "@/utils/format-relative-time"
 
+const HIDDEN_SIMULATION_IDS_STORAGE_KEY = "swarm:hidden-simulation-ids"
+
+function readHiddenSimulationIds() {
+  if (typeof window === "undefined") {
+    return []
+  }
+
+  try {
+    const raw = window.localStorage.getItem(HIDDEN_SIMULATION_IDS_STORAGE_KEY)
+    if (!raw) {
+      return []
+    }
+
+    const parsed = JSON.parse(raw)
+    return Array.isArray(parsed)
+      ? parsed.filter((value): value is string => typeof value === "string")
+      : []
+  } catch {
+    return []
+  }
+}
+
+function writeHiddenSimulationIds(ids: string[]) {
+  if (typeof window === "undefined") {
+    return
+  }
+
+  window.localStorage.setItem(
+    HIDDEN_SIMULATION_IDS_STORAGE_KEY,
+    JSON.stringify(ids),
+  )
+}
+
 function AuthSidebar({
   open,
   activeSimulationId,
@@ -23,6 +57,7 @@ function AuthSidebar({
   onRetry,
   onToggle,
   onSelectSimulation,
+  onHideSimulation,
 }: {
   open: boolean
   activeSimulationId?: string
@@ -32,6 +67,7 @@ function AuthSidebar({
   onRetry: () => void
   onToggle: () => void
   onSelectSimulation: (simulationId: string) => void
+  onHideSimulation: (simulationId: string) => void
 }) {
   return (
     <aside
@@ -48,7 +84,7 @@ function AuthSidebar({
       >
         <button
           type="button"
-          aria-label={open ? "사이드바 접기" : "사이드바 펼치기"}
+          aria-label={open ? "사이드바 닫기" : "사이드바 펼치기"}
           className="grid size-8 place-items-center rounded-full bg-surface-control text-text-secondary-2 transition-colors hover:bg-surface-control-hover hover:text-text-secondary-3"
           onClick={onToggle}
         >
@@ -64,64 +100,82 @@ function AuthSidebar({
             : "pointer-events-none -translate-x-2 opacity-0",
         ].join(" ")}
       >
-        <div className="min-h-0 flex-1">
+        <div className="flex min-h-0 flex-1 flex-col">
           <p className="text-caption-12-regular text-text-muted">최근 프로젝트</p>
           <div className="mt-2 border-b border-border-strong" />
-          <div className="mt-3 grid gap-3 overflow-y-auto pr-1">
-            {isLoading
-              ? Array.from({ length: 4 }).map((_, index) => (
-                  <div
-                    key={index}
-                    className="h-[72px] animate-pulse rounded-xl border border-border-soft-3 bg-surface-subtle"
-                    aria-hidden="true"
-                  />
-                ))
-              : null}
+          <div className="mt-3 min-h-0 flex-1 overflow-y-auto pr-1">
+            <div className="grid gap-3">
+              {isLoading
+                ? Array.from({ length: 4 }).map((_, index) => (
+                    <div
+                      key={index}
+                      className="h-[72px] animate-pulse rounded-xl border border-border-soft-3 bg-surface-subtle"
+                      aria-hidden="true"
+                    />
+                  ))
+                : null}
 
-            {!isLoading && isError ? (
-              <ErrorState
-                title="목록을 불러오지 못했습니다"
-                description="잠시 후 다시 시도해 주세요."
-                actionLabel="다시 시도"
-                onAction={onRetry}
-                className="px-4 py-6"
-              />
-            ) : null}
+              {!isLoading && isError ? (
+                <ErrorState
+                  title="목록을 불러오지 못했습니다"
+                  description="잠시 후 다시 시도해 주세요"
+                  actionLabel="다시 시도"
+                  onAction={onRetry}
+                  className="px-4 py-6"
+                />
+              ) : null}
 
-            {!isLoading && !isError && simulations.length === 0 ? (
-              <EmptyState
-                title="최근 프로젝트가 없습니다"
-                description="시뮬레이션을 시작하면 목록에 표시됩니다."
-                className="px-4 py-6"
-              />
-            ) : null}
+              {!isLoading && !isError && simulations.length === 0 ? (
+                <EmptyState
+                  title="최근 프로젝트가 없습니다"
+                  description="시뮬레이션을 시작하면 목록이 표시됩니다"
+                  className="px-4 py-6"
+                />
+              ) : null}
 
-            {!isLoading && !isError
-              ? simulations.map((item) => {
-                  const isActive = item.simulationId === activeSimulationId
+              {!isLoading && !isError
+                ? simulations.map((item) => {
+                    const isActive = item.simulationId === activeSimulationId
 
-                  return (
-                    <button
-                      key={item.simulationId}
-                      type="button"
-                      className={cn(
-                        "rounded-xl border bg-card px-4 py-3 text-left transition-colors hover:bg-surface-hover-2",
-                        isActive
-                          ? "border-border-focus ring-2 ring-border-focus/40"
-                          : "border-border-soft-3",
-                      )}
-                      onClick={() => onSelectSimulation(item.simulationId)}
-                    >
-                      <p className="text-body-14-medium text-foreground">
-                        {item.siteName ?? item.title}
-                      </p>
-                      <p className="mt-1 text-caption-12-regular text-text-muted">
-                        {formatRelativeWithDate(item.createdAt)}
-                      </p>
-                    </button>
-                  )
-                })
-              : null}
+                    return (
+                      <button
+                        key={item.simulationId}
+                        type="button"
+                        className={cn(
+                          "relative rounded-xl border bg-card px-4 py-3 text-left transition-colors hover:bg-surface-hover-2",
+                          isActive
+                            ? "border-border-focus ring-2 ring-border-focus/40"
+                            : "border-border-soft-3",
+                        )}
+                        onClick={() => onSelectSimulation(item.simulationId)}
+                      >
+                        <button
+                          type="button"
+                          aria-label="최근 프로젝트 숨기기"
+                          className="absolute right-3 top-3 grid size-7 place-items-center rounded-lg text-text-muted transition-colors hover:bg-surface-hover hover:text-text-body"
+                          onClick={(event) => {
+                            event.stopPropagation()
+                            onHideSimulation(item.simulationId)
+                          }}
+                        >
+                          <Trash2 className="size-3.5" />
+                        </button>
+                        <p className="pr-8 text-body-14-medium text-foreground">
+                          {item.title}
+                        </p>
+                        {item.siteName ? (
+                          <p className="mt-1 truncate pr-8 text-caption-12-regular text-text-subtle">
+                            {item.siteName}
+                          </p>
+                        ) : null}
+                        <p className="mt-1 text-caption-12-regular text-text-muted">
+                          {formatRelativeWithDate(item.createdAt)}
+                        </p>
+                      </button>
+                    )
+                  })
+                : null}
+            </div>
           </div>
         </div>
       </div>
@@ -150,23 +204,44 @@ function AuthLayout({
     isError: isSimulationListError,
     refetch: refetchSimulationList,
   } = useSimulationListQuery()
+  const [hiddenSimulationIds, setHiddenSimulationIds] = useState<string[]>(
+    () => readHiddenSimulationIds(),
+  )
   const resultMatch = matchPath("/result/:simulationId/*", location.pathname)
   const overviewMatch = matchPath("/result/:simulationId/overview", location.pathname)
   const activeSimulationId = resultMatch?.params?.simulationId
   const disablePaddingTransition = Boolean(overviewMatch)
+  const visibleSimulations = useMemo(
+    () =>
+      simulations.filter(
+        (simulation) => !hiddenSimulationIds.includes(simulation.simulationId),
+      ),
+    [hiddenSimulationIds, simulations],
+  )
 
   return (
     <div className="relative min-h-screen bg-background text-foreground">
       <AuthSidebar
         open={sidebarOpen}
         activeSimulationId={activeSimulationId}
-        simulations={simulations}
+        simulations={visibleSimulations}
         isLoading={isSimulationListLoading}
         isError={isSimulationListError}
         onRetry={() => {
           void refetchSimulationList()
         }}
         onToggle={toggleSidebar}
+        onHideSimulation={(simulationId) => {
+          setHiddenSimulationIds((prev) => {
+            if (prev.includes(simulationId)) {
+              return prev
+            }
+
+            const next = [...prev, simulationId]
+            writeHiddenSimulationIds(next)
+            return next
+          })
+        }}
         onSelectSimulation={(simulationId) =>
           navigate(buildResultOverviewPath(simulationId))
         }

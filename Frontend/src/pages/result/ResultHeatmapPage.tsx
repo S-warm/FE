@@ -77,13 +77,13 @@ const JET_LOOKUP = buildJetLookup()
 const BLOB_HEATMAP_RADIUS_SCALE = 0.095
 const BLOB_HEATMAP_MIN_RADIUS = 54
 const BLOB_HEATMAP_MAX_RADIUS = 118
-const BLOB_HEATMAP_AMBIENT_SCALE = 1.42
-const BLOB_HEATMAP_CORE_SCALE = 0.7
-const BLOB_HEATMAP_CORE_ALPHA = 0.64
-const BLOB_HEATMAP_AMBIENT_ALPHA = 0.28
-const BLOB_HEATMAP_OUTPUT_ALPHA = 0.82
-const BLOB_HEATMAP_ALPHA_GAMMA = 1.02
-const BLOB_HEATMAP_LOW_SAMPLE_BOOST = 1.18
+const BLOB_HEATMAP_AMBIENT_SCALE = 1.28
+const BLOB_HEATMAP_CORE_SCALE = 0.64
+const BLOB_HEATMAP_CORE_ALPHA = 0.52
+const BLOB_HEATMAP_AMBIENT_ALPHA = 0.18
+const BLOB_HEATMAP_OUTPUT_ALPHA = 0.72
+const BLOB_HEATMAP_ALPHA_GAMMA = 1.08
+const BLOB_HEATMAP_LOW_SAMPLE_BOOST = 1.06
 const MAX_HEATMAP_RENDER_DIMENSION = 1280
 const HEATMAP_PANEL_MAX_HEIGHT_PX = 3200
 const HEATMAP_PANEL_MAX_VIEWPORT_RATIO = 1.6
@@ -96,41 +96,41 @@ function getLowSampleVisibilityProfile(pointsCount: number) {
   // 초저샘플: 1-2개 포인트
   if (pointsCount <= 2) {
     return {
-      intensityBoost: 1.2,
-      intensityFloor: 0.3,
-      coreAlphaBonus: 0.08,
-      ambientAlphaBonus: 0.06,
-      alphaThreshold: 3,
+      intensityBoost: 1.02,
+      intensityFloor: 0.08,
+      coreAlphaBonus: 0.03,
+      ambientAlphaBonus: 0.02,
+      alphaThreshold: 4,
     }
   }
 
   // 저샘플: 3-4개 포인트 (강도 조정)
   if (pointsCount <= 4) {
     return {
-      intensityBoost: 1.1,
-      intensityFloor: 0.25,
-      coreAlphaBonus: 0.08,
-      ambientAlphaBonus: 0.06,
-      alphaThreshold: 3,
+      intensityBoost: 1.0,
+      intensityFloor: 0.06,
+      coreAlphaBonus: 0.03,
+      ambientAlphaBonus: 0.02,
+      alphaThreshold: 4,
     }
   }
 
   if (pointsCount <= 8) {
     return {
-      intensityBoost: 1.44,
-      intensityFloor: 0.34,
-      coreAlphaBonus: 0.09,
-      ambientAlphaBonus: 0.08,
-      alphaThreshold: 3,
+      intensityBoost: 1.04,
+      intensityFloor: 0.08,
+      coreAlphaBonus: 0.03,
+      ambientAlphaBonus: 0.02,
+      alphaThreshold: 4,
     }
   }
 
   if (pointsCount <= 12) {
     return {
-      intensityBoost: 1.3,
-      intensityFloor: 0.28,
-      coreAlphaBonus: 0.07,
-      ambientAlphaBonus: 0.06,
+      intensityBoost: 1.02,
+      intensityFloor: 0.07,
+      coreAlphaBonus: 0.02,
+      ambientAlphaBonus: 0.02,
       alphaThreshold: 4,
     }
   }
@@ -138,9 +138,9 @@ function getLowSampleVisibilityProfile(pointsCount: number) {
   if (pointsCount <= 24) {
     return {
       intensityBoost: BLOB_HEATMAP_LOW_SAMPLE_BOOST,
-      intensityFloor: 0.22,
-      coreAlphaBonus: 0.04,
-      ambientAlphaBonus: 0.04,
+      intensityFloor: 0.06,
+      coreAlphaBonus: 0.02,
+      ambientAlphaBonus: 0.02,
       alphaThreshold: 4,
     }
   }
@@ -268,6 +268,20 @@ function getPointIntensity(point: ResultHeatmapPointViewModel) {
   return point.count * getSeverityWeight(point)
 }
 
+function getPercentile(sortedValues: number[], percentile: number) {
+  if (!sortedValues.length) {
+    return 0
+  }
+
+  const clampedPercentile = Math.max(0, Math.min(1, percentile))
+  const index = Math.min(
+    sortedValues.length - 1,
+    Math.floor((sortedValues.length - 1) * clampedPercentile),
+  )
+
+  return sortedValues[index] ?? 0
+}
+
 function getPointDensityFactors(
   points: ResultHeatmapPointViewModel[],
   metrics: RenderedImageMetrics,
@@ -357,6 +371,15 @@ function drawHeatmapLayer(
   )
   const intensities = points.map(getPointIntensity)
   const maxIntensity = Math.max(...intensities, 1)
+  const sortedIntensities = [...intensities].sort((left, right) => left - right)
+  const medianIntensity = getPercentile(sortedIntensities, 0.5)
+  const upperQuartileIntensity = getPercentile(sortedIntensities, 0.75)
+  const referenceIntensity = Math.max(
+    1,
+    maxIntensity * 1.35,
+    medianIntensity * 2,
+    upperQuartileIntensity * 1.7,
+  )
   const visibilityProfile = getLowSampleVisibilityProfile(points.length)
   const { positions, densities } = getPointDensityFactors(
     points,
@@ -368,26 +391,26 @@ function drawHeatmapLayer(
   ctx.globalCompositeOperation = "lighter"
   for (let index = 0; index < points.length; index += 1) {
     const { left, top } = positions[index]
-    const normalized = intensities[index] / maxIntensity
+    const normalized = clampUnit(intensities[index] / referenceIntensity)
     const density = densities[index]
     const softened = clampUnit(
       Math.max(
         visibilityProfile.intensityFloor,
-        Math.pow(normalized, 0.88) * visibilityProfile.intensityBoost,
+        Math.pow(normalized, 1.18) * visibilityProfile.intensityBoost,
       ),
     )
-    const radius = baseRadius * (0.9 + density * 0.18 + softened * 0.06)
-    const ambientRadius = radius * (BLOB_HEATMAP_AMBIENT_SCALE + density * 0.08)
+    const radius = baseRadius * (0.84 + density * 0.1 + softened * 0.04)
+    const ambientRadius = radius * (BLOB_HEATMAP_AMBIENT_SCALE + density * 0.05)
     const coreRadius = radius * Math.max(0.58, BLOB_HEATMAP_CORE_SCALE - density * 0.04)
     const coreAlpha = Math.min(
-      0.66,
+      0.52,
       visibilityProfile.coreAlphaBonus +
-        softened * (BLOB_HEATMAP_CORE_ALPHA - density * 0.06),
+        softened * (BLOB_HEATMAP_CORE_ALPHA - density * 0.04),
     )
     const ambientAlpha = Math.min(
-      0.32,
+      0.22,
       visibilityProfile.ambientAlphaBonus +
-        softened * (BLOB_HEATMAP_AMBIENT_ALPHA + density * 0.05),
+        softened * (BLOB_HEATMAP_AMBIENT_ALPHA + density * 0.03),
     )
 
     const ambientGradient = ctx.createRadialGradient(
@@ -529,7 +552,7 @@ function HeatmapCanvas({
       !hasExpectedDimensions
     ) {
       if (canFallbackToOriginal) {
-        setActiveScreenshotUrl(screenshotSet.originalUrl)
+        setActiveScreenshotUrl(screenshotSet.originalUrl ?? null)
         return
       }
 
@@ -711,7 +734,7 @@ function HeatmapCanvas({
                   screenshotSet.originalUrl &&
                   screenshotSet.originalUrl !== screenshotSet.fullUrl
                 ) {
-                  setActiveScreenshotUrl(screenshotSet.originalUrl)
+                  setActiveScreenshotUrl(screenshotSet.originalUrl ?? null)
                   return
                 }
 

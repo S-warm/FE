@@ -1,10 +1,15 @@
 import { createResultPageSummary } from "@/adapters/result/result-page.adapter"
+import {
+  deriveResultPageName,
+  normalizeResultScreenshotUrl,
+} from "@/adapters/result/result-page-meta.adapter"
 import { adaptWcagSeverity } from "@/adapters/result/result-severity.adapter"
-import { getResultPageScreenshotUrl } from "@/features/result/assets"
 import type {
   SimulationWcagApiResponseDto,
   SimulationWcagBusinessUrlResultDto,
   SimulationWcagFlatResponseDto,
+  SimulationWcagPageDto,
+  SimulationWcagPagesResponseDto,
   SimulationWcagResponseDto,
 } from "@/types/api/simulation/simulation-wcag.response"
 import type { ResultWcagDistributionItemViewModel } from "@/types/view-model/result/result-wcag"
@@ -37,25 +42,6 @@ function buildDistributionItems(input: {
   ]
 }
 
-function resolvePageName(url: string) {
-  if (url.includes("/search")) return "검색 결과"
-  if (url.includes("/articleDetail")) return "논문 상세"
-  if (url.includes("/journal")) return "저널 상세"
-  if (url.includes("/login")) return "로그인"
-  if (url.includes("/signup")) return "회원가입"
-  return "상세 페이지"
-}
-
-function resolveScreenshotUrl(url: string) {
-  if (url.includes("/search")) return getResultPageScreenshotUrl("search")
-  if (url.includes("/articleDetail") || url.includes("/journal")) {
-    return getResultPageScreenshotUrl("product")
-  }
-  if (url.includes("/login")) return getResultPageScreenshotUrl("login")
-  if (url.includes("/signup")) return getResultPageScreenshotUrl("signup")
-  return getResultPageScreenshotUrl()
-}
-
 function deriveSummaryFromViolations(
   score: number,
   wcagLabel: string,
@@ -74,6 +60,29 @@ function deriveSummaryFromViolations(
   }
 }
 
+function mapIssues(
+  issues: Array<{
+    wcagIssueId: string
+    title: string
+    severity: string
+    description: string
+    html?: string
+    selector?: string
+    wcagCriteria?: string
+    wcag_criteria?: string
+  }>
+) {
+  return issues.map((issue) => ({
+    issueType: "wcag" as const,
+    wcagIssueId: issue.wcagIssueId,
+    title: issue.title,
+    severity: adaptWcagSeverity(issue.severity),
+    description: issue.description,
+    htmlElement: issue.html ?? issue.selector,
+    wcagCriteria: issue.wcagCriteria ?? issue.wcag_criteria,
+  }))
+}
+
 function toBusinessPages(
   simulationId: string,
   raw: Extract<SimulationWcagApiResponseDto, { urls: Record<string, SimulationWcagBusinessUrlResultDto> }>
@@ -82,23 +91,21 @@ function toBusinessPages(
 
   return {
     pages: entries.map(([url, result], index) => {
-      const issues = result.violations.map((violation) => ({
-        issueType: "wcag" as const,
-        wcagIssueId: violation.wcagIssueId,
-        title: violation.title,
-        severity: adaptWcagSeverity(violation.severity),
-        description: violation.description,
-        htmlElement: violation.html,
-        wcagCriteria: violation.wcag_criteria,
-      }))
+      const issues = mapIssues(
+        result.violations.map((violation) => ({
+          ...violation,
+          selector: undefined,
+          wcagCriteria: undefined,
+        }))
+      )
 
       return {
         ...createResultPageSummary({
           simulationId,
           order: index + 1,
-          pageName: resolvePageName(url),
+          pageName: deriveResultPageName(url),
           pageUrl: url,
-          screenshotUrl: resolveScreenshotUrl(url),
+          screenshotUrl: undefined,
           totalCount: issues.length,
           totalCountType: "wcag-issues",
           metaText: `${issues.length}건 WCAG 이슈`,
@@ -119,19 +126,65 @@ function toBusinessPages(
   }
 }
 
+function toPageListResponse(
+  simulationId: string,
+  raw: SimulationWcagPagesResponseDto
+): ResultWcagViewModel {
+  return {
+    pages: raw.pages.map((page: SimulationWcagPageDto) => {
+      const issues = mapIssues(page.issues)
+      const summary =
+        page.summary ??
+        deriveSummaryFromViolations(
+          page.score ?? 100,
+          page.wcagLabel ?? "AA",
+          issues.length
+        )
+
+      const critical =
+        page.distribution?.critical ??
+        page.distributionCritical ??
+        issues.filter((issue) => issue.severity.rank >= 5).length
+      const moderate =
+        page.distribution?.moderate ??
+        page.distributionModerate ??
+        issues.filter((issue) => issue.severity.rank >= 3 && issue.severity.rank < 5).length
+      const minor =
+        page.distribution?.minor ??
+        page.distributionMinor ??
+        issues.filter((issue) => issue.severity.rank < 3).length
+
+      return {
+        ...createResultPageSummary({
+          simulationId,
+          order: page.order,
+          pageName: deriveResultPageName(page.pageUrl, page.pageName),
+          pageUrl: page.pageUrl,
+          screenshotUrl: normalizeResultScreenshotUrl(page.screenshotUrl),
+          totalCount:
+            page.totalIssueCount ??
+            page.totalWcagIssueCount ??
+            issues.length,
+          totalCountType: "wcag-issues",
+          metaText: `${page.totalIssueCount ?? page.totalWcagIssueCount ?? issues.length}건 WCAG 이슈`,
+        }),
+        summary,
+        distribution: buildDistributionItems({
+          critical,
+          moderate,
+          minor,
+        }),
+        issues,
+      }
+    }),
+  }
+}
+
 function toLegacyPages(
   simulationId: string,
   raw: Extract<SimulationWcagApiResponseDto, SimulationWcagResponseDto>
 ): ResultWcagViewModel {
-  const issues = raw.issues.map((issue) => ({
-    issueType: "wcag" as const,
-    wcagIssueId: issue.wcagIssueId,
-    title: issue.title,
-    severity: adaptWcagSeverity(issue.severity),
-    description: issue.description,
-    htmlElement: issue.selector,
-    wcagCriteria: undefined,
-  }))
+  const issues = mapIssues(raw.issues)
 
   return {
     pages: [
@@ -162,15 +215,7 @@ function toFlatPages(
   simulationId: string,
   raw: Extract<SimulationWcagApiResponseDto, SimulationWcagFlatResponseDto>
 ): ResultWcagViewModel {
-  const issues = raw.issues.map((issue) => ({
-    issueType: "wcag" as const,
-    wcagIssueId: issue.wcagIssueId,
-    title: issue.title,
-    severity: adaptWcagSeverity(issue.severity),
-    description: issue.description,
-    htmlElement: issue.html ?? issue.selector,
-    wcagCriteria: issue.wcagCriteria ?? issue.wcag_criteria,
-  }))
+  const issues = mapIssues(raw.issues)
 
   return {
     pages: [
@@ -203,6 +248,10 @@ export function adaptWcagResponseToViewModel(
 ): ResultWcagViewModel {
   if ("urls" in raw && raw.urls) {
     return toBusinessPages(simulationId, raw)
+  }
+
+  if ("pages" in raw && Array.isArray(raw.pages)) {
+    return toPageListResponse(simulationId, raw)
   }
 
   if ("summary" in raw && "distribution" in raw && Array.isArray(raw.issues)) {

@@ -1,0 +1,139 @@
+{
+  "pages": [
+    {
+      "order": 1,
+      "pageUrl": "http://muun-shop-demo.s3-website.ap-northeast-2.amazonaws.com/category.html",
+      "screenshotUrl": "https://swarm-logs-bucket-195765661361.s3.ap-northeast-2.amazonaws.com/raw/muun-site-test-v1-260525/logs/2026-05-25_11-40-28/screenshots/muun-shop-demo_s3-website_ap-northeast-2_amazonaws_com_category_html.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20260525T132737Z&X-Amz-SignedHeaders=host&X-Amz-Credential=AKIAS3FEK52YVORN7WKG%2F20260525%2Fap-northeast-2%2Fs3%2Faws4_request&X-Amz-Expires=3600&X-Amz-Signature=26eb2352ca78c104812c00b10dd6783873742a48ea9e787395ffc8980152c916",
+      "totalErrorCount": 3,
+      "errorPoints": [
+        {
+          "x": 0.051,
+          "y": 0.636,
+          "count": 1,
+          "severity": "LOW",
+          "errorType": "사용성/시인성 부족",
+          "ageBand": "20대",
+          "issueId": "b0fb2cc6-2abd-4ae5-8325-103f1606c1b9"
+        },
+        {
+          "x": 0.051,
+          "y": 0.636,
+          "count": 2,
+          "severity": "LOW",
+          "errorType": "사용성/시인성 부족",
+          "ageBand": "50대",
+          "issueId": "b0fb2cc6-2abd-4ae5-8325-103f1606c1b9"
+        },
+        {
+          "x": 0.051,
+          "y": 0.636,
+          "count": 1,
+          "severity": "LOW",
+          "errorType": "사용성/시인성 부족",
+          "ageBand": "70대",
+          "issueId": "36053663-d4c9-49f0-bf69-499195968b39"
+        }
+      ],
+      "currentAgeGroup": "all",
+      "pagination": {
+        "totalCount": 3,
+        "currentPage": 0,
+        "pageSize": 100,
+        "hasMore": false
+      }
+    },
+    {
+      "order": 2,
+      "pageUrl": "http://muun-shop-demo.s3-website.ap-northeast-2.amazonaws.com/detail-1.html",
+      "screenshotUrl": "https://swarm-logs-bucket-195765661361.s3.ap-northeast-2.amazonaws.com/raw/muun-site-test-v1-260525/logs/2026-05-25_11-40-28/screenshots/muun-shop-demo_s3-website_ap-northeast-2_amazonaws_com_detail-1_html.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20260525T132737Z&X-Amz-SignedHeaders=host&X-Amz-Credential=AKIAS3FEK52YVORN7WKG%2F20260525%2Fap-northeast-2%2Fs3%2Faws4_request&X-Amz-Expires=3600&X-Amz-Signature=bbc8c4792c8a53d834af60ff4565b06bc4f1d886a1c08f107d8019d328b7fb23",
+      "totalErrorCount": 4,
+      "errorPoints": [
+        {
+          "x": 0.051,
+          "y": 0.13,
+          "count": 1,
+          "severity": "LOW",
+          "errorType": "사용성/클릭 영역 불명확",
+          "ageBand": "20대",
+          "issueId": "fb9437bd-26c1-4230-b3e4-bbece038f1b1"
+        },
+        {
+          "x": 0.051,
+          "y": 0.13,
+          "count": 1,
+          "severity": "LOW",
+          "errorType": "사용성/클릭 영역 불명확",
+          "ageBand": "50대",
+          "issueId": "fb9437bd-26c1-4230-b3e4-bbece038f1b1"
+        },
+        {
+          "x": 0.051,
+          "y": 0.13,
+          "count": 1,
+          "severity": "LOW",
+          "errorType": "사용성/클릭 영역 불명확",
+          "ageBand": "70대",
+          "issueId": "fb9437bd-26c1-4230-b3e4-bbece038f1b1"
+        },
+        {
+          "x": 0.349,
+          "y": 0.558,
+          "count": 1,
+          "severity": "LOW",
+          "errorType": "사용성/클릭 영역 불명확",
+          "ageBand": "70대",
+          "issueId": "594d5d6c-86ad-4303-91a6-b7ee7aba2c2e"
+        }
+      ],
+      "currentAgeGroup": "all",
+      "pagination": {
+        "totalCount": 4,
+        "currentPage": 0,
+        "pageSize": 100,
+        "hasMore": false
+      }
+    },
+    {
+      "order": 3,
+      "pageUrl": "http://muun-shop-demo.s3-website.ap-northeast-2.amazonaws.com/index.html",
+      "screenshotUrl": null,
+      "totalErrorCount": 0,
+      "errorPoints": [],
+      "currentAgeGroup": "all",
+      "pagination": {
+        "totalCount": 0,
+        "currentPage": 0,
+        "pageSize": 100,
+        "hasMore": false
+      }
+    },
+    {
+      "order": 4,
+      "pageUrl": "http://muun-shop-demo.s3-website.ap-northeast-2.amazonaws.com/list.html",
+      "screenshotUrl": null,
+      "totalErrorCount": 0,
+      "errorPoints": [],
+      "currentAgeGroup": "all",
+      "pagination": {
+        "totalCount": 0,
+        "currentPage": 0,
+        "pageSize": 100,
+        "hasMore": false
+      }
+    },
+    {
+      "order": 5,
+      "pageUrl": "http://muun-shop-demo.s3-website.ap-northeast-2.amazonaws.com/cart.html",
+      "screenshotUrl": null,
+      "totalErrorCount": 0,
+      "errorPoints": [],
+      "currentAgeGroup": "all",
+      "pagination": {
+        "totalCount": 0,
+        "currentPage": 0,
+        "pageSize": 100,
+        "hasMore": false
+      }
+    }
+  ]
+}

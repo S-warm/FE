@@ -1,6 +1,9 @@
 import { createResultPageSummary } from "@/adapters/result/result-page.adapter"
+import {
+  deriveResultPageName,
+  normalizeResultScreenshotUrl,
+} from "@/adapters/result/result-page-meta.adapter"
 import { adaptIssueSeverity } from "@/adapters/result/result-severity.adapter"
-import { getResultPageScreenshotUrl } from "@/features/result/assets"
 import type {
   SimulationAiFixApiResponseDto,
   SimulationAiFixBusinessItemDto,
@@ -20,23 +23,22 @@ function normalizeSeverity(
   return null
 }
 
-function resolvePageName(url: string) {
-  if (url.includes("/search")) return "검색 결과"
-  if (url.includes("/articleDetail")) return "논문 상세"
-  if (url.includes("/journal")) return "저널 상세"
-  if (url.includes("/login")) return "로그인"
-  if (url.includes("/signup")) return "회원가입"
-  return "상세 페이지"
-}
+function resolveFixTitle(fix: SimulationAiFixBusinessItemDto, index: number) {
+  const candidateTitles = [
+    "issueTitle" in fix ? fix.issueTitle : undefined,
+    "issue_title" in fix ? fix.issue_title : undefined,
+    "title" in fix ? fix.title : undefined,
+    fix.changeDescription?.split("\n")[0],
+    fix.selector,
+  ]
 
-function resolveScreenshotUrl(url: string) {
-  if (url.includes("/search")) return getResultPageScreenshotUrl("search")
-  if (url.includes("/articleDetail") || url.includes("/journal")) {
-    return getResultPageScreenshotUrl("product")
+  for (const candidate of candidateTitles) {
+    if (typeof candidate === "string" && candidate.trim()) {
+      return candidate.trim()
+    }
   }
-  if (url.includes("/login")) return getResultPageScreenshotUrl("login")
-  if (url.includes("/signup")) return getResultPageScreenshotUrl("signup")
-  return getResultPageScreenshotUrl()
+
+  return `수정 제안 ${index + 1}`
 }
 
 function toBusinessPage(
@@ -49,23 +51,25 @@ function toBusinessPage(
         ...createResultPageSummary({
           simulationId,
           order: 1,
-          pageName: resolvePageName(raw.url),
+          pageName: deriveResultPageName(raw.url),
           pageUrl: raw.url,
-          screenshotUrl: raw.screenshotUrl || resolveScreenshotUrl(raw.url),
+          screenshotUrl: normalizeResultScreenshotUrl(raw.screenshotUrl),
           totalCount: raw.fixes.length,
           totalCountType: "fixes",
-          metaText: `${raw.fixes.length}건 수정안`,
+          metaText: `${raw.fixes.length}건 수정`,
         }),
         fixes: raw.fixes.map((fix, index) => ({
           issueType: "ux" as const,
-          issueId: `ai-fix-${index + 1}`,
-          title: fix.changeDescription?.split('\n')[0] || `수정 제안 ${index + 1}`,
+          issueId:
+            ("issueId" in fix && typeof fix.issueId === "string" && fix.issueId.trim()) ||
+            `ai-fix-${index + 1}`,
+          title: resolveFixTitle(fix, index),
           severity: adaptIssueSeverity(normalizeSeverity(fix.severity)),
           impactedUsersCount: fix.affectedUsersCount ?? 0,
           beforeCode: fix.beforeCode,
           afterCode: fix.afterCode,
           impactSummary: fix.impactDescription,
-          changeSummaryTitle: "무엇이 변경되었나",
+          changeSummaryTitle: "코드 변경 요약",
           changeSummaryBody: fix.changeDescription,
         })),
       },
@@ -82,9 +86,9 @@ function toLegacyPages(
       ...createResultPageSummary({
         simulationId,
         order: page.order,
-        pageName: page.pageName,
+        pageName: deriveResultPageName(page.pageUrl, page.pageName),
         pageUrl: page.pageUrl,
-        screenshotUrl: page.screenshotUrl,
+        screenshotUrl: normalizeResultScreenshotUrl(page.screenshotUrl),
         totalCount: page.totalFixCount,
         totalCountType: "fixes",
         metaText: `${page.totalFixCount}건 수정 제안`,

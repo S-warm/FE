@@ -33,7 +33,9 @@ export interface SimulationIssueDto {
   issueId: string
   title: string
   category: string
+  subCategory?: string
   severity: ApiIssueSeverity
+  failCount?: number
   affectedUsersCount: number
   affectedUsersPercent: number
   description: string

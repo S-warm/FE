@@ -1,0 +1,84 @@
+{
+  "pages": [
+    {
+      "order": 1,
+      "pageUrl": "http://muun-shop-demo.s3-website.ap-northeast-2.amazonaws.com/category.html",
+      "screenshotUrl": "https://swarm-logs-bucket-195765661361.s3.ap-northeast-2.amazonaws.com/raw/muun-site-test-v1-260525/logs/2026-05-25_11-40-28/screenshots/muun-shop-demo_s3-website_ap-northeast-2_amazonaws_com_category_html.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20260525T132723Z&X-Amz-SignedHeaders=host&X-Amz-Credential=AKIAS3FEK52YVORN7WKG%2F20260525%2Fap-northeast-2%2Fs3%2Faws4_request&X-Amz-Expires=3600&X-Amz-Signature=590c199271c94f6ba1ad6aa04c81482d7d9769789a09a6bca309ebe32cba4467",
+      "totalIssueCount": 2,
+      "issues": [
+        {
+          "issueId": "b0fb2cc6-2abd-4ae5-8325-103f1606c1b9",
+          "title": "상품 상세 페이지로의 접근성 문제",
+          "category": "사용성",
+          "subCategory": "시인성 부족",
+          "severity": "HIGH",
+          "failCount": 3,
+          "affectedUsersCount": 3,
+          "description": "사용자가 '오버핏 코튼 셔츠' 상품의 상세 페이지로 이동하는 데 어려움을 겪고 있습니다. 이는 시각 제약으로 인해 해당 요소를 놓쳤기 때문입니다.",
+          "targetHtml": "오버핏 코튼 셔츠 상품 링크",
+          "tags": [
+            "접근성",
+            "시인성",
+            "상품 탐색"
+          ]
+        },
+        {
+          "issueId": "36053663-d4c9-49f0-bf69-499195968b39",
+          "title": "상품 상세 페이지로의 접근성 문제",
+          "category": "사용성",
+          "subCategory": "시인성 부족",
+          "severity": "HIGH",
+          "failCount": 1,
+          "affectedUsersCount": 0,
+          "description": "'오버핏 코튼 셔츠' 상품의 상세 페이지로 이동하는 과정에서 시각 제약으로 인해 해당 상품을 인식하지 못해 장바구니에 담는 목표를 달성하지 못했습니다.",
+          "targetHtml": "'오버핏 코튼 셔츠' 상품의 시인성 부족",
+          "tags": [
+            "상품 접근성",
+            "시각 제약",
+            "사용성 문제"
+          ]
+        }
+      ]
+    },
+    {
+      "order": 2,
+      "pageUrl": "http://muun-shop-demo.s3-website.ap-northeast-2.amazonaws.com/detail-1.html",
+      "screenshotUrl": "https://swarm-logs-bucket-195765661361.s3.ap-northeast-2.amazonaws.com/raw/muun-site-test-v1-260525/logs/2026-05-25_11-40-28/screenshots/muun-shop-demo_s3-website_ap-northeast-2_amazonaws_com_detail-1_html.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20260525T132723Z&X-Amz-SignedHeaders=host&X-Amz-Credential=AKIAS3FEK52YVORN7WKG%2F20260525%2Fap-northeast-2%2Fs3%2Faws4_request&X-Amz-Expires=3600&X-Amz-Signature=913d4271968a07a02bab870bb3742bff25d7b346fcc382a00c7c51c120d1c869",
+      "totalIssueCount": 2,
+      "issues": [
+        {
+          "issueId": "fb9437bd-26c1-4230-b3e4-bbece038f1b1",
+          "title": "장바구니에 담기 버튼 클릭 불가",
+          "category": "사용성",
+          "subCategory": "클릭 영역 불명확",
+          "severity": "MEDIUM",
+          "failCount": 3,
+          "affectedUsersCount": 3,
+          "description": "사용자가 '오버핏 코튼 셔츠' 상품의 상세 페이지에서 '장바구니에 담기' 버튼을 클릭할 수 없습니다. 이는 버튼의 클릭 영역이 불명확하거나 시각적으로 인지하기 어려운 위치에 있을 수 있습니다.",
+          "targetHtml": "장바구니에 담기 버튼",
+          "tags": [
+            "장바구니",
+            "클릭 불가",
+            "상세 페이지"
+          ]
+        },
+        {
+          "issueId": "594d5d6c-86ad-4303-91a6-b7ee7aba2c2e",
+          "title": "장바구니 담기 버튼의 시인성 부족",
+          "category": "사용성",
+          "subCategory": "클릭 영역 불명확",
+          "severity": "MEDIUM",
+          "failCount": 1,
+          "affectedUsersCount": 0,
+          "description": "사용자가 '오버핏 코튼 셔츠' 상품의 상세 페이지에서 장바구니에 담기 버튼을 찾지 못해 목표를 달성하지 못했습니다. 버튼의 시인성이 부족하여 사용자가 쉽게 인지하지 못한 것으로 보입니다.",
+          "targetHtml": "장바구니 담기 버튼",
+          "tags": [
+            "장바구니",
+            "버튼",
+            "시인성"
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,8 +1,6 @@
 import { adaptWcagResponseToViewModel } from "@/adapters/result/result-wcag.adapter"
-import { tryLoadDevFallbackJson } from "@/services/core/dev-fallback-json"
 import { ApiServiceError } from "@/services/core/api-service-error"
 import { requestJsonWithFallback } from "@/services/core/http-client"
-import { SERVICE_CONFIG } from "@/services/core/service-config"
 import type { SimulationWcagApiResponseDto } from "@/types/api/simulation/simulation-wcag.response"
 import type { ResultWcagViewModel } from "@/types/view-model/result/result-wcag"
 
@@ -10,7 +8,6 @@ export interface ResultWcagService {
   getWcag(simulationId: string): Promise<ResultWcagViewModel>
 }
 
-const WCAG_FALLBACK_PATH = "/_mock_wcag.json"
 const WCAG_ENDPOINT = "/api/simulations/:simulationId/wcag"
 
 function createWcagPayloadError(message: string) {
@@ -52,24 +49,8 @@ function hasRecognizableWcagPayload(apiResponse: SimulationWcagApiResponseDto) {
       Array.isArray(apiResponse.issues))
 }
 
-async function getWcagFallback(simulationId: string) {
-  const fallbackResponse =
-    await tryLoadDevFallbackJson<SimulationWcagApiResponseDto>(WCAG_FALLBACK_PATH)
-
-  if (!fallbackResponse) {
-    return null
-  }
-
-  return adaptWcagResponseToViewModel(simulationId, fallbackResponse)
-}
-
 export const resultWcagService: ResultWcagService = {
   async getWcag(simulationId) {
-    if (SERVICE_CONFIG.useSimulationMock) {
-      const fallbackViewModel = await getWcagFallback(simulationId)
-      return fallbackViewModel ?? { pages: [] }
-    }
-
     try {
       const apiResponse = await requestJsonWithFallback<SimulationWcagApiResponseDto>([
         `/api/simulations/${simulationId}/wcag`,
@@ -84,26 +65,12 @@ export const resultWcagService: ResultWcagService = {
       }
 
       if (!hasUsableWcagPayload(apiResponse)) {
-        if (import.meta.env.DEV) {
-          const fallbackViewModel = await getWcagFallback(simulationId)
-          if (fallbackViewModel) {
-            return fallbackViewModel
-          }
-        }
-
         return { pages: [] }
       }
 
       return adaptWcagResponseToViewModel(simulationId, apiResponse)
     } catch (error) {
       if (error instanceof ApiServiceError && error.status === 404) {
-        if (import.meta.env.DEV) {
-          const fallbackViewModel = await getWcagFallback(simulationId)
-          if (fallbackViewModel) {
-            return fallbackViewModel
-          }
-        }
-
         return { pages: [] }
       }
 

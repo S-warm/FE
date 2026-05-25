@@ -23,7 +23,6 @@ export interface SimulationFormViewModel {
   targetUrl: string
   endUrl: string
   task: string
-  successCondition: string
   digitalLiteracy: SimulationFormDigitalLiteracy
   personaDevice: SimulationFormPersonaDevice
   ageCounts: SimulationFormAgeCounts

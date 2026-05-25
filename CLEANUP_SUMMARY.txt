@@ -1,0 +1,58 @@
+🧹 하드 목업 정리 요약
+
+═══════════════════════════════════════════════════════════════
+
+【 즉시 삭제 가능 (9개) 】
+
+✅ Mock JSON 파일 (5개)
+   - _mock_AI수정.json
+   - _mock_wcag.json
+   - _mock_개요.json
+   - _mock_주요이슈.json
+   - _mock_히트맵.json
+
+✅ 코드 로직 (5개 service)
+   - result-ai-fix.service.ts (mock 로드 로직)
+   - result-heatmap.service.ts (mock 로드 로직)
+   - result-issues.service.ts (mock 로드 로직)
+   - result-overview.service.ts (mock 로드 로직)
+   - result-wcag.service.ts (mock 로드 로직)
+
+✅ Helper 파일 (1개)
+   - src/services/core/dev-fallback-json.ts
+
+═══════════════════════════════════════════════════════════════
+
+【 조건부 삭제 (필요 여부 확인 후) 】
+
+⚠️ Mock 이미지들:
+   - page-main.png 사용 여부?
+   - page-cart.png 사용 여부?
+   - img-example-site.png (fallback) 필요한가?
+
+⚠️ 이미지 매핑 정리:
+   - checkout, payment, mypage 매핑 제거
+
+═══════════════════════════════════════════════════════════════
+
+【 유지해야 할 것들 】
+
+✅ 필수 Mock 이미지 (실제 사용 중):
+   - page-login.png
+   - page-signup.png
+   - page-search.png
+   - page-product-detail.png
+
+✅ 필수 코드:
+   - SERVICE_CONFIG.useSimulationMock (개발/프로덕션 구분용)
+   - persona-device.ts (테스트 설정)
+
+═══════════════════════════════════════════════════════════════
+
+예상 효과:
+- 번들 사이즈: ~15MB 감소 (mock 이미지)
+- 코드 복잡도: 감소 (mock 로직 제거)
+- 유지보수성: 증가 (명확한 로직)
+- 배포 시간: 약간 단축
+
+═══════════════════════════════════════════════════════════════

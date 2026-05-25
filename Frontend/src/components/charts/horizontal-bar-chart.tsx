@@ -110,7 +110,7 @@ function HorizontalBarChart({
         <BarChart
           data={data}
           layout="vertical"
-          margin={{ top: 4, right: 8, left: 8, bottom: 4 }}
+          margin={{ top: 4, right: 32, left: 8, bottom: 4 }}
           barCategoryGap="30%"
           onMouseMove={(state) => {
             setActiveIndex(getActiveTooltipIndex(state))

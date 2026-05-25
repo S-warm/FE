@@ -17,13 +17,6 @@ const RESULT_PAGE_SCREENSHOT_ASSETS = {
     expectedNaturalWidth: 3158,
     expectedNaturalHeight: 1646,
   },
-  main: {
-    original: "/mock-images/page-main.png",
-    full: "/mock-images/optimized/page-main.jpg",
-    preview: "/mock-images/thumbs/page-main.jpg",
-    expectedNaturalWidth: 3158,
-    expectedNaturalHeight: 5550,
-  },
   search: {
     original: "/mock-images/page-search.png",
     full: "/mock-images/optimized/page-search.jpg",
@@ -38,34 +31,6 @@ const RESULT_PAGE_SCREENSHOT_ASSETS = {
     expectedNaturalWidth: 3158,
     expectedNaturalHeight: 22191,
   },
-  cart: {
-    original: "/mock-images/page-cart.png",
-    full: "/mock-images/optimized/page-cart.jpg",
-    preview: "/mock-images/thumbs/page-cart.jpg",
-    expectedNaturalWidth: 3158,
-    expectedNaturalHeight: 4590,
-  },
-  checkout: {
-    original: RESULT_PAGE_SCREENSHOT_URL,
-    full: RESULT_PAGE_SCREENSHOT_OPTIMIZED_URL,
-    preview: RESULT_PAGE_SCREENSHOT_PREVIEW_URL,
-    expectedNaturalWidth: 3258,
-    expectedNaturalHeight: 1734,
-  },
-  payment: {
-    original: RESULT_PAGE_SCREENSHOT_URL,
-    full: RESULT_PAGE_SCREENSHOT_OPTIMIZED_URL,
-    preview: RESULT_PAGE_SCREENSHOT_PREVIEW_URL,
-    expectedNaturalWidth: 3258,
-    expectedNaturalHeight: 1734,
-  },
-  mypage: {
-    original: RESULT_PAGE_SCREENSHOT_URL,
-    full: RESULT_PAGE_SCREENSHOT_OPTIMIZED_URL,
-    preview: RESULT_PAGE_SCREENSHOT_PREVIEW_URL,
-    expectedNaturalWidth: 3258,
-    expectedNaturalHeight: 1734,
-  },
 } as const
 
 const SOURCE_TO_ASSET = {
@@ -78,10 +43,8 @@ const SOURCE_TO_ASSET = {
   },
   "/mock-images/page-login.png": RESULT_PAGE_SCREENSHOT_ASSETS.login,
   "/mock-images/page-signup.png": RESULT_PAGE_SCREENSHOT_ASSETS.signup,
-  "/mock-images/page-main.png": RESULT_PAGE_SCREENSHOT_ASSETS.main,
   "/mock-images/page-search.png": RESULT_PAGE_SCREENSHOT_ASSETS.search,
   "/mock-images/page-product-detail.png": RESULT_PAGE_SCREENSHOT_ASSETS.product,
-  "/mock-images/page-cart.png": RESULT_PAGE_SCREENSHOT_ASSETS.cart,
 } as const
 
 const FULL_TO_PREVIEW_URL = Object.entries(SOURCE_TO_ASSET).reduce<Record<string, string>>(

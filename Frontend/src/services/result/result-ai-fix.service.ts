@@ -1,8 +1,6 @@
 import { adaptAiFixResponseToViewModel } from "@/adapters/result/result-ai-fix.adapter"
-import { tryLoadDevFallbackJson } from "@/services/core/dev-fallback-json"
 import { ApiServiceError } from "@/services/core/api-service-error"
 import { requestJsonWithFallback } from "@/services/core/http-client"
-import { SERVICE_CONFIG } from "@/services/core/service-config"
 import type { SimulationAiFixApiResponseDto } from "@/types/api/simulation/simulation-ai-fix.response"
 import type { ResultAiFixViewModel } from "@/types/view-model/result/result-ai-fix"
 
@@ -10,7 +8,6 @@ export interface ResultAiFixService {
   getAiFix(simulationId: string): Promise<ResultAiFixViewModel>
 }
 
-const AI_FIX_FALLBACK_PATH = "/_mock_AI수정.json"
 const AI_FIX_ENDPOINT = "/api/simulations/:simulationId/ai-fix"
 
 function createAiFixPayloadError(message: string) {
@@ -45,24 +42,8 @@ function hasCompleteAiFixSeverity(apiResponse: SimulationAiFixApiResponseDto) {
   )
 }
 
-async function getAiFixFallback(simulationId: string) {
-  const fallbackResponse =
-    await tryLoadDevFallbackJson<SimulationAiFixApiResponseDto>(AI_FIX_FALLBACK_PATH)
-
-  if (!fallbackResponse) {
-    return null
-  }
-
-  return adaptAiFixResponseToViewModel(simulationId, fallbackResponse)
-}
-
 export const resultAiFixService: ResultAiFixService = {
   async getAiFix(simulationId) {
-    if (SERVICE_CONFIG.useSimulationMock) {
-      const fallbackViewModel = await getAiFixFallback(simulationId)
-      return fallbackViewModel ?? { pages: [] }
-    }
-
     try {
       const apiResponse = await requestJsonWithFallback<SimulationAiFixApiResponseDto>([
         `/api/simulations/${simulationId}/ai-fix`,
@@ -84,26 +65,12 @@ export const resultAiFixService: ResultAiFixService = {
       }
 
       if (!hasUsableAiFixPayload(apiResponse)) {
-        if (import.meta.env.DEV) {
-          const fallbackViewModel = await getAiFixFallback(simulationId)
-          if (fallbackViewModel) {
-            return fallbackViewModel
-          }
-        }
-
         return { pages: [] }
       }
 
       return adaptAiFixResponseToViewModel(simulationId, apiResponse)
     } catch (error) {
       if (error instanceof ApiServiceError && error.status === 404) {
-        if (import.meta.env.DEV) {
-          const fallbackViewModel = await getAiFixFallback(simulationId)
-          if (fallbackViewModel) {
-            return fallbackViewModel
-          }
-        }
-
         return { pages: [] }
       }
 

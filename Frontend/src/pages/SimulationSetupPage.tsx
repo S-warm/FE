@@ -93,7 +93,6 @@ function SimulationSetupPage() {
     targetUrl,
     endUrl,
     task,
-    successCondition: task,
     digitalLiteracy,
     personaDevice,
     ageCounts: ageGroupCounts,

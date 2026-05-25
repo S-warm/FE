@@ -1,0 +1,75 @@
+🗑️ 최종 삭제 계획 (재확인 완료)
+
+═════════════════════════════════════════════════════════════
+
+【 확인된 필요 없는 것들 - 100% 삭제 가능 】
+
+✅ Mock JSON 파일들 (5개)
+   - _mock_AI수정.json
+   - _mock_wcag.json
+   - _mock_개요.json
+   - _mock_주요이슈.json
+   - _mock_히트맵.json
+   
+   이유: 실제 API가 정상 작동 중
+
+✅ Mock 로드 로직 (5개 service)
+   - result-ai-fix.service.ts
+   - result-heatmap.service.ts
+   - result-issues.service.ts
+   - result-overview.service.ts
+   - result-wcag.service.ts
+   
+   이유: SERVICE_CONFIG.useSimulationMock이 false (프로덕션)
+
+✅ dev-fallback-json.ts 파일
+   
+   이유: Mock 파일 로드 함수, 더 이상 사용 안 함
+
+✅ page-main.png (모든 버전)
+   - public/mock-images/page-main.png
+   - public/mock-images/optimized/page-main.jpg
+   - public/mock-images/thumbs/page-main.jpg
+   
+   이유: URL 패턴에 포함되지 않음, 실제 사용 안 함
+
+✅ page-cart.png (모든 버전)
+   - public/mock-images/page-cart.png
+   - public/mock-images/optimized/page-cart.jpg
+   - public/mock-images/thumbs/page-cart.jpg
+   
+   이유: URL 패턴에 포함되지 않음, 실제 사용 안 함
+
+✅ 이미지 매핑 정리
+   - RESULT_PAGE_SCREENSHOT_ASSETS에서 main, cart 제거
+   - SOURCE_TO_ASSET에서 main, cart 관련 제거
+
+═════════════════════════════════════════════════════════════
+
+【 유지해야 할 것들 】
+
+✅ img-example-site.png (모든 버전)
+   
+   이유: fallback으로 실제 사용 중
+
+✅ page-login.png, page-signup.png, page-search.png, page-product-detail.png
+   
+   이유: URL 패턴에서 실제 사용 중
+
+✅ SERVICE_CONFIG.useSimulationMock 설정
+   
+   이유: 개발 환경과 프로덕션 구분용
+
+✅ persona-device.ts
+   
+   이유: 테스트 설정
+
+═════════════════════════════════════════════════════════════
+
+예상 효과:
+- 파일 삭제: 12개
+- 코드 정리: 5개 service + 1개 파일 + 1개 config
+- 번들 사이즈 감소: ~10MB (page-main, page-cart 이미지)
+- 코드 복잡도 감소: import/로직 제거
+
+═════════════════════════════════════════════════════════════

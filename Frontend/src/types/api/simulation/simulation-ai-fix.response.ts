@@ -1,18 +1,18 @@
 import type { ApiIssueSeverity } from "@/types/api/common/enums"
 
 export interface SimulationAiFixBusinessItemDto {
-  issue_title: string
   selector: string
-  before: string
-  after: string
-  description: string
-  impact: string
+  beforeCode: string
+  afterCode: string
+  changeDescription: string
+  impactDescription: string
   severity?: ApiIssueSeverity | "critical" | "high" | "medium" | "low"
   affectedUsersCount?: number
 }
 
 export interface SimulationAiFixBusinessResponseDto {
   url: string
+  screenshotUrl?: string
   fixes: SimulationAiFixBusinessItemDto[]
 }
 

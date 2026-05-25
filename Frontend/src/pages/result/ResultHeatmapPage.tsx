@@ -93,12 +93,24 @@ function getDevicePixelRatio() {
 }
 
 function getLowSampleVisibilityProfile(pointsCount: number) {
+  // 초저샘플: 1-2개 포인트
+  if (pointsCount <= 2) {
+    return {
+      intensityBoost: 1.2,
+      intensityFloor: 0.3,
+      coreAlphaBonus: 0.08,
+      ambientAlphaBonus: 0.06,
+      alphaThreshold: 3,
+    }
+  }
+
+  // 저샘플: 3-4개 포인트 (강도 조정)
   if (pointsCount <= 4) {
     return {
-      intensityBoost: 1.6,
-      intensityFloor: 0.4,
-      coreAlphaBonus: 0.12,
-      ambientAlphaBonus: 0.1,
+      intensityBoost: 1.1,
+      intensityFloor: 0.25,
+      coreAlphaBonus: 0.08,
+      ambientAlphaBonus: 0.06,
       alphaThreshold: 3,
     }
   }

@@ -1,8 +1,6 @@
 import { adaptHeatmapResponseToViewModel } from "@/adapters/result/result-heatmap.adapter"
-import { tryLoadDevFallbackJson } from "@/services/core/dev-fallback-json"
 import { ApiServiceError } from "@/services/core/api-service-error"
 import { requestJsonWithFallback } from "@/services/core/http-client"
-import { SERVICE_CONFIG } from "@/services/core/service-config"
 import type { GetResultHeatmapParams } from "@/services/result/result.types"
 import type { SimulationHeatmapApiResponseDto } from "@/types/api/simulation/simulation-heatmap.response"
 import type { ResultHeatmapViewModel } from "@/types/view-model/result/result-heatmap"
@@ -10,8 +8,6 @@ import type { ResultHeatmapViewModel } from "@/types/view-model/result/result-he
 export interface ResultHeatmapService {
   getHeatmap(params: GetResultHeatmapParams): Promise<ResultHeatmapViewModel>
 }
-
-const HEATMAP_FALLBACK_PATH = "/_mock_히트맵.json"
 
 function hasUsableHeatmapPayload(apiResponse: SimulationHeatmapApiResponseDto) {
   if ("errorPoints" in apiResponse) {
@@ -34,48 +30,18 @@ async function requestHeatmap(params: GetResultHeatmapParams) {
   ])
 }
 
-async function getHeatmapFallback(params: GetResultHeatmapParams) {
-  const fallbackResponse =
-    await tryLoadDevFallbackJson<SimulationHeatmapApiResponseDto>(HEATMAP_FALLBACK_PATH)
-
-  if (!fallbackResponse) {
-    return null
-  }
-
-  return adaptHeatmapResponseToViewModel(params.simulationId, fallbackResponse, params)
-}
-
 export const resultHeatmapService: ResultHeatmapService = {
   async getHeatmap(params) {
-    if (SERVICE_CONFIG.useSimulationMock) {
-      const fallbackViewModel = await getHeatmapFallback(params)
-      return fallbackViewModel ?? { pages: [] }
-    }
-
     try {
       const apiResponse = await requestHeatmap(params)
 
       if (!hasUsableHeatmapPayload(apiResponse)) {
-        if (import.meta.env.DEV) {
-          const fallbackViewModel = await getHeatmapFallback(params)
-          if (fallbackViewModel) {
-            return fallbackViewModel
-          }
-        }
-
         return { pages: [] }
       }
 
       return adaptHeatmapResponseToViewModel(params.simulationId, apiResponse, params)
     } catch (error) {
       if (error instanceof ApiServiceError && error.status === 404) {
-        if (import.meta.env.DEV) {
-          const fallbackViewModel = await getHeatmapFallback(params)
-          if (fallbackViewModel) {
-            return fallbackViewModel
-          }
-        }
-
         return { pages: [] }
       }
 

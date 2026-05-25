@@ -455,9 +455,7 @@ function HeatmapCanvas({
   const containerRef = useRef<HTMLDivElement>(null)
   const imageRef = useRef<HTMLImageElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const [failedScreenshotUrl, setFailedScreenshotUrl] = useState<string | null>(null)
-  const [activeScreenshotUrl, setActiveScreenshotUrl] = useState<string | null>(null)
-  const [imageMetrics, setImageMetrics] = useState<RenderedImageMetrics | null>(null)
+  // screenshotSet을 먼저 계산해 activeScreenshotUrl 초기값으로 사용
   const screenshotSet = useMemo(
     () =>
       resolveResultPageScreenshotSet({
@@ -466,6 +464,11 @@ function HeatmapCanvas({
       }),
     [page.pageId, page.screenshotUrl],
   )
+  const [failedScreenshotUrl, setFailedScreenshotUrl] = useState<string | null>(null)
+  const [activeScreenshotUrl, setActiveScreenshotUrl] = useState<string | null>(
+    () => screenshotSet.fullUrl ?? screenshotSet.originalUrl ?? null,
+  )
+  const [imageMetrics, setImageMetrics] = useState<RenderedImageMetrics | null>(null)
   const [hoveredTooltipState, setHoveredTooltipState] = useState<{
     markerId: string
     position: { x: number; y: number }
@@ -476,13 +479,6 @@ function HeatmapCanvas({
       Math.round(window.innerHeight * HEATMAP_PANEL_MAX_VIEWPORT_RATIO),
     ),
   )
-
-  useEffect(() => {
-    setFailedScreenshotUrl(null)
-    setImageMetrics(null)
-    setActiveScreenshotUrl(screenshotSet.fullUrl ?? screenshotSet.originalUrl ?? null)
-    setHoveredTooltipState(null)
-  }, [page.pageId, screenshotSet.fullUrl, screenshotSet.originalUrl])
 
   useEffect(() => {
     const updatePanelMaxHeight = () => {
@@ -1192,6 +1188,7 @@ function ResultHeatmapPage() {
         ) : (
           <>
             <HeatmapCanvas
+              key={`${selectedPage.pageId}:${selectedPage.screenshotUrl ?? ""}`}
               page={selectedPage}
               isPinpointMode={isPinpointMode}
               selectedMarkerId={isPinpointMode ? selectedPoint?.markerId ?? null : null}

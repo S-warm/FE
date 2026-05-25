@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
 import type { ReactElement } from "react"
 import {
   Bar,
@@ -148,15 +148,6 @@ function StackedBarChart({
 }: StackedBarChartProps) {
   const { containerRef, height } = useObservedContainerHeight(280)
   const [activeIndex, setActiveIndex] = useState<number | null>(null)
-  const [isAnimationActive, setIsAnimationActive] = useState(true)
-
-  if (!data.length) {
-    return (
-      <div className={`${heightClassName} w-full`}>
-        <EmptyState title={emptyTitle} description={emptyDescription} className="h-full" />
-      </div>
-    )
-  }
 
   const chartDataKey = useMemo(
     () =>
@@ -166,9 +157,17 @@ function StackedBarChart({
     [data],
   )
 
-  useEffect(() => {
-    setIsAnimationActive(true)
-  }, [chartDataKey])
+  // 데이터 변경 시 애니메이션 재실행: effect 없이 "마지막 완료 키"로 추적
+  const [animatedDataKey, setAnimatedDataKey] = useState<string | null>(null)
+  const isAnimationActive = animatedDataKey !== chartDataKey
+
+  if (!data.length) {
+    return (
+      <div className={`${heightClassName} w-full`}>
+        <EmptyState title={emptyTitle} description={emptyDescription} className="h-full" />
+      </div>
+    )
+  }
 
   const activeSuccess = activeIndex !== null ? data[activeIndex]?.success : null
 
@@ -270,7 +269,7 @@ function StackedBarChart({
             isAnimationActive={isAnimationActive}
             animationDuration={420}
             animationEasing="linear"
-            onAnimationEnd={() => { setIsAnimationActive(false) }}
+            onAnimationEnd={() => { setAnimatedDataKey(chartDataKey) }}
             onClick={(_, index) => {
               const label = data[index]?.label
               if (label) {

@@ -58,7 +58,8 @@ function hasRecognizableWcagPayload(apiResponse: SimulationWcagApiResponseDto) {
 
   const isRecognizable = hasPagesFormat || hasUrlsFormat || hasLegacyFormat || hasFlatFormat
 
-  if (isRecognizable && process.env.NODE_ENV === "development") {
+  if (isRecognizable && typeof window === "undefined") {
+    // Only log in server/development environment
     if (hasFlatFormat && !hasPagesFormat && !hasUrlsFormat && !hasLegacyFormat) {
       console.log(
         "[WCAG Service] Detected flat format response. Note: For per-page WCAG error breakdown, backend should return pages[] format instead."

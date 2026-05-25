@@ -255,8 +255,7 @@ function toFlatPages(
       minor: pageIssues.filter(i => i.severity.rank < 3).length,
     }
 
-    // Scale score based on how many issues this page has
-    const issueRatio = pageIssues.length / Math.max(issues.length, 1)
+    // Calculate page score based on issue severity
     const pageScore = Math.max(0, Math.round(raw.score - (pageDistribution.critical * 10 + pageDistribution.moderate * 5)))
 
     return {

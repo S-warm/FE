@@ -115,13 +115,21 @@ export function IssueDetailPanelNew({
               </button>
             </div>
 
-            <div className="grid grid-cols-3 gap-3 border-t border-border-soft pt-2">
+            <div className="grid grid-cols-4 gap-3 border-t border-border-soft pt-2">
               <div className="text-center">
                 <p className="mb-1 text-caption-12-medium text-text-subtle">
                   발생 건수
                 </p>
                 <p className="whitespace-nowrap text-lg font-bold text-text-body">
                   {issue.totalFailures}건
+                </p>
+              </div>
+              <div className="text-center">
+                <p className="mb-1 text-caption-12-medium text-text-subtle">
+                  발생률
+                </p>
+                <p className="whitespace-nowrap text-lg font-bold text-text-body">
+                  {issue.failureRate.toFixed(1)}%
                 </p>
               </div>
               <div className="text-center">

@@ -1078,18 +1078,27 @@ function ResultHeatmapPage() {
   const toggleAgeFilter = useCallback((filter: ResultAgeFilter) => {
     setSelectedAgeBands((prev) => {
       if (filter === "all") {
+        // "all" 클릭 시 모든 연령대 선택
         return selectableAgeBands
       }
 
-      const nextAgeBands = prev.includes(filter)
-        ? prev.filter((ageBand) => ageBand !== filter)
-        : [...prev, filter]
+      const isCurrentlySelected = prev.includes(filter)
 
-      if (!nextAgeBands.length) {
-        return selectableAgeBands
+      if (isCurrentlySelected) {
+        // 이미 선택된 연령대 제거
+        const nextAgeBands = prev.filter((ageBand) => ageBand !== filter)
+
+        // 모든 연령대가 해제되면 "all"로 복귀
+        if (!nextAgeBands.length) {
+          return selectableAgeBands
+        }
+
+        return nextAgeBands
+      } else {
+        // 새로운 연령대 선택 → "all"에서 벗어남
+        const nextAgeBands = [...prev, filter]
+        return selectableAgeBands.filter((ageBand) => nextAgeBands.includes(ageBand))
       }
-
-      return selectableAgeBands.filter((ageBand) => nextAgeBands.includes(ageBand))
     })
     resetHeatmapSelection()
   }, [resetHeatmapSelection])

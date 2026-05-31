@@ -20,6 +20,7 @@ import { motion } from "@/lib/motion"
 import { cn } from "@/lib/utils"
 import { useSimulationHeaderQuery } from "@/queries"
 import { useSimulationDraftStore } from "@/store/simulation-draft.store"
+import { useSimulationListQuery } from "@/queries"
 import { formatRelativeTime, formatDateTime } from "@/utils/format-relative-time"
 
 const RESULT_TAB_HOVER_BG =
@@ -76,9 +77,11 @@ function MetaRow({
 function ResultHeaderCard({
   title,
   createdAt,
+  siteUrl,
 }: {
   title: string
   createdAt: string
+  siteUrl?: string
 }) {
   return (
     <Card
@@ -97,6 +100,19 @@ function ResultHeaderCard({
                 </p>
               </div>
             </MetaRow>
+            {siteUrl ? (
+              <MetaRow label="테스트 사이트">
+                <a
+                  href={siteUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-body-16-medium text-brand-accent hover:underline"
+                >
+                  <span className="truncate">{siteUrl}</span>
+                  <span className="shrink-0">↗</span>
+                </a>
+              </MetaRow>
+            ) : null}
             <MetaRow label="생성일">
               <div className="flex flex-wrap items-center gap-2">
                 <p className="text-body-16-medium text-text-secondary">
@@ -147,6 +163,8 @@ function ResultLayoutPage() {
     isError,
     refetch,
   } = useSimulationHeaderQuery(resolvedId)
+  const { data: simulations = [] } = useSimulationListQuery()
+  const currentSimulation = simulations.find((sim) => sim.simulationId === resolvedId)
   const displayHeader = simulationHeader ?? {
     simulationId: resolvedId,
     title: fallbackTitle,
@@ -184,6 +202,7 @@ function ResultLayoutPage() {
           <ResultHeaderCard
             title={displayHeader.title}
             createdAt={displayHeader.createdAt}
+            siteUrl={currentSimulation?.siteName}
           />
         ) : null}
 

@@ -13,6 +13,7 @@ import { useSimulationListQuery } from "@/queries"
 import { useAuthStore } from "@/store/auth.store"
 import { useLayoutStore } from "@/store/layout.store"
 import type { SimulationListItemViewModel } from "@/types/view-model/simulation/simulation-list"
+import { formatRelativeWithDate } from "@/utils/format-relative-time"
 
 const HIDDEN_SIMULATION_IDS_STORAGE_KEY = "swarm:hidden-simulation-ids"
 
@@ -164,17 +165,13 @@ function AuthSidebar({
                         <p className="pr-8 text-body-14-medium text-foreground">
                           {item.title}
                         </p>
+                        {item.siteName ? (
+                          <p className="mt-1 truncate pr-8 text-caption-12-regular text-text-subtle">
+                            {item.siteName}
+                          </p>
+                        ) : null}
                         <p className="mt-1 text-caption-12-regular text-text-muted">
-                          {new Date(item.createdAt).toLocaleDateString('ko-KR', {
-                            year: 'numeric',
-                            month: '2-digit',
-                            day: '2-digit',
-                          }).replaceAll('. ', '.')}{' '}
-                          {new Date(item.createdAt).toLocaleTimeString('ko-KR', {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                            hour12: false,
-                          })}
+                          {formatRelativeWithDate(item.createdAt)}
                         </p>
                       </button>
                     )

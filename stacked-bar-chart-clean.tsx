@@ -280,7 +280,7 @@ function StackedBarChart({
             stackId="a"
             name="성공"
             barSize={barSize ?? 24}
-            radius={[8, 8, 8, 8]}
+            radius={[8, 0, 0, 8]}
             isAnimationActive={isAnimationActive}
             animationDuration={420}
             animationEasing="linear"

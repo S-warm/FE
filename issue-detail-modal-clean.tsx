@@ -73,10 +73,14 @@ export function IssueDetailModalNew({ isOpen, issue, onClose }: IssueDetailModal
             </div>
 
             {/* 퀵 스탯 */}
-            <div className="grid grid-cols-2 gap-3 pt-2 border-t border-white/20 dark:border-gray-700/30">
+            <div className="grid grid-cols-3 gap-3 pt-2 border-t border-white/20 dark:border-gray-700/30">
               <div className="space-y-1">
                 <p className="text-caption-12-medium text-text-subtle">전체 발생</p>
                 <p className="text-lg font-bold text-text-body">{issue.totalFailures}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-caption-12-medium text-text-subtle">발생률</p>
+                <p className="text-lg font-bold text-text-body">{issue.failureRate.toFixed(1)}%</p>
               </div>
               <div className="space-y-1">
                 <p className="text-caption-12-medium text-text-subtle">영향 페르소나</p>

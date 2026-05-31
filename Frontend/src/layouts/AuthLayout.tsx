@@ -141,7 +141,7 @@ function AuthSidebar({
                         key={item.simulationId}
                         type="button"
                         className={cn(
-                          "relative rounded-xl border bg-card px-4 py-3 text-left transition-colors hover:bg-surface-hover-2",
+                          "relative rounded-xl border bg-card px-4 py-3 text-left transition-colors hover:bg-surface-hover-2 overflow-visible",
                           isActive
                             ? "border-border-focus ring-2 ring-border-focus/40"
                             : "border-border-soft-3",
@@ -159,9 +159,9 @@ function AuthSidebar({
                             }
                           }}
                         >
-                          <Trash2 className="size-3.5" />
+                          <Trash2 className="size-3.5 opacity-50" />
                         </button>
-                        <p className="pr-8 text-body-14-medium text-foreground">
+                        <p className="pr-16 text-body-14-medium text-foreground">
                           {item.title}
                         </p>
                         <p className="mt-1 text-caption-12-regular text-text-muted">

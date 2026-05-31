@@ -1011,6 +1011,12 @@ function ResultHeatmapPage() {
   const resolvedId = simulationId ?? "unknown"
   const [selectedAgeBands, setSelectedAgeBands] =
     useState<ResultAgeBand[]>(selectableAgeBands)
+  const [hasUserClearedAll, setHasUserClearedAll] = useState(false)
+
+  // 선택된 연령대가 비워지면 hasUserClearedAll 자동 업데이트
+  useEffect(() => {
+    setHasUserClearedAll(selectedAgeBands.length === 0)
+  }, [selectedAgeBands])
   const [currentPageIndex, setCurrentPageIndex] = useState(0)
   const [isPinpointMode, setIsPinpointMode] = useState(true)
   const [selectedMarkerId, setSelectedMarkerId] = useState<string | null>(null)
@@ -1086,20 +1092,23 @@ function ResultHeatmapPage() {
 
       if (isCurrentlySelected) {
         // 이미 선택된 연령대 제거
-        const nextAgeBands = prev.filter((ageBand) => ageBand !== filter)
-
-        // 모든 연령대가 해제되면 "all"로 복귀
-        if (!nextAgeBands.length) {
-          return selectableAgeBands
-        }
-
-        return nextAgeBands
+        return prev.filter((ageBand) => ageBand !== filter)
       } else {
-        // 새로운 연령대 선택 → "all"에서 벗어남
+        // 새로운 연령대 선택
         const nextAgeBands = [...prev, filter]
         return selectableAgeBands.filter((ageBand) => nextAgeBands.includes(ageBand))
       }
     })
+    resetHeatmapSelection()
+  }, [resetHeatmapSelection])
+
+  const clearAllAgeFilters = useCallback(() => {
+    setSelectedAgeBands([])
+    resetHeatmapSelection()
+  }, [resetHeatmapSelection])
+
+  const resetAgeFilters = useCallback(() => {
+    setSelectedAgeBands(selectableAgeBands)
     resetHeatmapSelection()
   }, [resetHeatmapSelection])
 
@@ -1148,7 +1157,7 @@ function ResultHeatmapPage() {
   }
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
+    <div className="grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)] h-full min-h-0">
       <ResultPageSidePanel
         pages={sidePages}
         selectedPageId={selectedPageId}
@@ -1162,7 +1171,7 @@ function ResultHeatmapPage() {
         onTogglePage={togglePage}
       />
 
-      <div className="grid gap-4">
+      <div className="grid gap-4 min-h-0 overflow-y-auto">
         <Card
           className={cn(
             "rounded-2xl border border-border-strong bg-card shadow-none",
@@ -1210,6 +1219,28 @@ function ResultHeatmapPage() {
                   </button>
                 )
               })}
+              <button
+                type="button"
+                onClick={clearAllAgeFilters}
+                disabled={selectedAgeBands.length === 0}
+                className={cn(
+                  "rounded-full border px-3 py-1.5 text-caption-12-medium transition-colors",
+                  selectedAgeBands.length === 0
+                    ? "border-border-soft bg-card text-text-secondary opacity-50 cursor-not-allowed"
+                    : "border-border-soft bg-card text-text-secondary hover:bg-surface-subtle",
+                )}
+              >
+                모두 해제
+              </button>
+              {hasUserClearedAll && (
+                <button
+                  type="button"
+                  onClick={resetAgeFilters}
+                  className="rounded-full border border-border-soft bg-card px-3 py-1.5 text-caption-12-medium text-text-secondary transition-colors hover:bg-surface-subtle"
+                >
+                  초기화
+                </button>
+              )}
               <button
                 type="button"
                 onClick={togglePinpointMode}

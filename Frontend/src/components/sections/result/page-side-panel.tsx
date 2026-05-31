@@ -81,11 +81,11 @@ function ResultPageSidePanel({
   return (
     <Card
       className={cn(
-        "min-h-full min-w-0 overflow-hidden rounded-2xl border-none bg-surface-app shadow-none",
+        "min-w-0 rounded-2xl border-none bg-surface-app shadow-none py-0 gap-0 h-full min-h-0 flex flex-col",
         motion.card,
       )}
     >
-      <CardContent className="grid gap-3 px-3 py-4">
+      <CardContent className="grid gap-2 px-3 py-3">
         {topSlot ? <div>{topSlot}</div> : null}
 
         <div className="grid min-w-0 gap-2">

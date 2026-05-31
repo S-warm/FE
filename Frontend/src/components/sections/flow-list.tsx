@@ -100,7 +100,7 @@ function FlowList() {
                   onClick={() => moveFlowDown(flow.id)}
                 />
                 <IconButton
-                  icon={<Trash2 />}
+                  icon={<Trash2 className="opacity-50" />}
                   label="삭제"
                   size="sm"
                   variant="destructive"

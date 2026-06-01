@@ -47,14 +47,19 @@ function mapBusinessIssueToViewModel(issue: SimulationBusinessIssueDto): ResultI
   }
 }
 
-function mapLegacyIssueToViewModel(issue: SimulationIssuesPageDto["issues"][number]): ResultIssueViewModel {
+function mapLegacyIssueToViewModel(issue: SimulationIssuesPageDto["issues"][number], pageUrl?: string): ResultIssueViewModel {
   const totalFailures = issue.failCount ?? issue.affectedUsersCount
+
+  const affectedSessions = issue.affected_personas?.map((persona) => ({
+    sessionId: persona.session_id,
+    personaAge: persona.persona_age,
+  })) ?? []
 
   return {
     issueType: "ux",
     issueId: issue.issueId,
     title: issue.title,
-    url: "",
+    url: pageUrl ?? "",
     category: adaptIssueCategory(issue.category),
     subCategory: issue.subCategory ?? "",
     severity: adaptIssueSeverity(issue.severity),
@@ -66,8 +71,8 @@ function mapLegacyIssueToViewModel(issue: SimulationIssuesPageDto["issues"][numb
     selector: issue.targetHtml,
     tags: issue.tags,
     personaList: [],
-    sessionIds: [],
-    affectedSessions: [],
+    sessionIds: affectedSessions.map((s) => s.sessionId),
+    affectedSessions,
     expectedBenefit: null,
   }
 }
@@ -121,7 +126,7 @@ function adaptLegacyPages(
         totalCountType: "issues",
         metaText: `${page.totalIssueCount}건 이슈`,
       }),
-      issues: page.issues.map(mapLegacyIssueToViewModel),
+      issues: page.issues.map((issue) => mapLegacyIssueToViewModel(issue, page.pageUrl)),
     })),
   }
 }

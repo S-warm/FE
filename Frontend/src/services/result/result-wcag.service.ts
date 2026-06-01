@@ -20,6 +20,10 @@ function createWcagPayloadError(message: string) {
 }
 
 function hasUsableWcagPayload(apiResponse: SimulationWcagApiResponseDto) {
+  if ("pages" in apiResponse && Array.isArray(apiResponse.pages)) {
+    return apiResponse.pages.length > 0
+  }
+
   if ("urls" in apiResponse) {
     return typeof apiResponse.urls === "object" && apiResponse.urls !== null
   }

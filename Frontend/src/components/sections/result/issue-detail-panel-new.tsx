@@ -84,32 +84,32 @@ export function IssueDetailPanelNew({
         <div className="sticky top-0 z-10 border-b border-border-strong bg-card">
           <div className="grid gap-4 px-6 py-5">
             <div className="flex items-start justify-between gap-4">
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                 <div className="mb-3 flex flex-wrap items-center gap-2">
                   <span
                     className={cn(
-                      "rounded-lg px-3 py-1.5 text-xs font-semibold",
+                      "rounded-lg px-3 py-1.5 text-xs font-semibold shrink-0",
                       tone.badge
                     )}
                   >
                     {issue.severity.label}
                   </span>
-                  <span className="text-xs font-medium text-text-secondary">
+                  <span className="text-xs font-medium text-text-secondary truncate">
                     {issue.category}
                   </span>
                   {issue.subCategory ? (
-                    <span className="text-xs text-text-muted">
+                    <span className="text-xs text-text-muted truncate">
                       {issue.subCategory}
                     </span>
                   ) : null}
                 </div>
-                <h2 className="text-xl font-bold leading-tight text-text-body">
+                <h2 className="text-xl font-bold leading-tight text-text-body line-clamp-2">
                   {issue.title}
                 </h2>
               </div>
               <button
                 onClick={handleClose}
-                className="rounded-lg p-2 transition-colors hover:bg-surface-muted"
+                className="rounded-lg p-2 transition-colors hover:bg-surface-muted shrink-0"
               >
                 <X className="h-5 w-5 text-text-secondary" />
               </button>

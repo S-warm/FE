@@ -45,6 +45,7 @@ export interface SimulationWcagIssueDto {
   title: string
   severity: ApiWcagSeverity
   description: string
+  url?: string
   selector?: string
   html?: string
   wcagCriteria?: string

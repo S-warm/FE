@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Cell, Pie, PieChart, ResponsiveContainer, Sector } from "recharts"
 import type { PieSectorShapeProps } from "recharts/types/polar/Pie"
 
@@ -128,6 +128,11 @@ function DonutChart({
   const [animationActive, setAnimationActive] = useState(true)
   const [hoverIndex, setHoverIndex] = useState(-1)
 
+  // 데이터 변경 시 애니메이션 재실행
+  useEffect(() => {
+    setAnimationActive(true)
+  }, [data])
+
   if (!data.length) {
     return (
       <div className={cn(heightClassName, "w-full")}>
@@ -210,7 +215,7 @@ function DonutChart({
             paddingAngle={2}
             cornerRadius={4}
             isAnimationActive={animationActive}
-            animationDuration={300}
+            animationDuration={600}
             onAnimationEnd={() => setAnimationActive(false)}
             label={outerLabels ? renderOuterLabel : renderCustomLabel}
             labelLine={false}

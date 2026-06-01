@@ -35,15 +35,17 @@ const selectableAgeBands = ageFilters.filter(
   (filter): filter is ResultAgeBand => filter !== "all",
 )
 
-function buildJetLookup(): Uint8ClampedArray {
+function buildTurboLookup(): Uint8ClampedArray {
+  // Turbo 컬러맵: 파랑 → 청록 → 초록 → 노랑 → 주황 → 빨강
   const stops: Array<[number, [number, number, number]]> = [
-    [0.0, [10, 10, 130]],
-    [0.2, [10, 60, 230]],
-    [0.4, [10, 200, 220]],
-    [0.55, [40, 220, 60]],
-    [0.72, [240, 230, 30]],
-    [0.88, [240, 130, 20]],
-    [1.0, [220, 30, 30]],
+    [0.0, [34, 34, 204]],      // 진한 파랑
+    [0.15, [34, 85, 221]],     // 파랑
+    [0.3, [34, 157, 230]],     // 청록
+    [0.45, [62, 196, 124]],    // 초록
+    [0.6, [190, 249, 86]],     // 노랑-초록
+    [0.75, [253, 237, 32]],    // 노랑
+    [0.85, [253, 155, 0]],     // 주황
+    [1.0, [226, 20, 30]],      // 빨강
   ]
 
   const lookup = new Uint8ClampedArray(256 * 3)
@@ -73,20 +75,20 @@ function buildJetLookup(): Uint8ClampedArray {
   return lookup
 }
 
-const JET_LOOKUP = buildJetLookup()
+const TURBO_LOOKUP = buildTurboLookup()
 const BLOB_HEATMAP_RADIUS_SCALE = 0.095
 const BLOB_HEATMAP_MIN_RADIUS = 54
 const BLOB_HEATMAP_MAX_RADIUS = 118
 const BLOB_HEATMAP_AMBIENT_SCALE = 1.28
 const BLOB_HEATMAP_CORE_SCALE = 0.64
-const BLOB_HEATMAP_CORE_ALPHA = 0.52
-const BLOB_HEATMAP_AMBIENT_ALPHA = 0.18
-const BLOB_HEATMAP_OUTPUT_ALPHA = 0.72
+const BLOB_HEATMAP_CORE_ALPHA = 0.65
+const BLOB_HEATMAP_AMBIENT_ALPHA = 0.25
+const BLOB_HEATMAP_OUTPUT_ALPHA = 0.70 // 조정: 더 낮춤 (빨강 강도 최소화)
 const BLOB_HEATMAP_ALPHA_GAMMA = 1.08
 const BLOB_HEATMAP_LOW_SAMPLE_BOOST = 1.06
 const MAX_HEATMAP_RENDER_DIMENSION = 1280
-const HEATMAP_PANEL_MAX_HEIGHT_PX = 3200
-const HEATMAP_PANEL_MAX_VIEWPORT_RATIO = 1.6
+const HEATMAP_PANEL_MAX_HEIGHT_PX = 5000
+const HEATMAP_PANEL_MAX_VIEWPORT_RATIO = 2.8
 
 function getDevicePixelRatio() {
   return typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1
@@ -165,8 +167,12 @@ function getPointBadgeVariant(point: ResultHeatmapPointViewModel) {
 }
 
 function getMarkerColor(point: ResultHeatmapPointViewModel) {
-  void point
-  return "bg-slate-950/78"
+  const rank = point.severity?.rank ?? 0
+  // 심각도별 색상: Critical(빨강) > High(주황) > Medium(노랑) > Low(파랑)
+  if (rank >= 4) return "bg-red-600"      // Critical - 빨강
+  if (rank >= 3) return "bg-orange-500"   // High - 주황
+  if (rank >= 2) return "bg-yellow-500"   // Medium - 노랑
+  return "bg-blue-600"                    // Low/Info - 파랑
 }
 
 function formatPercent(value: number) {
@@ -460,9 +466,9 @@ function drawHeatmapLayer(
     const normalizedAlpha = Math.pow(alpha / 255, BLOB_HEATMAP_ALPHA_GAMMA)
     const lookupAlpha = Math.max(0, Math.min(255, Math.round(normalizedAlpha * 255)))
     const lookupIndex = lookupAlpha * 3
-    data[index] = JET_LOOKUP[lookupIndex]
-    data[index + 1] = JET_LOOKUP[lookupIndex + 1]
-    data[index + 2] = JET_LOOKUP[lookupIndex + 2]
+    data[index] = TURBO_LOOKUP[lookupIndex]
+    data[index + 1] = TURBO_LOOKUP[lookupIndex + 1]
+    data[index + 2] = TURBO_LOOKUP[lookupIndex + 2]
     data[index + 3] = Math.min(
       255,
       Math.round(lookupAlpha * BLOB_HEATMAP_OUTPUT_ALPHA),
@@ -573,6 +579,16 @@ function HeatmapCanvas({
       displayHeight: image.clientHeight,
       naturalWidth: image.naturalWidth,
       naturalHeight: image.naturalHeight,
+    }
+
+    // 좌표 정확성 검증용 디버그 로그
+    if (!areImageMetricsEqual(null, nextMetrics)) {
+      console.log("📐 Image Metrics Updated:", {
+        displaySize: `${nextMetrics.displayWidth}x${nextMetrics.displayHeight}px`,
+        naturalSize: `${nextMetrics.naturalWidth}x${nextMetrics.naturalHeight}px`,
+        aspectRatio: (nextMetrics.displayWidth / nextMetrics.displayHeight).toFixed(2),
+        pointsCount: page.points.length,
+      })
     }
 
     setImageMetrics((prev) => (
@@ -703,23 +719,17 @@ function HeatmapCanvas({
     }
   }, [getTooltipPosition, hoveredTooltipState, imageMetrics, page.points])
 
-  const shouldConstrainHeight =
-    imageMetrics !== null && imageMetrics.displayHeight > panelMaxHeight
-
   return (
     <div
       ref={containerRef}
-      className={cn(
-        "relative rounded-2xl border border-border-strong bg-card",
-        shouldConstrainHeight ? "overflow-y-auto overscroll-contain" : "overflow-hidden",
-      )}
+      className="relative rounded-2xl border border-border-strong bg-card overflow-y-auto overscroll-contain"
       style={{
-        maxHeight: shouldConstrainHeight ? `${panelMaxHeight}px` : undefined,
+        maxHeight: `${panelMaxHeight}px`,
       }}
     >
       {activeScreenshotUrl && failedScreenshotUrl !== activeScreenshotUrl ? (
-        <div className="relative w-full">
-          <div className="relative w-full">
+        <div className="inline-block w-full">
+          <div className="relative w-full" style={{ display: "inline-block" }}>
             <img
               ref={imageRef}
               src={activeScreenshotUrl}
@@ -799,18 +809,22 @@ function HeatmapCanvas({
                           setHoveredTooltipState(null)
                         }}
                         className={cn(
-                          "pointer-events-auto absolute grid size-9 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-white/55 text-[11px] font-semibold text-white shadow-[0_6px_16px_rgba(15,23,42,0.32)] backdrop-blur-sm transition-all duration-300",
+                          "pointer-events-auto absolute grid size-9 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border-2 border-white text-[11px] font-bold text-white backdrop-blur-md transition-all duration-300",
                           getMarkerColor(point),
-                          isSelected ? "ring-3 ring-white/65" : "",
+                          isSelected ? "ring-4 ring-white/80" : "",
                           isHovered
-                            ? "scale-110 ring-4 ring-white/90 shadow-2xl"
-                            : "hover:scale-105",
-                          "opacity-92",
+                            ? "scale-125 ring-4 ring-white/95 shadow-2xl"
+                            : "hover:scale-110",
+                          "opacity-95",
                         )}
                         style={{
                           left: `${position.left}px`,
                           top: `${position.top}px`,
                           zIndex: isHovered ? 10 : 1,
+                          boxShadow: isHovered
+                            ? '0 0 24px rgba(255, 107, 107, 0.9), 0 6px 20px rgba(15, 23, 42, 0.4)'
+                            : '0 0 16px rgba(255, 107, 107, 0.6), 0 4px 12px rgba(15, 23, 42, 0.3)',
+                          animation: isHovered ? 'none' : 'heatmap-pulse 3s ease-in-out infinite',
                         }}
                         aria-label={`${point.issueId} ${point.description}`}
                       >
@@ -1085,21 +1099,27 @@ function ResultHeatmapPage() {
     setSelectedAgeBands((prev) => {
       if (filter === "all") {
         // "all" 클릭 시 모든 연령대 선택
+        resetHeatmapSelection()
         return selectableAgeBands
       }
 
       const isCurrentlySelected = prev.includes(filter)
 
       if (isCurrentlySelected) {
+        // 마지막 필터는 해제 불가 (최소 1개 필터 유지)
+        if (prev.length === 1) {
+          return prev
+        }
         // 이미 선택된 연령대 제거
+        resetHeatmapSelection()
         return prev.filter((ageBand) => ageBand !== filter)
       } else {
         // 새로운 연령대 선택
+        resetHeatmapSelection()
         const nextAgeBands = [...prev, filter]
         return selectableAgeBands.filter((ageBand) => nextAgeBands.includes(ageBand))
       }
     })
-    resetHeatmapSelection()
   }, [resetHeatmapSelection])
 
   const clearAllAgeFilters = useCallback(() => {
@@ -1171,7 +1191,7 @@ function ResultHeatmapPage() {
         onTogglePage={togglePage}
       />
 
-      <div className="grid gap-4 min-h-0 overflow-y-auto">
+      <div className="grid gap-4 min-h-0 overflow-hidden pb-6">
         <Card
           className={cn(
             "rounded-2xl border border-border-strong bg-card shadow-none",
@@ -1201,16 +1221,23 @@ function ResultHeatmapPage() {
                   filter === "all"
                     ? isAllAgesSelected
                     : selectedAgeBands.includes(filter)
+                // 마지막 필터 체크 (연령대만, "all" 제외)
+                const isLastFilter =
+                  filter !== "all" && active && selectedAgeBands.length === 1
                 return (
                   <button
                     key={filter}
                     type="button"
+                    disabled={isLastFilter}
                     className={cn(
                       "rounded-full border px-3 py-1.5 text-caption-12-medium transition-colors",
-                      active
-                        ? "border-border-focus bg-brand-subtle text-text-link"
-                        : "border-border-soft bg-card text-text-secondary hover:bg-surface-subtle",
+                      isLastFilter
+                        ? "border-border-soft bg-card text-text-secondary opacity-50 cursor-not-allowed"
+                        : active
+                          ? "border-border-focus bg-brand-subtle text-text-link"
+                          : "border-border-soft bg-card text-text-secondary hover:bg-surface-subtle",
                     )}
+                    title={isLastFilter ? "최소 1개의 필터는 선택되어야 합니다" : undefined}
                     onClick={() => {
                       toggleAgeFilter(filter)
                     }}

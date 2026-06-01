@@ -4,6 +4,18 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/* Heatmap animations */
+@keyframes heatmap-pulse {
+  0%, 100% {
+    opacity: 0.85;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+}
+
 /* 1) Source of truth: UX-Swarm design tokens */
 :root {
   /* Primary */

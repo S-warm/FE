@@ -6,6 +6,8 @@ import {
 } from "@/adapters/result/result-page-meta.adapter"
 import { adaptIssueSeverity } from "@/adapters/result/result-severity.adapter"
 import type {
+  SimulationIssueDto,
+  SimulationIssueAffectedPersonaDto,
   SimulationBusinessIssueDto,
   SimulationIssuesApiResponseDto,
   SimulationIssuesPageDto,
@@ -19,6 +21,9 @@ function toPercentLabel(rate: number) {
 function mapBusinessIssueToViewModel(issue: SimulationBusinessIssueDto): ResultIssueViewModel {
   const affectedUsersCount = issue.affected_personas.length || issue.session_ids.length
   const failureRate = toPercentLabel(issue.fail_rate)
+
+  // affected_personas에서 연령대 추출 (중복 제거)
+  const personaAges = [...new Set(issue.affected_personas.map((p) => p.persona_age))]
 
   return {
     issueType: "ux",
@@ -37,7 +42,7 @@ function mapBusinessIssueToViewModel(issue: SimulationBusinessIssueDto): ResultI
     description: issue.description,
     selector: issue.targetHtml,
     tags: issue.tags,
-    personaList: issue.persona_ages,
+    personaList: personaAges,
     sessionIds: issue.session_ids,
     affectedSessions: issue.affected_personas.map((persona) => ({
       sessionId: persona.session_id,
@@ -50,10 +55,13 @@ function mapBusinessIssueToViewModel(issue: SimulationBusinessIssueDto): ResultI
 function mapLegacyIssueToViewModel(issue: SimulationIssuesPageDto["issues"][number], pageUrl?: string): ResultIssueViewModel {
   const totalFailures = issue.failCount ?? issue.affectedUsersCount
 
-  const affectedSessions = issue.affected_personas?.map((persona) => ({
+  const affectedSessions = issue.affected_personas?.map((persona: SimulationIssueAffectedPersonaDto) => ({
     sessionId: persona.session_id,
     personaAge: persona.persona_age,
   })) ?? []
+
+  // 연령대 목록 추출 (중복 제거)
+  const personaAges = [...new Set(affectedSessions.map((s) => s.personaAge))]
 
   return {
     issueType: "ux",
@@ -70,8 +78,8 @@ function mapLegacyIssueToViewModel(issue: SimulationIssuesPageDto["issues"][numb
     description: issue.description,
     selector: issue.targetHtml,
     tags: issue.tags,
-    personaList: [],
-    sessionIds: affectedSessions.map((s) => s.sessionId),
+    personaList: personaAges,
+    sessionIds: affectedSessions.map((s: { sessionId: string; personaAge: string }) => s.sessionId),
     affectedSessions,
     expectedBenefit: null,
   }
@@ -126,7 +134,7 @@ function adaptLegacyPages(
         totalCountType: "issues",
         metaText: `${page.totalIssueCount}건 이슈`,
       }),
-      issues: page.issues.map((issue) => mapLegacyIssueToViewModel(issue, page.pageUrl)),
+      issues: page.issues.map((issue: SimulationIssueDto) => mapLegacyIssueToViewModel(issue, page.pageUrl)),
     })),
   }
 }

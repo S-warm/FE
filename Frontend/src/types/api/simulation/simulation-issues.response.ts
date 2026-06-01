@@ -41,6 +41,7 @@ export interface SimulationIssueDto {
   description: string
   targetHtml: string
   tags: string[]
+  affected_personas?: SimulationIssueAffectedPersonaDto[]
 }
 
 export interface SimulationIssuesPageDto {

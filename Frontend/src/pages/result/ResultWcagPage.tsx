@@ -18,6 +18,29 @@ import { motion } from "@/lib/motion"
 import { useResultPageParam } from "@/lib/result-page-param"
 import { useResultPageSidePanelState } from "@/lib/result-page-side-panel-state"
 import { cn } from "@/lib/utils"
+
+const WCAG_CRITERIA_LABEL: Record<string, string> = {
+  "1.1.1": "대체 텍스트",
+  "1.3.1": "정보 및 구조",
+  "1.3.5": "입력 목적 식별",
+  "1.3.6": "목적 식별",
+  "1.4.1": "색상 사용",
+  "1.4.3": "명도 대비",
+  "1.4.4": "텍스트 크기 조절",
+  "2.1.1": "키보드 접근성",
+  "2.4.1": "블록 건너뛰기",
+  "2.4.2": "페이지 제목",
+  "2.4.4": "링크 목적",
+  "2.4.6": "제목과 레이블",
+  "2.4.7": "포커스 표시",
+  "2.4.8": "위치 정보",
+  "2.5.5": "타겟 크기",
+  "3.3.2": "레이블 또는 지침",
+  "3.3.3": "오류 수정 제안",
+  "3.3.4": "오류 방지",
+  "4.1.2": "이름·역할·값",
+  "4.1.3": "상태 메시지",
+}
 import { useResultWcagQuery, useResultIssuesQuery } from "@/queries"
 import type { SeverityTokenViewModel } from "@/types/view-model/common/severity"
 import type {
@@ -267,7 +290,9 @@ function DetailIssueRow({
                     style.badge,
                   )}
                 >
-                  {issue.wcagIssueId}
+                  {issue.wcagCriteria
+                    ? (WCAG_CRITERIA_LABEL[issue.wcagCriteria] ?? issue.wcagCriteria)
+                    : issue.wcagIssueId}
                 </span>
                 <p className="truncate text-body-14-medium text-text-body">
                   {issue.title}

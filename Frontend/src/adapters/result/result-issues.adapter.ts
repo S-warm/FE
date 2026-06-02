@@ -72,7 +72,7 @@ function mapLegacyIssueToViewModel(issue: SimulationIssuesPageDto["issues"][numb
     subCategory: issue.subCategory ?? "",
     severity: adaptIssueSeverity(issue.severity),
     totalFailures,
-    failureRate: issue.affectedUsersPercent ?? 0,
+    failureRate: issue.failRate != null ? Number((issue.failRate * 100).toFixed(1)) : (issue.affectedUsersPercent ?? 0),
     affectedUsersCount: issue.affectedUsersCount,
     affectedUsersPercent: issue.affectedUsersPercent,
     description: issue.description,

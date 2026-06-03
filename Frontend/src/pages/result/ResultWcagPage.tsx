@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react"
 import { useParams } from "react-router-dom"
 import {
   AlertCircle,
-  ChevronDown,
   ClipboardCheck,
   ShieldCheck,
   TriangleAlert,
@@ -230,12 +229,8 @@ function DistributionSummary({
 
 function DetailIssueRow({
   issue,
-  expanded,
-  onToggle,
 }: {
   issue: ResultWcagIssueViewModel
-  expanded: boolean
-  onToggle: () => void
 }) {
   const style = getSeverityStyle(issue.severity)
   const Icon = style.icon
@@ -267,13 +262,8 @@ function DetailIssueRow({
   return (
     <Card className="rounded-2xl border border-border-strong bg-card shadow-none">
       <CardContent className="px-5 py-4">
-        <button
-          type="button"
-          className="flex w-full items-center justify-between gap-3 text-left"
-          onClick={onToggle}
-          aria-expanded={expanded}
-        >
-          <div className="flex min-w-0 items-center gap-3">
+        <div className="flex w-full items-center gap-3">
+          <div className="flex min-w-0 flex-1 items-center gap-3">
             <span
               className={cn(
                 "grid size-8 shrink-0 place-items-center rounded-xl",
@@ -282,7 +272,7 @@ function DetailIssueRow({
             >
               <Icon className="size-4" />
             </span>
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
                 <span
                   className={cn(
@@ -300,23 +290,9 @@ function DetailIssueRow({
               </div>
             </div>
           </div>
+        </div>
 
-          <span className="inline-flex items-center gap-1 rounded-lg bg-surface-muted px-3 py-2 text-caption-12-medium text-text-muted">
-            자세히 보기
-            <ChevronDown
-              className={cn("size-4 transition-transform", expanded ? "rotate-180" : "")}
-            />
-          </span>
-        </button>
-
-        <div
-          className={cn(
-            "grid transition-[grid-template-rows,opacity] duration-200",
-            expanded ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0",
-          )}
-        >
-          <div className="min-h-0 overflow-hidden">
-            <div className="mt-4 grid gap-3">
+        <div className="mt-4 grid gap-3">
               <div className="rounded-2xl border border-border-subtle bg-surface-subtle px-4 py-3">
                 <p className="mb-2 text-caption-12-medium text-text-secondary">설명</p>
                 <p className="text-caption-12-regular leading-relaxed text-text-body">
@@ -363,8 +339,6 @@ function DetailIssueRow({
                   </code>
                 </div>
               ) : null}
-            </div>
-          </div>
         </div>
       </CardContent>
     </Card>
@@ -374,7 +348,6 @@ function DetailIssueRow({
 function ResultWcagPage() {
   const { simulationId } = useParams()
   const resolvedId = simulationId ?? "unknown"
-  const [expandedIdsByPage, setExpandedIdsByPage] = useState<Record<string, string[]>>({})
   const [activeSeverityRawsByPage, setActiveSeverityRawsByPage] = useState<Record<string, string[]>>({})
   const { data, error, isLoading, isError, refetch } = useResultWcagQuery(resolvedId)
   // Fetch Issues data for sidebar pages only (temporary workaround until WCAG backend provides pageUrl)
@@ -399,10 +372,6 @@ function ResultWcagPage() {
   const activeSeverityRaws = useMemo(
     () => new Set(activeSeverityRawsByPage[selectedPageId] ?? []),
     [activeSeverityRawsByPage, selectedPageId],
-  )
-  const expandedIds = useMemo(
-    () => new Set(expandedIdsByPage[selectedPageId] ?? []),
-    [expandedIdsByPage, selectedPageId],
   )
 
   const distributionTotal = useMemo(
@@ -439,18 +408,10 @@ function ResultWcagPage() {
         [selectedPageId]: Array.from(current),
       }
     })
-    setExpandedIdsByPage((prev) => ({
-      ...prev,
-      [selectedPageId]: [],
-    }))
   }
 
   function handleResetSeverityFilter() {
     setActiveSeverityRawsByPage((prev) => ({
-      ...prev,
-      [selectedPageId]: [],
-    }))
-    setExpandedIdsByPage((prev) => ({
       ...prev,
       [selectedPageId]: [],
     }))
@@ -615,30 +576,12 @@ function ResultWcagPage() {
           </div>
           {selectedPage && filteredIssues.length > 0 ? (
             <div className="grid gap-3">
-              {filteredIssues.map((issue) => {
-                const expanded = expandedIds.has(issue.wcagIssueId)
-                return (
-                  <DetailIssueRow
-                    key={`${issue.wcagIssueId}:${expanded ? "open" : "closed"}`}
-                    issue={issue}
-                    expanded={expanded}
-                    onToggle={() =>
-                      setExpandedIdsByPage((prev) => {
-                        const current = new Set(prev[selectedPageId] ?? [])
-                        if (current.has(issue.wcagIssueId)) {
-                          current.delete(issue.wcagIssueId)
-                        } else {
-                          current.add(issue.wcagIssueId)
-                        }
-                        return {
-                          ...prev,
-                          [selectedPageId]: Array.from(current),
-                        }
-                      })
-                    }
-                  />
-                )
-              })}
+              {filteredIssues.map((issue) => (
+                <DetailIssueRow
+                  key={issue.wcagIssueId}
+                  issue={issue}
+                />
+              ))}
             </div>
           ) : (
             <EmptyState
@@ -657,3 +600,4 @@ function ResultWcagPage() {
 }
 
 export default ResultWcagPage
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            

@@ -180,7 +180,7 @@ function CodePanel({
 function toStatusBadgeVariant(
   fix: ResultAiFixItemViewModel
 ): "high" | "medium" | "low" {
-  if (fix.severity.rank >= 4) return "high"
+  if (fix.severity.rank >= 3) return "high"
   if (fix.severity.rank >= 2) return "medium"
   return "low"
 }
@@ -197,7 +197,7 @@ function ResultAiFixPage() {
   const { data, error, isLoading, isError, refetch } = useResultAiFixQuery(resolvedId)
   const { data: issuesData } = useResultIssuesQuery(resolvedId)
   const pages = useMemo(() => data?.pages ?? [], [data])
-  const pageIds = pages.map((page) => page.pageId)
+  const pageIds = useMemo(() => pages.map((page) => page.pageId), [pages])
 
   const pageUrlParam = useMemo(() => {
     const params = new URLSearchParams(location.search)

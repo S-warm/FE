@@ -49,7 +49,7 @@ function renderCustomLabel({
       fontSize={11}
       fontWeight={600}
     >
-      {count}명
+      {count}건
     </text>
   )
 }
@@ -108,7 +108,7 @@ function renderOuterLabel({
       <rect x={rectX} y={oy - 5} width={10} height={10} fill={fill} rx={2} />
       <text x={textX} y={oy} textAnchor={anchor} dominantBaseline="central" fontSize={12} fill="var(--color-text-muted)">
         <tspan fontWeight={500} fill="var(--color-text-body)">{name}</tspan>
-        <tspan fontSize={11}> ({count ?? value}명)</tspan>
+        <tspan fontSize={11}> ({count ?? value}건)</tspan>
       </text>
     </g>
   )
@@ -198,7 +198,7 @@ function DonutChart({
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
           <div className="text-center">
             <p className="text-[11px] text-text-muted">총 페르소나</p>
-            <p className="mt-1 text-[18px] font-bold leading-none text-text-primary">{total.toLocaleString()}명</p>
+            <p className="mt-1 text-[18px] font-bold leading-none text-text-primary">{total.toLocaleString()}건</p>
           </div>
         </div>
       )}

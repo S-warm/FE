@@ -38,14 +38,14 @@ function BrandingHeader({
           src={swarmIconUrl}
           alt=""
           aria-hidden
-          className={cn(compact ? "h-7 w-7" : "h-10 w-10 sm:h-12 sm:w-12")}
+          className={cn(compact ? "h-9 w-9" : "h-20 w-20 sm:h-24 sm:w-24")}
         />
         <img
           src={swarmTextUrl}
           alt="Swarm"
           className={cn(
             "object-contain",
-            compact ? "h-7" : "h-10 sm:h-12"
+            compact ? "h-7 translate-y-1" : "h-10 sm:h-12 pb-1 translate-y-2"
           )}
         />
       </Link>

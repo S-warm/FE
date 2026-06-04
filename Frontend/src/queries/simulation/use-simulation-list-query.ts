@@ -8,5 +8,7 @@ export function useSimulationListQuery(userId = SERVICE_CONFIG.defaultUserId) {
     queryKey: queryKeys.simulations.list(userId),
     queryFn: () => simulationService.getSimulationList(userId),
     enabled: Boolean(userId),
+    staleTime: 2 * 60_000,
+    gcTime: 10 * 60_000,
   })
 }

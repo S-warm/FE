@@ -355,7 +355,7 @@ function ResultWcagPage() {
   const pages = useMemo(() => data?.pages ?? [], [data])
   // Use Issues page IDs for sidebar selection (since sidebar uses Issues data)
   const issuePages = useMemo(() => issuesData?.pages ?? [], [issuesData])
-  const pageIds = issuePages.map((page) => page.pageId)
+  const pageIds = useMemo(() => issuePages.map((page) => page.pageId), [issuePages])
   const { selectedPageId, setSelectedPageId } = useResultPageParam({
     availablePageIds: pageIds,
     defaultPageId: pageIds[0],

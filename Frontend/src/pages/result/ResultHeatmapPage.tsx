@@ -1059,7 +1059,7 @@ function ResultHeatmapPage() {
   const displayPages = pages.length > 0 ? pages : lastKnownPagesRef.current
   // 사이드 패널은 항상 전체 페이지 기준
   const sidePanelPages = basePagesRef.current.length > 0 ? basePagesRef.current : displayPages
-  const pageIds = sidePanelPages.map((page) => page.pageId)
+  const pageIds = useMemo(() => sidePanelPages.map((page) => page.pageId), [sidePanelPages])
   const { selectedPageId, setSelectedPageId } = useResultPageParam({
     availablePageIds: pageIds,
     defaultPageId: pageIds[0],

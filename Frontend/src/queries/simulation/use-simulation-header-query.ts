@@ -11,5 +11,7 @@ export function useSimulationHeaderQuery(
     queryKey: queryKeys.simulations.header(simulationId, userId),
     queryFn: () => simulationService.getSimulationHeader({ simulationId, userId }),
     enabled: Boolean(simulationId),
+    staleTime: 5 * 60_000,
+    gcTime: 10 * 60_000,
   })
 }

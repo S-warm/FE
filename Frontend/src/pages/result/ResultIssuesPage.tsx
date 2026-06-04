@@ -172,7 +172,7 @@ function ResultIssuesPage() {
   const { data, isLoading, isError, refetch } = useResultIssuesQuery(resolvedId)
 
   const pages = useMemo(() => data?.pages ?? [], [data])
-  const pageIds = pages.map((page) => page.pageId)
+  const pageIds = useMemo(() => pages.map((page) => page.pageId), [pages])
   const { selectedPageId, setSelectedPageId } = useResultPageParam({
     availablePageIds: pageIds,
     defaultPageId: pageIds[0],

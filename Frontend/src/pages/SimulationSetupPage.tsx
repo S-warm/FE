@@ -198,14 +198,15 @@ function SimulationSetupPage() {
 
   return (
     <AuthLayout
-      mainClassName="items-start justify-start overflow-hidden pb-8"
+      mainClassName="items-start justify-center overflow-hidden pb-8"
+      contentMaxWidth="max-w-[1200px]"
       headerLeft={
-        <BrandingHeader compact showTagline={false} align="left" className="origin-left scale-150" />
+        <BrandingHeader compact showTagline={false} align="left" />
       }
     >
       <section
         className={cn(
-          "grid w-full max-w-[1480px] items-start gap-8 pb-8 pt-2 xl:grid-cols-[minmax(0,740px)_420px]",
+          "grid w-full max-w-[1200px] mx-auto items-start gap-8 pb-8 pt-2 xl:grid-cols-[minmax(0,740px)_420px]",
           motion.page,
         )}
       >

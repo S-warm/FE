@@ -365,7 +365,7 @@ function SimulationProcessPage() {
   return (
     <AuthLayout
       mainClassName="items-start justify-start overflow-hidden"
-      headerLeft={<BrandingHeader compact showTagline={false} align="left" className="origin-left scale-150" />}
+      headerLeft={<BrandingHeader compact showTagline={false} align="left" />}
     >
       <section className={cn("grid w-full gap-5 pt-2", motion.page)}>
         {!hasProcessContext ? (

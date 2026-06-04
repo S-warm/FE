@@ -2,11 +2,11 @@ import { Link } from "react-router-dom"
 
 import googleIconUrl from "@/assets/icons/ic-google.svg"
 import swarmIconUrl from "@/assets/logos/logo-swarm.svg"
+import swarmTextUrl from "@/assets/logos/Swarm.png"
 import routes from "@/constants/routes"
 import { cn } from "@/lib/utils"
 import { useAuthStore } from "@/store/auth.store"
 
-const APP_TITLE = "Swarm"
 const APP_TAGLINE = "AI 에이전트 기반 사용자 경험 시뮬레이션"
 
 function BrandingHeader({
@@ -38,18 +38,16 @@ function BrandingHeader({
           src={swarmIconUrl}
           alt=""
           aria-hidden
+          className={cn(compact ? "h-7 w-7" : "h-10 w-10 sm:h-12 sm:w-12")}
+        />
+        <img
+          src={swarmTextUrl}
+          alt="Swarm"
           className={cn(
-            "transition-transform duration-200 group-hover:scale-[1.02] group-focus-visible:scale-[1.02]",
-            compact ? "h-7 w-7" : "h-10 w-10 sm:h-12 sm:w-12"
+            "object-contain",
+            compact ? "h-7" : "h-10 sm:h-12"
           )}
         />
-        <h1
-          className={cn(
-            compact ? "text-subtitle-20-bold text-foreground" : "text-title-32 text-foreground sm:text-title-42"
-          )}
-        >
-          {APP_TITLE}
-        </h1>
       </Link>
 
       {showTagline ? (

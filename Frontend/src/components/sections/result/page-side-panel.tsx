@@ -153,7 +153,10 @@ function ResultPageSidePanel({
                   </div>
 
                   {expanded ? (
-                    <div className="grid gap-2 px-3 pb-3">
+                    <div
+                      className="grid gap-2 px-3 pb-3 cursor-pointer"
+                      onClick={() => onSelectPage(page.id)}
+                    >
                       <ScreenshotPreview
                         key={page.previewUrl ?? page.id}
                         previewUrl={page.previewUrl}
@@ -163,7 +166,7 @@ function ResultPageSidePanel({
                   ) : null}
                 </div>
               )
-            })}
+             })}
           </div>
         </div>
       </CardContent>

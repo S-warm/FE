@@ -180,7 +180,7 @@ function ResultLayoutPage() {
           compact
           showTagline={false}
           align="left"
-          className="origin-left scale-150"
+          className=""
         />
       }
     >

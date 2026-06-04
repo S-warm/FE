@@ -192,10 +192,12 @@ function AuthLayout({
   children,
   mainClassName,
   headerLeft,
+  contentMaxWidth = "max-w-[1560px] 2xl:max-w-[1760px]",
 }: {
   children: ReactNode
   mainClassName?: string
   headerLeft?: ReactNode
+  contentMaxWidth?: string
 }) {
   const sidebarOpen = useLayoutStore((state) => state.sidebarOpen)
   const toggleSidebar = useLayoutStore((state) => state.toggleSidebar)
@@ -259,20 +261,22 @@ function AuthLayout({
           sidebarOpen ? "pl-72 sm:pl-80" : "pl-16 sm:pl-[4.5rem]",
         )}
       >
-        <header className="flex items-start justify-between gap-4 px-6 pb-3 pt-6">
-          <div className="min-w-0">{headerLeft}</div>
-          {isAuthenticated ? (
-            <ProfileMenu initials={initials} />
-          ) : (
-            <div className="flex justify-end">
-              <div
-                className="grid size-10 place-items-center rounded-full bg-muted text-subtitle-16-semibold text-foreground ring-1 ring-border"
-                aria-hidden
-              >
-                {initials}
+        <header className="px-4 pb-3 pt-6 sm:px-6">
+          <div className={cn("mx-auto flex w-full items-start justify-between gap-4", contentMaxWidth)}>
+            <div className="min-w-0">{headerLeft}</div>
+            {isAuthenticated ? (
+              <ProfileMenu initials={initials} />
+            ) : (
+              <div className="flex justify-end">
+                <div
+                  className="grid size-10 place-items-center rounded-full bg-muted text-subtitle-16-semibold text-foreground ring-1 ring-border"
+                  aria-hidden
+                >
+                  {initials}
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </header>
 
         <main
@@ -281,7 +285,7 @@ function AuthLayout({
             mainClassName ?? "items-center",
           )}
         >
-          <div className="w-full max-w-[1560px] 2xl:max-w-[1760px]">{children}</div>
+          <div className={cn("w-full", contentMaxWidth)}>{children}</div>
         </main>
       </div>
     </div>

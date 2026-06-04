@@ -106,8 +106,9 @@ function renderOuterLabel({
         {value}%
       </text>
       <rect x={rectX} y={oy - 5} width={10} height={10} fill={fill} rx={2} />
-      <text x={textX} y={oy} textAnchor={anchor} dominantBaseline="central" fontSize={14} fill="var(--color-text-muted)">
-        <tspan fontWeight={500} fill="var(--color-text-body)">{name}</tspan>{" "}({count ?? value}건 / {value}%)
+      <text x={textX} y={oy} textAnchor={anchor} dominantBaseline="central" fontSize={12} fill="var(--color-text-muted)">
+        <tspan fontWeight={500} fill="var(--color-text-body)">{name}</tspan>
+        <tspan fontSize={11}> ({count ?? value}명)</tspan>
       </text>
     </g>
   )

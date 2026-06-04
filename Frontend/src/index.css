@@ -122,7 +122,7 @@
 
   /* Charts */
   --color-chart-landing: var(--color-primary-main);
-  --color-chart-form-start: var(--color-persona-eighty);
+  --color-chart-form-start: #A78BCC;
   --color-chart-field-input: #6a36d9;
   --color-chart-validation: #3182f6;
   --color-chart-failure-muted: #ead8fb;

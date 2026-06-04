@@ -256,11 +256,13 @@ export function IssueDetailPanelNew({
                   <div className="h-[200px]">
                     <DonutChart
                       data={issue.personas.map((persona) => ({
-                        name: persona.age,
-                        value: persona.count,
+                        name: normalizeAgeBand(persona.age),
+                        value: persona.percentage,
+                        count: persona.count,
                         color: getPersonaColor(persona.age),
                       }))}
                       heightClassName="h-full"
+                      outerLabels={false}
                     />
                   </div>
 
@@ -276,7 +278,7 @@ export function IssueDetailPanelNew({
                             style={{ backgroundColor: getPersonaColor(persona.age) }}
                           />
                           <p className="text-body-14-medium text-text-body">
-                            {persona.age}
+                            {normalizeAgeBand(persona.age)}
                           </p>
                         </div>
                         <div className="text-right">
@@ -400,6 +402,20 @@ export function IssueDetailPanelNew({
   )
 }
 
+function normalizeAgeBand(age: string): string {
+  const ageMap: Record<string, string> = {
+    "10s": "10대",
+    "20s": "20대",
+    "30s": "30대",
+    "40s": "40대",
+    "50s": "50대",
+    "60s": "60대",
+    "70s": "70대",
+    "80s": "80대",
+  }
+  return ageMap[age] ?? age
+}
+
 function getPersonaColor(age: string): string {
   const colorMap: Record<string, string> = {
     "10s": "var(--color-persona-teen)",
@@ -407,7 +423,7 @@ function getPersonaColor(age: string): string {
     "30s": "var(--color-primary-200)",
     "40s": "var(--color-primary-300)",
     "50s": "var(--color-persona-fifty)",
-    "60s": "var(--color-chart-form-start)",
+    "60s": "#A78BCC",
     "70s": "var(--color-persona-eighty)",
     "80s": "var(--color-chart-validation)",
   }
